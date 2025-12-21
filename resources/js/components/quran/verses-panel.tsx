@@ -1,0 +1,297 @@
+import { useEffect, useState } from 'react';
+import { Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { VerseCard } from './verse-card';
+import { TranslationSelector } from './translation-selector';
+import { QuranSearch } from './quran-search';
+import { cn } from '@/lib/utils';
+
+interface Verse {
+    id: number;
+    verseNumber: number;
+    text: string;
+    translation?: string;
+    audioUrl?: string;
+    juzNumber: number;
+    pageNumber: number;
+}
+
+interface Chapter {
+    id: number;
+    number: number;
+    name: string;
+    englishName: string;
+    englishNameTranslation: string;
+}
+
+interface VersesPanelProps {
+    chapter?: Chapter;
+    apiUrl?: string;
+    pageSize?: number;
+    showTranslation?: boolean;
+    className?: string;
+    user?: any; // User authentication object
+}
+
+export function VersesPanel({
+    chapter,
+    apiUrl = '/api/quran',
+    pageSize = 10,
+    showTranslation = true,
+    user,
+    className
+}: VersesPanelProps) {
+    const [verses, setVerses] = useState<Verse[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const [bookmarkedVerses, setBookmarkedVerses] = useState<Set<number>>(new Set());
+    const [isAutoScroll, setIsAutoScroll] = useState(false);
+    const [selectedEdition, setSelectedEdition] = useState('en.sahih');
+    const [showSearch, setShowSearch] = useState(false);
+
+    const fetchVerses = async (pageNum: number, reset = false) => {
+        if (!chapter) return;
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            const response = await fetch(
+                `${apiUrl}/chapters/${chapter.id}/verses?page=${pageNum}&limit=${pageSize}&edition=${selectedEdition}`
+            );
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch verses');
+            }
+
+            const data = await response.json();
+
+            if (reset) {
+                setVerses(data.data || []);
+            } else {
+                setVerses(prev => [...prev, ...(data.data || [])]);
+            }
+
+            setHasMore(data.data?.length === pageSize);
+            setPage(pageNum);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'An error occurred');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (chapter) {
+            setVerses([]);
+            setPage(1);
+            setHasMore(true);
+            fetchVerses(1, true);
+        }
+    }, [chapter?.id, apiUrl, pageSize, selectedEdition]);
+
+    // Load user bookmarks if authenticated
+    useEffect(() => {
+        if (user && chapter) {
+            loadUserBookmarks();
+        }
+    }, [user, chapter, selectedEdition]);
+
+    const loadUserBookmarks = async () => {
+        if (!user) return;
+
+        try {
+            const response = await fetch(
+                `/api/bookmarks?chapter_id=${chapter.id}&edition=${selectedEdition}`
+            );
+
+            if (response.ok) {
+                const data = await response.json();
+                const bookmarkedIds = new Set(data.data.map((b: any) => b.verse_id));
+                setBookmarkedVerses(bookmarkedIds);
+            }
+        } catch (err) {
+            console.error('Failed to load bookmarks:', err);
+        }
+    };
+
+    const loadMore = () => {
+        if (!loading && hasMore) {
+            fetchVerses(page + 1);
+        }
+    };
+
+    const handleBookmarkToggle = async (verse: Verse) => {
+        if (!user) {
+            // Redirect to login or show message
+            alert('Please login to bookmark verses');
+            return;
+        }
+
+        const verseId = verse.id.toString();
+        const isCurrentlyBookmarked = bookmarkedVerses.has(verseId);
+
+        try {
+            if (isCurrentlyBookmarked) {
+                // Remove bookmark
+                const response = await fetch(`/api/bookmarks/check?verse_id=${verseId}&edition=${selectedEdition}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.bookmark) {
+                        await fetch(`/api/bookmarks/${data.bookmark.id}`, {
+                            method: 'DELETE'
+                        });
+                    }
+                }
+
+                setBookmarkedVerses(prev => {
+                    const newSet = new Set(prev);
+                    newSet.delete(verseId);
+                    return newSet;
+                });
+            } else {
+                // Add bookmark
+                await fetch('/api/bookmarks', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chapter_id: chapter?.id,
+                        verse_number: verse.verseNumber,
+                        verse_id: verseId,
+                        verse_data: verse,
+                        edition: selectedEdition,
+                    })
+                });
+
+                setBookmarkedVerses(prev => {
+                    const newSet = new Set(prev);
+                    newSet.add(verseId);
+                    return newSet;
+                });
+            }
+        } catch (err) {
+            console.error('Failed to toggle bookmark:', err);
+            alert('Failed to update bookmark. Please try again.');
+        }
+    };
+
+    const handleCopy = async (verseId: number, text: string) => {
+        await navigator.clipboard.writeText(text);
+    };
+
+    const handlePlayAudio = (audioUrl: string) => {
+        const audio = new Audio(audioUrl);
+        audio.play().catch(console.error);
+    };
+
+    const toggleAutoScroll = () => {
+        setIsAutoScroll(!isAutoScroll);
+    };
+
+    if (!chapter) {
+        return (
+            <div className="flex items-center justify-center h-full text-muted-foreground">
+                <p>Select a chapter to start reading</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className={cn('flex flex-col h-full', className)}>
+            {/* Chapter Header */}
+            <div className="p-6 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold">{chapter.englishName}</h1>
+                        <p className="text-muted-foreground" dir="rtl">{chapter.name}</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            {chapter.englishNameTranslation}
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={toggleAutoScroll}
+                        >
+                            {isAutoScroll ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            {isAutoScroll ? 'Stop Auto' : 'Auto Scroll'}
+                        </Button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Verses Content */}
+            <div className="flex-1 overflow-y-auto">
+                <div className="p-6">
+                    {error && (
+                        <div className="bg-destructive/10 text-destructive p-4 rounded-lg mb-4">
+                            <p>Error: {error}</p>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => fetchVerses(1, true)}
+                                className="mt-2"
+                            >
+                                Retry
+                            </Button>
+                        </div>
+                    )}
+
+                    {verses.length === 0 && !loading && !error && (
+                        <div className="text-center text-muted-foreground py-8">
+                            <p>No verses found</p>
+                        </div>
+                    )}
+
+                    {/* Verses */}
+                    {verses.map((verse) => (
+                        <VerseCard
+                            key={verse.id}
+                            verse={verse}
+                            isBookmarked={bookmarkedVerses.has(verse.id.toString())}
+                            onBookmarkToggle={() => handleBookmarkToggle(verse)}
+                            onCopy={handleCopy}
+                            onPlayAudio={handlePlayAudio}
+                            showTranslation={showTranslation}
+                        />
+                    ))}
+
+                    {/* Load More Button */}
+                    {hasMore && (
+                        <div className="flex justify-center mt-6">
+                            <Button
+                                variant="outline"
+                                onClick={loadMore}
+                                disabled={loading}
+                                className="min-w-32"
+                            >
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        Loading...
+                                    </>
+                                ) : (
+                                    'Load More Verses'
+                                )}
+                            </Button>
+                        </div>
+                    )}
+
+                    {/* End Message */}
+                    {!hasMore && verses.length > 0 && (
+                        <div className="text-center text-muted-foreground py-8">
+                            <Separator className="mb-4" />
+                            <p>You've reached the end of this chapter</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}

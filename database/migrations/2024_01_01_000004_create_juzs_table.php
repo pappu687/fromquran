@@ -1,0 +1,37 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('juzs', function (Blueprint $table) {
+            $table->id();
+            $table->integer('juz_number')->unique();
+            $table->json('verse_mapping');
+            $table->foreignId('first_verse_id')->constrained('verses')->onDelete('cascade');
+            $table->foreignId('last_verse_id')->constrained('verses')->onDelete('cascade');
+            $table->integer('verses_count');
+            $table->timestamps();
+
+            // Indexes
+            $table->index('juz_number');
+            $table->index('first_verse_id');
+            $table->index('last_verse_id');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('juzs');
+    }
+};
