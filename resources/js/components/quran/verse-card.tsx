@@ -1,9 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { Bookmark, BookmarkCheck, Copy, Plus, Volume2 } from 'lucide-react';
-import { useState } from 'react';
+import { Bookmark, BookmarkCheck, Eye, Plus, Volume2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { AddResourceModal } from './add-resource-modal';
+import { ResourcesSheet } from './resources-sheet';
 
 interface Verse {
     id: number;
@@ -34,18 +35,28 @@ export function VerseCard({
     showTranslation = true,
     className,
 }: VerseCardProps) {
-    const [isCopied, setIsCopied] = useState(false);
     const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
+    const [isResourcesSheetOpen, setIsResourcesSheetOpen] = useState(false);
+    const [hasResources, setHasResources] = useState(false);
 
-    const handleCopy = async () => {
-        if (onCopy) {
-            onCopy(verse.id, verse.text);
-        } else {
-            await navigator.clipboard.writeText(verse.text);
-        }
-        setIsCopied(true);
-        setTimeout(() => setIsCopied(false), 2000);
-    };
+    useEffect(() => {
+        // Check if verse has resources
+        const checkResources = async () => {
+            try {
+                const response = await fetch(
+                    `/api/verses/${verse.id}/resources`,
+                );
+                if (response.ok) {
+                    const data = await response.json();
+                    setHasResources((data.data || []).length > 0);
+                }
+            } catch (error) {
+                console.error('Failed to check resources:', error);
+            }
+        };
+
+        checkResources();
+    }, [verse.id]);
 
     const handleBookmark = () => {
         onBookmarkToggle?.(verse.id);
@@ -87,14 +98,14 @@ export function VerseCard({
                         <Button
                             variant="ghost"
                             size="sm"
-                            onClick={handleCopy}
+                            onClick={() => setIsResourcesSheetOpen(true)}
                             className="h-8 w-8 p-0"
-                            title={isCopied ? 'Copied!' : 'Copy verse'}
+                            title="View resources"
                         >
-                            <Copy
+                            <Eye
                                 className={cn(
                                     'h-4 w-4',
-                                    isCopied && 'text-green-600',
+                                    hasResources && 'text-orange-500',
                                 )}
                             />
                         </Button>
@@ -153,6 +164,14 @@ export function VerseCard({
                 open={isResourceModalOpen}
                 onOpenChange={setIsResourceModalOpen}
                 verseId={verse.id}
+            />
+
+            {/* Resources Sheet */}
+            <ResourcesSheet
+                open={isResourcesSheetOpen}
+                onOpenChange={setIsResourcesSheetOpen}
+                verseId={verse.id}
+                verseNumber={verse.verseNumber}
             />
         </Card>
     );

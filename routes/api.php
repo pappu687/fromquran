@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\QuranController;
 use App\Http\Controllers\BookmarkController;
+use App\Http\Controllers\Api\VerseResourceController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -29,3 +30,6 @@ Route::middleware('auth')->prefix('bookmarks')->group(function () {
     Route::put('/{bookmark}', [BookmarkController::class, 'update']);
     Route::delete('/{bookmark}', [BookmarkController::class, 'destroy']);
 });
+
+// Verse Resources (public - approved resources only)
+Route::get('/verses/{verseId}/resources', [VerseResourceController::class, 'index']);
