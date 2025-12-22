@@ -72,10 +72,21 @@ export function ChaptersPanel({
                                         isActive={
                                             selectedChapter === chapter.id
                                         }
-                                        className="h-auto py-3"
+                                        className={`h-auto py-3 ${
+                                            selectedChapter === chapter.id
+                                                ? 'bg-rose-500 text-black hover:bg-rose-800'
+                                                : ''
+                                        }`}
                                     >
                                         <div className="flex w-full items-start gap-3">
-                                            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold">
+                                            <div
+                                                className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
+                                                    selectedChapter ===
+                                                    chapter.id
+                                                        ? 'bg-rose-500/40'
+                                                        : 'bg-primary/10'
+                                                }`}
+                                            >
                                                 {chapter.number}
                                             </div>
                                             <div className="flex-1 text-left">
@@ -83,13 +94,25 @@ export function ChaptersPanel({
                                                     {chapter.englishName}
                                                 </div>
                                                 <div
-                                                    className="text-xs text-muted-foreground"
+                                                    className={`text-xs ${
+                                                        selectedChapter ===
+                                                        chapter.id
+                                                            ? 'text-black/80'
+                                                            : 'text-muted-foreground'
+                                                    }`}
                                                     dir="rtl"
                                                 >
                                                     {chapter.name}
                                                 </div>
                                             </div>
-                                            <BookOpen className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                                            <BookOpen
+                                                className={`h-4 w-4 flex-shrink-0 ${
+                                                    selectedChapter ===
+                                                    chapter.id
+                                                        ? 'text-black/80'
+                                                        : 'text-muted-foreground'
+                                                }`}
+                                            />
                                         </div>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
