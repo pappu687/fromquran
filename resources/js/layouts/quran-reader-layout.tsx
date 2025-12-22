@@ -1,8 +1,15 @@
-import { type ReactNode, useState } from 'react';
-import { PanelLeft, PanelLeftOpen, Menu } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarHeader,
+    SidebarInset,
+    SidebarProvider,
+    SidebarTrigger,
+} from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
+import { PanelLeft } from 'lucide-react';
+import { type ReactNode } from 'react';
 
 interface QuranReaderLayoutProps {
     children: ReactNode;
@@ -13,59 +20,46 @@ interface QuranReaderLayoutProps {
 export default function QuranReaderLayout({
     children,
     chaptersPanel,
-    className
+    className,
 }: QuranReaderLayoutProps) {
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-
     return (
-        <div className={cn('flex h-screen bg-background', className)}>
-            {/* Left Sidebar - Chapters Panel */}
+        <SidebarProvider>
             <div
                 className={cn(
-                    'relative flex flex-col bg-card border-r transition-all duration-300 ease-in-out',
-                    isSidebarOpen ? 'w-80' : 'w-0 overflow-hidden'
+                    'flex min-h-screen w-full bg-background',
+                    className,
                 )}
             >
-                {/* Sidebar Header */}
-                <div className="flex items-center justify-between p-4 border-b">
-                    <h2 className="font-semibold text-lg">Chapters</h2>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setIsSidebarOpen(false)}
-                        className="lg:hidden"
-                    >
-                        <PanelLeftOpen className="h-4 w-4" />
-                    </Button>
-                </div>
-
-                {/* Chapters Content */}
-                <div className="flex-1 overflow-y-auto">
+                {/* Left Sidebar - Chapters */}
+                <Sidebar
+                    collapsible="offcanvas"
+                    variant="sidebar"
+                    className="border-r"
+                >
                     {chaptersPanel}
-                </div>
-            </div>
+                </Sidebar>
 
-            {/* Main Content - Verses Panel */}
-            <div className="flex-1 flex flex-col">
-                {/* Top Bar with Menu Toggle */}
-                <div className="flex items-center gap-2 p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                        className="h-8 w-8 p-0"
-                    >
-                        {isSidebarOpen ? <PanelLeft className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-                    </Button>
-                    <Separator orientation="vertical" className="h-6" />
-                    <h1 className="font-semibold text-lg">Quran Reader</h1>
-                </div>
-
-                {/* Verses Content */}
-                <div className="flex-1 overflow-y-auto">
-                    {children}
-                </div>
+                {/* Main Content - Verses Panel */}
+                <SidebarInset>
+                    <div className="flex min-h-svh flex-col">
+                        {/* Top Bar with Menu Toggle */}
+                        <div className="sticky top-0 z-20 flex items-center gap-2 border-b bg-background/95 px-3 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                            <SidebarTrigger className="h-8 w-8 rounded-md border">
+                                <PanelLeft className="h-4 w-4" />
+                            </SidebarTrigger>
+                            <Separator
+                                orientation="vertical"
+                                className="h-6"
+                            />
+                            <h1 className="text-base font-semibold md:text-lg">
+                                Quran Reader
+                            </h1>
+                        </div>
+                        {/* Verses Content */}
+                        <div className="flex-1 overflow-y-auto">{children}</div>
+                    </div>
+                </SidebarInset>
             </div>
-        </div>
+        </SidebarProvider>
     );
 }

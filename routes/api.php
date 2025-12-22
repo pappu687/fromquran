@@ -20,7 +20,7 @@ Route::prefix('quran')->group(function () {
 });
 
 // Bookmark Routes (require authentication)
-Route::middleware('auth:sanctum')->prefix('bookmarks')->group(function () {
+Route::middleware('auth')->prefix('bookmarks')->group(function () {
     Route::get('/', [BookmarkController::class, 'index']);
     Route::post('/', [BookmarkController::class, 'store']);
     Route::get('/stats', [BookmarkController::class, 'stats']);

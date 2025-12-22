@@ -1,11 +1,9 @@
-import { useEffect, useState } from 'react';
-import { Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { VerseCard } from './verse-card';
-import { TranslationSelector } from './translation-selector';
-import { QuranSearch } from './quran-search';
 import { cn } from '@/lib/utils';
+import { Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { VerseCard } from './verse-card';
 
 interface Verse {
     id: number;
@@ -32,6 +30,8 @@ interface VersesPanelProps {
     showTranslation?: boolean;
     className?: string;
     user?: any; // User authentication object
+    fromVerse?: number;
+    toVerse?: number;
 }
 
 export function VersesPanel({
@@ -40,17 +40,24 @@ export function VersesPanel({
     pageSize = 10,
     showTranslation = true,
     user,
-    className
+    className,
+    fromVerse,
+    toVerse,
 }: VersesPanelProps) {
     const [verses, setVerses] = useState<Verse[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
-    const [bookmarkedVerses, setBookmarkedVerses] = useState<Set<number>>(new Set());
+    const [bookmarkedVerses, setBookmarkedVerses] = useState<Set<number>>(
+        new Set(),
+    );
     const [isAutoScroll, setIsAutoScroll] = useState(false);
     const [selectedEdition, setSelectedEdition] = useState('en.sahih');
     const [showSearch, setShowSearch] = useState(false);
+    const [currentChapterId, setCurrentChapterId] = useState<number | null>(
+        null,
+    );
 
     const fetchVerses = async (pageNum: number, reset = false) => {
         if (!chapter) return;
@@ -59,8 +66,19 @@ export function VersesPanel({
         setError(null);
 
         try {
+            const params = new URLSearchParams({
+                page: String(pageNum),
+                limit: String(pageSize),
+                edition: selectedEdition,
+            });
+
+            if (fromVerse && toVerse) {
+                params.set('from', String(fromVerse));
+                params.set('to', String(toVerse));
+            }
+
             const response = await fetch(
-                `${apiUrl}/chapters/${chapter.id}/verses?page=${pageNum}&limit=${pageSize}&edition=${selectedEdition}`
+                `${apiUrl}/chapters/${chapter.id}/verses?${params.toString()}`,
             );
 
             if (!response.ok) {
@@ -72,7 +90,7 @@ export function VersesPanel({
             if (reset) {
                 setVerses(data.data || []);
             } else {
-                setVerses(prev => [...prev, ...(data.data || [])]);
+                setVerses((prev) => [...prev, ...(data.data || [])]);
             }
 
             setHasMore(data.data?.length === pageSize);
@@ -85,13 +103,14 @@ export function VersesPanel({
     };
 
     useEffect(() => {
-        if (chapter) {
+        if (chapter && chapter.id !== currentChapterId) {
+            setCurrentChapterId(chapter.id);
             setVerses([]);
             setPage(1);
             setHasMore(true);
             fetchVerses(1, true);
         }
-    }, [chapter?.id, apiUrl, pageSize, selectedEdition]);
+    }, [chapter?.id, apiUrl, pageSize, selectedEdition, fromVerse, toVerse]);
 
     // Load user bookmarks if authenticated
     useEffect(() => {
@@ -105,12 +124,14 @@ export function VersesPanel({
 
         try {
             const response = await fetch(
-                `/api/bookmarks?chapter_id=${chapter.id}&edition=${selectedEdition}`
+                `/api/bookmarks?chapter_id=${chapter.id}&edition=${selectedEdition}`,
             );
 
             if (response.ok) {
                 const data = await response.json();
-                const bookmarkedIds = new Set(data.data.map((b: any) => b.verse_id));
+                const bookmarkedIds = new Set(
+                    data.data.map((b: any) => b.verse_id),
+                );
                 setBookmarkedVerses(bookmarkedIds);
             }
         } catch (err) {
@@ -137,17 +158,19 @@ export function VersesPanel({
         try {
             if (isCurrentlyBookmarked) {
                 // Remove bookmark
-                const response = await fetch(`/api/bookmarks/check?verse_id=${verseId}&edition=${selectedEdition}`);
+                const response = await fetch(
+                    `/api/bookmarks/check?verse_id=${verseId}&edition=${selectedEdition}`,
+                );
                 if (response.ok) {
                     const data = await response.json();
                     if (data.bookmark) {
                         await fetch(`/api/bookmarks/${data.bookmark.id}`, {
-                            method: 'DELETE'
+                            method: 'DELETE',
                         });
                     }
                 }
 
-                setBookmarkedVerses(prev => {
+                setBookmarkedVerses((prev) => {
                     const newSet = new Set(prev);
                     newSet.delete(verseId);
                     return newSet;
@@ -165,10 +188,10 @@ export function VersesPanel({
                         verse_id: verseId,
                         verse_data: verse,
                         edition: selectedEdition,
-                    })
+                    }),
                 });
 
-                setBookmarkedVerses(prev => {
+                setBookmarkedVerses((prev) => {
                     const newSet = new Set(prev);
                     newSet.add(verseId);
                     return newSet;
@@ -195,42 +218,41 @@ export function VersesPanel({
 
     if (!chapter) {
         return (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
+            <div className="flex h-full items-center justify-center text-muted-foreground">
                 <p>Select a chapter to start reading</p>
             </div>
         );
     }
 
     return (
-        <div className={cn('flex flex-col h-full', className)}>
+        <div
+            className={cn(
+                'flex flex-col',
+                'w-full', // full width by default
+                'max-w-full', // prevent overflowing
+                'md:max-w-[280mm]', // A4 width (~210mm) for md and up
+                'md:mx-auto', // center on md+
+                className,
+            )}
+        >
             {/* Chapter Header */}
-            <div className="p-6 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="border-b bg-background/95 p-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold">{chapter.englishName}</h1>
-                        <p className="text-muted-foreground" dir="rtl">{chapter.name}</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                            {chapter.englishNameTranslation}
-                        </p>
+                        <h1 className="text-2xl font-bold">
+                            {chapter.englishName}
+                        </h1>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={toggleAutoScroll}
-                        >
-                            {isAutoScroll ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                            {isAutoScroll ? 'Stop Auto' : 'Auto Scroll'}
-                        </Button>
-                    </div>
+                    <p className="text-muted-foreground" dir="rtl">
+                        {chapter.name}
+                    </p>
                 </div>
             </div>
-
             {/* Verses Content */}
-            <div className="flex-1 overflow-y-auto">
-                <div className="p-6">
+            <div>
+                <div className="p-4">
                     {error && (
-                        <div className="bg-destructive/10 text-destructive p-4 rounded-lg mb-4">
+                        <div className="mb-4 rounded-lg bg-destructive/10 p-4 text-destructive">
                             <p>Error: {error}</p>
                             <Button
                                 variant="outline"
@@ -244,7 +266,7 @@ export function VersesPanel({
                     )}
 
                     {verses.length === 0 && !loading && !error && (
-                        <div className="text-center text-muted-foreground py-8">
+                        <div className="py-8 text-center text-muted-foreground">
                             <p>No verses found</p>
                         </div>
                     )}
@@ -254,7 +276,9 @@ export function VersesPanel({
                         <VerseCard
                             key={verse.id}
                             verse={verse}
-                            isBookmarked={bookmarkedVerses.has(verse.id.toString())}
+                            isBookmarked={bookmarkedVerses.has(
+                                verse.id.toString(),
+                            )}
                             onBookmarkToggle={() => handleBookmarkToggle(verse)}
                             onCopy={handleCopy}
                             onPlayAudio={handlePlayAudio}
@@ -263,8 +287,8 @@ export function VersesPanel({
                     ))}
 
                     {/* Load More Button */}
-                    {hasMore && (
-                        <div className="flex justify-center mt-6">
+                    {!fromVerse && !toVerse && hasMore && (
+                        <div className="mt-6 flex justify-center">
                             <Button
                                 variant="outline"
                                 onClick={loadMore}
@@ -273,7 +297,7 @@ export function VersesPanel({
                             >
                                 {loading ? (
                                     <>
-                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                         Loading...
                                     </>
                                 ) : (
@@ -285,7 +309,7 @@ export function VersesPanel({
 
                     {/* End Message */}
                     {!hasMore && verses.length > 0 && (
-                        <div className="text-center text-muted-foreground py-8">
+                        <div className="py-8 text-center text-muted-foreground">
                             <Separator className="mb-4" />
                             <p>You've reached the end of this chapter</p>
                         </div>

@@ -40,12 +40,26 @@ class QuranController extends Controller
         $limit = (int) $request->get('limit', config('quran.default_page_size', 10));
         $edition = $request->get('edition', config('quran.default_edition', 'en.sahih'));
 
+        // Only treat as range when explicit query params are present
+        $from = $request->has('from') ? (int) $request->query('from') : null;
+        $to = $request->has('to') ? (int) $request->query('to') : null;
+
         try {
             $verses = $this->quranService->getVerses($chapterId, $page, $limit, $edition);
 
-            // Add translations if edition is not the original Arabic
-            if ($edition !== 'ar') {
-                $verses = $this->quranService->getTranslations($verses, $edition);
+            // Optional verse range filtering (e.g. from=10&to=15)
+            if ($from !== null && $to !== null) {
+                $verses = array_values(array_filter($verses, function ($verse) use ($from, $to) {
+                    return $verse['verseNumber'] >= $from && $verse['verseNumber'] <= $to;
+                }));
+                // When using an explicit range, treat all verses as a single page
+                $page = 1;
+                $limit = count($verses) ?: $limit;
+            } else {
+                // Add translations if edition is not the original Arabic
+                if ($edition !== 'ar') {
+                    $verses = $this->quranService->getTranslations($verses, $edition);
+                }
             }
 
             $totalVerses = count($verses);

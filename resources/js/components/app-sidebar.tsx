@@ -10,10 +10,11 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard, explore } from '@/routes';
+import { dashboard, home } from '@/routes';
+import admin from '@/routes/admin';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, Book } from 'lucide-react';
+import { Book, BookOpen, Folder, Inbox, LayoutGrid } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -23,8 +24,13 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
+        title: 'Submissions',
+        href: admin.resourceSubmissions(),
+        icon: Inbox,
+    },
+    {
         title: 'Quran Reader',
-        href: explore(),
+        href: home(),
         icon: Book,
     },
 ];
