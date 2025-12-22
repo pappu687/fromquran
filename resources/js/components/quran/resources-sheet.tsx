@@ -97,7 +97,7 @@ export function ResourcesSheet({
                     </SheetDescription>
                 </SheetHeader>
 
-                <div className="mt-6">
+                <div className="px-4">
                     {loading ? (
                         <div className="space-y-4">
                             <Skeleton className="h-12 w-full" />
