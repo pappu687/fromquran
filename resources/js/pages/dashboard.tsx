@@ -29,7 +29,7 @@ export default function Page() {
               <BreadcrumbList>
                 <BreadcrumbItem>
                   <BreadcrumbPage className="line-clamp-1">
-                    Project Management & Task Tracking
+                    Quran Reader
                   </BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
@@ -39,7 +39,7 @@ export default function Page() {
             <NavActions />
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 px-4 py-10">
+        <div className="flex flex-1 flex-col gap-4 px-4 py-10">          
           <div className="bg-muted/50 mx-auto h-24 w-full max-w-3xl rounded-xl" />
           <div className="bg-muted/50 mx-auto h-full w-full max-w-3xl rounded-xl" />
         </div>

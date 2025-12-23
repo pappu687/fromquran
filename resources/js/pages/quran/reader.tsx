@@ -1,7 +1,7 @@
-import { ChaptersPanel } from '@/components/quran/chapters-panel';
+import { ChapterInfoHeader } from '@/components/quran/chapter-info-header';
 import { VersesPanel } from '@/components/quran/verses-panel';
 import QuranReaderLayout from '@/layouts/quran-reader-layout';
-import { Head, router } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
 interface Chapter {
@@ -123,7 +123,7 @@ export default function QuranReader({
         return (
             <div className="flex h-screen items-center justify-center">
                 <div className="text-center">
-                    <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-primary"></div>
+                    <div className="mx-auto mb-4 h-12 w-12 rounded-full"></div>
                     <p className="text-muted-foreground">
                         Loading Quran Reader...
                     </p>
@@ -134,7 +134,7 @@ export default function QuranReader({
 
     return (
         <>
-            <Head title="Quran Reader" />
+            <Head title="From Quran" />
             {error ? (
                 <div className="flex h-screen items-center justify-center">
                     <div className="text-center">
@@ -149,24 +149,26 @@ export default function QuranReader({
                 </div>
             ) : (
                 <QuranReaderLayout
-                    chaptersPanel={
-                        <ChaptersPanel
-                            chapters={chapters}
-                            selectedChapter={selectedChapter?.id}
-                            onChapterSelect={handleChapterSelect}
-                        />
-                    }
+                    chapters={chapters}
+                    selectedChapter={selectedChapter?.id}
+                    onChapterSelect={handleChapterSelect}
                 >
-                    <VersesPanel
-                        chapter={selectedChapter}
-                        apiUrl="/api/quran"
-                        pageSize={10}
-                        showTranslation={true}
-                        fromVerse={fromVerse ?? undefined}
-                        toVerse={toVerse ?? undefined}
-                    />
+                    <div className="flex flex-1 flex-col gap-4 px-4 py-5">
+                        <ChapterInfoHeader chapter={selectedChapter} />
+                        <div className="mx-auto h-full w-full max-w-3xl rounded-xl">
+                            <VersesPanel
+                                chapter={selectedChapter}
+                                apiUrl="/api/quran"
+                                pageSize={10}
+                                showTranslation={true}
+                                fromVerse={fromVerse ?? undefined}
+                                toVerse={toVerse ?? undefined}
+                            />
+                        </div>
+                    </div>
                 </QuranReaderLayout>
             )}
         </>
     );
 }
+
