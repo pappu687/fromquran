@@ -47,6 +47,32 @@ Route::middleware('auth')->prefix('user-resources')->group(function () {
 
 // Admin Routes (require role-based access)
 Route::middleware(['auth', 'role:Admin|Moderator|Reviewer'])->prefix('admin')->group(function () {
+    // Admin root - redirect to dashboard
+    Route::get('/', function () {
+        return redirect()->route('admin.dashboard');
+    })->name('admin.index');
+
+    // Admin Dashboard
+    Route::get('/dashboard', function () {
+        return Inertia::render('admin/dashboard');
+    })->name('admin.dashboard');
+
+    // Users Management (Admin only)
+    Route::get('/users', function () {
+        return Inertia::render('admin/users');
+    })->middleware('role:Admin')->name('admin.users');
+
+    // Roles & Permissions (Admin only)
+    Route::get('/roles', function () {
+        return Inertia::render('admin/roles');
+    })->middleware('role:Admin')->name('admin.roles');
+
+    // Settings (Admin only)
+    Route::get('/settings', function () {
+        return Inertia::render('admin/settings');
+    })->middleware('role:Admin')->name('admin.settings');
+
+    // Resource Submissions
     Route::get('/resource-submissions', [\App\Http\Controllers\Admin\ResourceSubmissionController::class, 'index'])
         ->name('admin.resource-submissions');
 

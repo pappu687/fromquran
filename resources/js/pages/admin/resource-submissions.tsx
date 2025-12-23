@@ -1,13 +1,10 @@
-import AppLayout from '@/layouts/app-layout';
+import AdminLayout from '@/layouts/admin-layout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { dashboard } from '@/routes';
-import admin from '@/routes/admin';
-import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { Check, ExternalLink, Search, Trash2, X } from 'lucide-react';
 import { FormEvent, useState } from 'react';
@@ -76,17 +73,6 @@ const resourceTypeLabels: Record<string, string> = {
     scholarly_commentary: 'Scholarly Commentary',
     other: 'Other',
 };
-
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard().url,
-    },
-    {
-        title: 'Resource Submissions',
-        href: admin.resourceSubmissions().url,
-    },
-];
 
 export default function ResourceSubmissions({ submissions, stats, filters }: Props) {
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -214,19 +200,11 @@ export default function ResourceSubmissions({ submissions, stats, filters }: Pro
     };
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Resource Submissions" />
-
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto p-4">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold">Resource Submissions</h1>
-                    <p className="text-muted-foreground">
-                        Manage user-submitted Quran verse resources
-                    </p>
-                </div>
-
+        <>
+            <Head title="Resource Submissions - Admin - From Quran" />
+            <AdminLayout title="Resource Submissions">
                 {/* Stats Cards */}
-                <div className="mb-6 grid gap-4 md:grid-cols-4">
+                <div className="grid gap-4 md:grid-cols-4">
                     <Card>
                         <CardHeader className="pb-3">
                             <CardDescription>Total</CardDescription>
@@ -492,7 +470,7 @@ export default function ResourceSubmissions({ submissions, stats, filters }: Pro
                         )}
                     </CardContent>
                 </Card>
-            </div>
-        </AppLayout>
+            </AdminLayout>
+        </>
     );
 }
