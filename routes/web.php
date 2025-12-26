@@ -36,6 +36,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
+
+    // User Collections
+    Route::get('collections', function () {
+        return Inertia::render('user/collections');
+    })->name('collections.index');
 });
 
 // User Resource Submission Routes (require authentication)
@@ -57,15 +62,19 @@ Route::middleware(['auth', 'role:Admin|Moderator|Reviewer'])->prefix('admin')->g
         return Inertia::render('admin/dashboard');
     })->name('admin.dashboard');
 
-    // Users Management (Admin only)
-    Route::get('/users', function () {
-        return Inertia::render('admin/users');
-    })->middleware('role:Admin')->name('admin.users');
-
     // Roles & Permissions (Admin only)
-    Route::get('/roles', function () {
-        return Inertia::render('admin/roles');
-    })->middleware('role:Admin')->name('admin.roles');
+    Route::prefix('roles')->middleware('role:Admin')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\RoleController::class, 'index'])
+            ->name('admin.roles');
+        Route::get('/{role}', [\App\Http\Controllers\Admin\RoleController::class, 'show'])
+            ->name('admin.roles.show');
+        Route::post('/', [\App\Http\Controllers\Admin\RoleController::class, 'store'])
+            ->name('admin.roles.store');
+        Route::put('/{role}', [\App\Http\Controllers\Admin\RoleController::class, 'update'])
+            ->name('admin.roles.update');
+        Route::delete('/{role}', [\App\Http\Controllers\Admin\RoleController::class, 'destroy'])
+            ->name('admin.roles.destroy');
+    });
 
     // Settings (Admin only)
     Route::get('/settings', function () {
@@ -96,6 +105,20 @@ Route::middleware(['auth', 'role:Admin|Moderator|Reviewer'])->prefix('admin')->g
     Route::post('/resource-submissions/bulk-reject', [\App\Http\Controllers\Admin\ResourceSubmissionController::class, 'bulkReject'])
         ->middleware('role:Admin|Moderator')
         ->name('admin.resource-submissions.bulk-reject');
+
+    // User Management (Admin only)
+    Route::prefix('users')->middleware('role:Admin')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\UserController::class, 'index'])
+            ->name('admin.users');
+        Route::get('/{user}', [\App\Http\Controllers\Admin\UserController::class, 'show'])
+            ->name('admin.users.show');
+        Route::post('/', [\App\Http\Controllers\Admin\UserController::class, 'store'])
+            ->name('admin.users.store');
+        Route::put('/{user}', [\App\Http\Controllers\Admin\UserController::class, 'update'])
+            ->name('admin.users.update');
+        Route::delete('/{user}', [\App\Http\Controllers\Admin\UserController::class, 'destroy'])
+            ->name('admin.users.destroy');
+    });
 });
 
 require __DIR__.'/settings.php';

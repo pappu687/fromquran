@@ -13,6 +13,8 @@ interface Verse {
     audioUrl?: string;
     juzNumber: number;
     pageNumber: number;
+    hasResources?: boolean;
+    resourceCount?: number;
 }
 
 interface Chapter {
@@ -138,6 +140,8 @@ export function VersesPanel({
             console.error('Failed to load bookmarks:', err);
         }
     };
+
+
 
     const loadMore = () => {
         if (!loading && hasMore) {
@@ -279,6 +283,7 @@ export function VersesPanel({
                             isBookmarked={bookmarkedVerses.has(
                                 verse.id.toString(),
                             )}
+                            hasResources={verse.hasResources || false}
                             onBookmarkToggle={() => handleBookmarkToggle(verse)}
                             onCopy={handleCopy}
                             onPlayAudio={handlePlayAudio}

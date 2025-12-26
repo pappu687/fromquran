@@ -8,10 +8,11 @@ From Quran is an enhanced Quran platform similar to Quran.com with additional fe
 
 **Stack:**
 - Frontend: React 19 with Inertia.js (SSR capable)
-- Backend: Laravel 12 with Fortify (authentication)
+- Backend: Laravel 12 with Fortify (authentication) & Spatie Laravel Permission (roles)
 - Build: Vite 7 with TypeScript 5.7
 - Styling: Tailwind CSS 4 with Radix UI components
 - State Management: Inertia.js props & React hooks
+- Icons: Lucide React
 
 ## Development Commands
 
@@ -59,6 +60,10 @@ php artisan queue:listen         # Queue worker
 php artisan pail                 # Real-time logs
 php artisan migrate              # Run migrations
 php artisan tinker               # Interactive REPL
+php artisan wayfinder:generate   # Regenerate type-safe routes
+php artisan make:controller      # Generate new controller
+php artisan make:model           # Generate new model
+php artisan make:migration       # Generate new migration
 ```
 
 ### Code Quality
@@ -93,6 +98,9 @@ php artisan quran:import-data --path=custom/file.json   # Custom path
 **Controllers:**
 - `QuranController` - Chapters, verses, editions, search, juzs
 - `BookmarkController` - User bookmarks (requires auth)
+- `UserResourceController` - User-submitted resources (YouTube, articles, etc.)
+- `Api/VerseResourceController` - API for verse-related resources
+- `Admin/ResourceSubmissionController` - Admin approval workflow for user submissions
 - `Settings/*Controller` - Profile, password, 2FA
 
 **API Routes (`routes/api.php`):**
@@ -104,6 +112,14 @@ php artisan quran:import-data --path=custom/file.json   # Custom path
 - `/api/quran/juzs/{id}/verses` - Verses by juz
 - `/api/bookmarks/*` - Bookmark CRUD (auth required)
 
+**Web Routes (`routes/web.php`):**
+- `/` - Quran reader (home page, renders `quran/reader`)
+- `/{chapterNumber}` - Reader by chapter (e.g., `/2` for Surah Al-Baqarah)
+- `/{chapterNumber}/{from}-{to}` - Reader for verse range (e.g., `/2/10-15`)
+- `/admin/*` - Admin panel with role-based access (Admin, Moderator, Reviewer)
+- `/user-resources/*` - User resource submissions (authenticated)
+- `/dashboard` - User dashboard (authenticated & verified)
+
 **Artisan Commands:**
 - `ImportQuranData` - Import Quran data from JSON files (see IMPORT_COMMAND_GUIDE.md)
 
@@ -114,14 +130,14 @@ php artisan quran:import-data --path=custom/file.json   # Custom path
 - `resources/js/ssr.tsx` - Server-side entry (SSR)
 
 **Directory Organization:**
-- `resources/js/pages/` - Inertia page components (auth/, quran/, settings/)
-- `resources/js/components/` - Reusable React components (app-header, sidebar, etc.)
-- `resources/js/layouts/` - Layout wrappers
-- `resources/js/routes/` - Wayfinder route definitions
+- `resources/js/pages/` - Inertia page components (auth/, quran/, settings/, admin/)
+- `resources/js/components/` - Reusable React components (app-header, sidebar, ui/)
+- `resources/js/layouts/` - Layout wrappers (auth-layout, app-layout, quran-reader-layout, admin-layout)
+- `resources/js/routes/` - Wayfinder route definitions (auto-generated type-safe routes)
 - `resources/js/actions/` - Server actions
-- `resources/js/hooks/` - Custom React hooks
+- `resources/js/hooks/` - Custom React hooks (use-clipboard, use-mobile, use-two-factor-auth, use-mobile-navigation)
 - `resources/js/types/` - TypeScript type definitions
-- `resources/js/lib/` - Utility functions
+- `resources/js/lib/` - Utility functions (cn for className merging, Inertia helpers)
 
 **Key Features:**
 - React Compiler enabled (babel-plugin-react-compiler)
@@ -133,9 +149,11 @@ php artisan quran:import-data --path=custom/file.json   # Custom path
 
 **Styling:**
 - Tailwind CSS 4 with Vite plugin
-- `class-variance-authority` for component variants
-- `tailwind-merge` (via `clsx`) for className merging
+- `class-variance-authority` (cva) for component variants
+- `tailwind-merge` + `clsx` via `cn()` utility for className merging
 - `tw-animate-css` for animations
+- Shadcn-style components in `resources/js/components/ui/` built with Radix UI primitives
+- All UI components use the `cn()` utility for conditional className merging
 
 ### Configuration Files
 
@@ -188,9 +206,30 @@ When working with SSR:
 - Test environment uses in-memory SQLite
 
 ### Authentication
-- Laravel Fortify handles auth
-- Routes: login, register, password reset, 2FA
-- Protected routes use `auth:sanctum` middleware
+- Laravel Fortify handles auth (login, register, password reset, 2FA)
+- Spatie Laravel Permission handles roles (Admin, Moderator, Reviewer)
+- Protected routes use `auth` middleware
+- Role-based routes use `role:RoleName` middleware
+- Some routes require email verification (`verified` middleware)
+
+### Common Patterns
+
+**Adding a new page:**
+1. Create page component in `resources/js/pages/` (e.g., `resources/js/pages/quran/new-page.tsx`)
+2. Add route in `routes/web.php` using `Inertia::render('page-name')` with props
+3. Run `php artisan wayfinder:generate` to regenerate type-safe routes
+4. Use Wayfinder route functions for navigation: `import { home } from '@/routes'`
+
+**Creating UI components:**
+- Follow the shadcn pattern in `resources/js/components/ui/`
+- Use `class-variance-authority` (cva) for variants
+- Always use `cn()` from `@/lib/utils` for className merging
+- Export both the component and variants (if applicable)
+- Set `asChild` prop to support Radix Slot composition pattern
+
+**Using icons:**
+- Import from `lucide-react` (e.g., `import { BookOpen } from 'lucide-react'`)
+- Use the `<Icon />` wrapper component for consistent sizing
 
 ## Data Import Process
 
@@ -203,9 +242,11 @@ The project includes comprehensive documentation for importing Quran data:
 ## File References
 
 When implementing features, key files to reference:
-- Database schema: `database/migrations/2024_01_01_*`
+- Database schema: `database/migrations/2024_01_01_*` (core Quran tables)
 - Models: `app/Models/*`
 - API structure: `QURAN_API_CONVERSION.md`
 - Import process: `IMPORT_COMMAND_GUIDE.md`
-- Frontend routing: `resources/js/routes/*`
+- Frontend routing: `resources/js/routes/index.ts` (auto-generated by Wayfinder)
 - Page components: `resources/js/pages/*`
+- Utility functions: `resources/js/lib/utils.ts` (cn() for className merging)
+- UI components: `resources/js/components/ui/*` (shadcn-style components built with Radix UI)

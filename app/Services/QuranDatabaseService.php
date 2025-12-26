@@ -57,8 +57,42 @@ class QuranDatabaseService
                 return [];
             }
 
-            $verses = Verse::where('chapter_id', $chapter->id)
-                ->orderBy('verse_number')
+            // Get verses with resource counts using a join
+            $verses = Verse::where('verses.chapter_id', $chapter->id)
+                ->leftJoin('user_verse_resources', function ($join) {
+                    $join->on('verses.id', '=', 'user_verse_resources.verse_id')
+                         ->where('user_verse_resources.status', '=', 'approved');
+                })
+                ->select(
+                    'verses.id',
+                    'verses.chapter_id',
+                    'verses.verse_number',
+                    'verses.verse_key',
+                    'verses.text_uthmani',
+                    'verses.text_imlaei',
+                    'verses.juz_number',
+                    'verses.hizb_number',
+                    'verses.rub_el_hizb_number',
+                    'verses.page_number',
+                    'verses.sajdah_type',
+                    'verses.sajdah_number',
+                    DB::raw('COUNT(DISTINCT user_verse_resources.id) as resource_count')
+                )
+                ->groupBy(
+                    'verses.id',
+                    'verses.chapter_id',
+                    'verses.verse_number',
+                    'verses.verse_key',
+                    'verses.text_uthmani',
+                    'verses.text_imlaei',
+                    'verses.juz_number',
+                    'verses.hizb_number',
+                    'verses.rub_el_hizb_number',
+                    'verses.page_number',
+                    'verses.sajdah_type',
+                    'verses.sajdah_number'
+                )
+                ->orderBy('verses.verse_number')
                 ->get();
 
             return $verses->map(function ($verse) use ($edition) {
@@ -95,7 +129,9 @@ class QuranDatabaseService
                     'pageNumber' => $verse->page_number,
                     'hizbQuarter' => $verse->rub_el_hizb_number,
                     'sajda' => false, // You can add this to your database if needed
-                    'audioUrl' => null // You can add audio URLs later
+                    'audioUrl' => null, // You can add audio URLs later
+                    'hasResources' => $verse->resource_count > 0,
+                    'resourceCount' => (int) $verse->resource_count,
                 ];
             })->toArray();
         });

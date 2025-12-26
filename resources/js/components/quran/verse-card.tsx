@@ -1,9 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { Bookmark, BookmarkCheck, Eye, Plus, Volume2 } from 'lucide-react';
+import { Bookmark, BookmarkCheck, BookmarkPlus, Eye, Plus, Volume2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { AddResourceModal } from './add-resource-modal';
+import { CollectionsModal } from './collections-modal';
 import { ResourcesSheet } from './resources-sheet';
 
 interface Verse {
@@ -19,6 +20,7 @@ interface Verse {
 interface VerseCardProps {
     verse: Verse;
     isBookmarked?: boolean;
+    hasResources?: boolean;
     onBookmarkToggle?: (verseId: number) => void;
     onCopy?: (verseId: number, text: string) => void;
     onPlayAudio?: (audioUrl: string) => void;
@@ -29,6 +31,7 @@ interface VerseCardProps {
 export function VerseCard({
     verse,
     isBookmarked = false,
+    hasResources = false,
     onBookmarkToggle,
     onCopy,
     onPlayAudio,
@@ -37,26 +40,7 @@ export function VerseCard({
 }: VerseCardProps) {
     const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
     const [isResourcesSheetOpen, setIsResourcesSheetOpen] = useState(false);
-    const [hasResources, setHasResources] = useState(false);
-
-    useEffect(() => {
-        // Check if verse has resources
-        const checkResources = async () => {
-            try {
-                const response = await fetch(
-                    `/api/verses/${verse.id}/resources`,
-                );
-                if (response.ok) {
-                    const data = await response.json();
-                    setHasResources((data.data || []).length > 0);
-                }
-            } catch (error) {
-                console.error('Failed to check resources:', error);
-            }
-        };
-
-        checkResources();
-    }, [verse.id]);
+    const [isCollectionsModalOpen, setIsCollectionsModalOpen] = useState(false);
 
     const handleBookmark = () => {
         onBookmarkToggle?.(verse.id);
@@ -130,11 +114,11 @@ export function VerseCard({
                         <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => setIsResourceModalOpen(true)}
+                            onClick={() => setIsCollectionsModalOpen(true)}
                             className="h-8 w-8 p-0"
-                            title="Add resource"
+                            title="Add to collection"
                         >
-                            <Plus className="h-4 w-4" />
+                            <BookmarkPlus className="h-4 w-4" />
                         </Button>
                     </div>
                 </div>
@@ -163,6 +147,13 @@ export function VerseCard({
             <AddResourceModal
                 open={isResourceModalOpen}
                 onOpenChange={setIsResourceModalOpen}
+                verseId={verse.id}
+            />
+
+            {/* Collections Modal */}
+            <CollectionsModal
+                open={isCollectionsModalOpen}
+                onOpenChange={setIsCollectionsModalOpen}
                 verseId={verse.id}
             />
 
