@@ -41,6 +41,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('collections', function () {
         return Inertia::render('user/collections');
     })->name('collections.index');
+
+    // My Collections (new interface)
+    Route::get('my-collections', function () {
+        return Inertia::render('my-collections');
+    })->name('my-collections.index');
+
+    Route::get('my-collections/{slug}', function (string $slug) {
+        return Inertia::render('my-collection-detail', [
+            'slug' => $slug,
+        ]);
+    })->name('my-collections.show');
+
+    // Favorites (Bookmarks)
+    Route::get('favorites', function () {
+        return Inertia::render('favorites');
+    })->name('favorites.index');
+
+    // My Contributions
+    Route::get('my-contributions', function () {
+        return Inertia::render('my-contributions');
+    })->name('my-contributions.index');
 });
 
 // User Resource Submission Routes (require authentication)

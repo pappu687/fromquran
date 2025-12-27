@@ -1,146 +1,146 @@
 import * as React from "react"
 import {
-  AudioWaveform,
-  Blocks,
-  Calendar,
-  Command,
-  Home,
-  MessageCircleQuestion,
-  Settings2,
-  Trash2,
+  User,
+  FolderOpen,
+  FileUp,
+  Heart,
+  Settings,
+  LogOut,
+  BookOpen,
 } from "lucide-react"
 
-import { NavFavorites } from '@/components/nav-favorites'
 import { NavMain } from '@/components/nav-main'
-import { NavSecondary } from '@/components/nav-secondary'
-import { NavWorkspaces } from '@/components/nav-workspaces'
-import { TeamSwitcher } from '@/components/team-switcher'
+import { NavUser } from '@/components/nav-user'
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
   SidebarRail,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
 } from '@/components/ui/sidebar'
+import { usePage, router } from '@inertiajs/react'
+import type { SharedData } from '@/types'
 
-// This is sample data.
-const data = {
-  teams: [
+// User navigation data
+const userNavData = {
+  navMain: [
     {
-      name: "Acme Inc",
-      logo: Command,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
-    },
-  ],
-  navMain: [    
-    {
-      title: "Home",
+      title: "Quran Reader",
       url: "/",
-      icon: Home,
+      icon: BookOpen,
       isActive: true,
     },
   ],
-  navSecondary: [
+  userMenu: [
     {
-      title: "Calendar",
-      url: "#",
-      icon: Calendar,
+      title: "Account",
+      url: "/dashboard",
+      icon: User,
+    },
+    {
+      title: "Collections",
+      url: "/my-collections",
+      icon: FolderOpen,
+    },
+    {
+      title: "Contributions",
+      url: "/my-contributions",
+      icon: FileUp,
+    },
+    {
+      title: "Favorites",
+      url: "/favorites",
+      icon: Heart,
     },
     {
       title: "Settings",
-      url: "#",
-      icon: Settings2,
-    },
-    {
-      title: "Templates",
-      url: "#",
-      icon: Blocks,
-    },
-    {
-      title: "Trash",
-      url: "#",
-      icon: Trash2,
-    },
-    {
-      title: "Help",
-      url: "#",
-      icon: MessageCircleQuestion,
+      url: "/settings/profile",
+      icon: Settings,
     },
   ],
-  favorites: [
-    {
-      name: "Project Management & Task Tracking",
-      url: "#",
-      emoji: "📊",
-    },
-    {
-      name: "Family Recipe Collection & Meal Planning",
-      url: "#",
-      emoji: "🍳",
-    },
-    {
-      name: "Fitness Tracker & Workout Routines",
-      url: "#",
-      emoji: "💪",
-    },
-    {
-      name: "Book Notes & Reading List",
-      url: "#",
-      emoji: "📚",
-    },
-    {
-      name: "Sustainable Gardening Tips & Plant Care",
-      url: "#",
-      emoji: "🌱",
-    },
-    {
-      name: "Language Learning Progress & Resources",
-      url: "#",
-      emoji: "🗣️",
-    },
-    {
-      name: "Home Renovation Ideas & Budget Tracker",
-      url: "#",
-      emoji: "🏠",
-    },
-    {
-      name: "Personal Finance & Investment Portfolio",
-      url: "#",
-      emoji: "💰",
-    },
-    {
-      name: "Movie & TV Show Watchlist with Reviews",
-      url: "#",
-      emoji: "🎬",
-    },
-    {
-      name: "Daily Habit Tracker & Goal Setting",
-      url: "#",
-      emoji: "✅",
-    },
-  ],  
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { auth } = usePage<SharedData>().props
+  const user = auth?.user
+
+  const handleLogout = () => {
+    router.post('/logout')
+  }
+
   return (
     <Sidebar className="border-r-0" {...props}>
-      <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
-        <NavMain items={data.navMain} />
+      <SidebarHeader className="border-b p-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <BookOpen className="h-4 w-4" />
+          </div>
+          <div className="flex flex-col min-w-0 flex-1">
+            <span className="text-sm font-semibold truncate">
+              From Quran
+            </span>
+            <span className="text-xs text-muted-foreground truncate">
+              Explore & Learn
+            </span>
+          </div>
+        </div>
       </SidebarHeader>
+      
       <SidebarContent>
-        <NavFavorites favorites={data.favorites} />        
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        {/* Main Navigation */}
+        <NavMain items={userNavData.navMain} />
+        
+        {/* User Menu - Only show if logged in */}
+        {user && (
+          <>
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {userNavData.userMenu.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton
+                        asChild
+                        tooltip={item.title}
+                      >
+                        <a href={item.url}>
+                          <item.icon />
+                          <span>{item.title}</span>
+                        </a>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+            
+            {/* Logout */}
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      onClick={handleLogout}
+                      tooltip="Logout"
+                    >
+                      <LogOut />
+                      <span>Logout</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
       </SidebarContent>
+      
+      <SidebarFooter>
+        <NavUser />
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   )

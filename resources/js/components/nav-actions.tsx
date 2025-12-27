@@ -2,21 +2,13 @@
 
 import * as React from "react"
 import {
-  ArrowDown,
-  ArrowUp,
-  Bell,
-  Copy,
-  CornerUpLeft,
-  CornerUpRight,
-  FileText,
-  GalleryVerticalEnd,
-  LineChart,
-  Link,
+  FolderOpen,
+  Heart,
+  LogOut,
+  Settings,
+  User,
+  LogIn,
   MoreHorizontal,
-  Settings2,
-  Star,
-  Trash,
-  Trash2,
 } from "lucide-react"
 
 import { Button } from '@/components/ui/button'
@@ -34,81 +26,87 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
+import { usePage, router } from '@inertiajs/react'
+import type { SharedData } from '@/types'
 
-const data = [
+interface MenuItem {
+  label: string
+  icon: any
+  href: string
+  method?: 'post'
+}
+
+const menuData: MenuItem[][] = [
   [
     {
-      label: "Customize Page",
-      icon: Settings2,
+      label: "My Collections",
+      icon: FolderOpen,
+      href: "/my-collections",
     },
     {
-      label: "Turn into wiki",
-      icon: FileText,
+      label: "Profile",
+      icon: User,
+      href: "/dashboard",
     },
   ],
   [
     {
-      label: "Copy Link",
-      icon: Link,
+      label: "Favorites",
+      icon: Heart,
+      href: "/favorites",
     },
     {
-      label: "Duplicate",
-      icon: Copy,
-    },
-    {
-      label: "Move to",
-      icon: CornerUpRight,
-    },
-    {
-      label: "Move to Trash",
-      icon: Trash2,
-    },
+      label: "Settings",
+      icon: Settings,
+      href: "/settings/profile",
+    },  
   ],
   [
     {
-      label: "Undo",
-      icon: CornerUpLeft,
+      label: "Logout",
+      icon: LogOut,
+      href: "/logout",
+      method: "post",
     },
-    {
-      label: "View analytics",
-      icon: LineChart,
-    },
-    {
-      label: "Version History",
-      icon: GalleryVerticalEnd,
-    },
-    {
-      label: "Show delete pages",
-      icon: Trash,
-    },
-    {
-      label: "Notifications",
-      icon: Bell,
-    },
-  ],
-  [
-    {
-      label: "Import",
-      icon: ArrowUp,
-    },
-    {
-      label: "Export",
-      icon: ArrowDown,
-    },
-  ],
+  ]
 ]
 
 export function NavActions() {
   const [isOpen, setIsOpen] = React.useState(false)
+  const { auth } = usePage<SharedData>().props
+  const user = auth?.user
 
+  const handleMenuClick = (item: MenuItem) => {
+    setIsOpen(false)
+    if (item.method === 'post') {
+      router.post(item.href)
+    } else {
+      router.visit(item.href)
+    }
+  }
+
+  // If user is not logged in, show login button
+  if (!user) {
+    return (
+      <div className="flex items-center gap-2 text-sm">
+        <Button 
+          variant="default" 
+          size="sm"
+          onClick={() => router.visit('/login')}
+        >
+          <LogIn className="mr-2 h-4 w-4" />
+          Login
+        </Button>
+      </div>
+    )
+  }
+
+  // If user is logged in, show welcome message and dropdown
   return (
     <div className="flex items-center gap-2 text-sm">
       <div className="text-muted-foreground hidden font-medium md:inline-block">
-        Edit Oct 08
+        Welcome, {user.name}
       </div>
-      <Button variant="ghost" size="icon" className="h-7 w-7">
-        <Star />
-      </Button>
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -125,13 +123,13 @@ export function NavActions() {
         >
           <Sidebar collapsible="none" className="bg-transparent">
             <SidebarContent>
-              {data.map((group, index) => (
+              {menuData.map((group, index) => (
                 <SidebarGroup key={index} className="border-b last:border-none">
                   <SidebarGroupContent className="gap-0">
                     <SidebarMenu>
-                      {group.map((item, index) => (
-                        <SidebarMenuItem key={index}>
-                          <SidebarMenuButton>
+                      {group.map((item, itemIndex) => (
+                        <SidebarMenuItem key={itemIndex}>
+                          <SidebarMenuButton onClick={() => handleMenuClick(item)}>
                             <item.icon /> <span>{item.label}</span>
                           </SidebarMenuButton>
                         </SidebarMenuItem>
