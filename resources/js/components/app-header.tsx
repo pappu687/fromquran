@@ -2,11 +2,18 @@ import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Icon } from '@/components/icon';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { CommandPalette } from '@/components/command-palette';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupInput,
+} from '@/components/ui/input-group';
+import { Kbd } from '@/components/ui/kbd';
 import {
     NavigationMenu,
     NavigationMenuItem,
@@ -32,7 +39,8 @@ import { cn, isSameUrl, resolveUrl } from '@/lib/utils';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, Menu, Search } from 'lucide-react';
+import { BookOpen, Folder, LayoutGrid, Menu, Search as SearchIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
 
@@ -68,6 +76,21 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
     const page = usePage<SharedData>();
     const { auth } = page.props;
     const getInitials = useInitials();
+    const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+
+    // Handle CMD+K / Ctrl+K keyboard shortcut
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                setCommandPaletteOpen((prev) => !prev);
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
     return (
         <>
             <div className="border-b border-sidebar-border/80">
@@ -186,12 +209,30 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
 
                     <div className="ml-auto flex items-center space-x-2">
                         <div className="relative flex items-center space-x-1">
+                            <div className="hidden md:block">
+                                <InputGroup className="w-[200px] lg:w-[300px]">
+                                    <InputGroupInput
+                                        placeholder="Search..."
+                                        readOnly
+                                        onClick={() => setCommandPaletteOpen(true)}
+                                        className="cursor-pointer pl-9 pr-16"
+                                    />
+                                    <InputGroupAddon align="start">
+                                        <SearchIcon className="h-4 w-4" />
+                                    </InputGroupAddon>
+                                    <InputGroupAddon align="inline-end">
+                                        <Kbd>⌘</Kbd>
+                                        <Kbd>K</Kbd>
+                                    </InputGroupAddon>
+                                </InputGroup>
+                            </div>
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="group h-9 w-9 cursor-pointer"
+                                className="group h-9 w-9 cursor-pointer md:hidden"
+                                onClick={() => setCommandPaletteOpen(true)}
                             >
-                                <Search className="!size-5 opacity-80 group-hover:opacity-100" />
+                                <SearchIcon className="!size-5 opacity-80 group-hover:opacity-100" />
                             </Button>
                             <div className="hidden lg:flex">
                                 {rightNavItems.map((item) => (
@@ -257,6 +298,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                     </div>
                 </div>
             )}
+            <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
         </>
     );
 }
