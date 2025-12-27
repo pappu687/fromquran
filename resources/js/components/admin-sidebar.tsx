@@ -5,6 +5,8 @@ import {
     Shield,
     FileText,
     Settings,
+    BookOpen,
+    Languages,
 } from 'lucide-react';
 
 import { NavMain } from '@/components/nav-main';
@@ -35,6 +37,16 @@ const adminNavData = {
             title: 'Roles / Permission',
             url: '/admin/roles',
             icon: Shield,
+        },
+        {
+            title: 'Verses',
+            url: '/admin/verses',
+            icon: BookOpen,
+        },
+        {
+            title: 'Translations',
+            url: '/admin/translations',
+            icon: Languages,
         },
         {
             title: 'Resource Submission',

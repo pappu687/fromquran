@@ -119,6 +119,16 @@ Route::middleware(['auth', 'role:Admin|Moderator|Reviewer'])->prefix('admin')->g
         Route::delete('/{user}', [\App\Http\Controllers\Admin\UserController::class, 'destroy'])
             ->name('admin.users.destroy');
     });
+
+    // Verse Management
+    Route::get('/verses', [\App\Http\Controllers\Admin\VerseController::class, 'index'])
+        ->name('admin.verses');
+    Route::get('/verses/{verse}', [\App\Http\Controllers\Admin\VerseController::class, 'show'])
+        ->name('admin.verses.show');
+
+    // Translation Management
+    Route::get('/translations', [\App\Http\Controllers\Admin\VerseController::class, 'translations'])
+        ->name('admin.translations');
 });
 
 require __DIR__.'/settings.php';
