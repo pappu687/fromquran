@@ -30,7 +30,7 @@ import {
     CheckCircle2,
     LogIn,
 } from 'lucide-react';
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 
 // Color options for collections
 const colorOptions = [
@@ -81,6 +81,7 @@ export function CollectionsModal({
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+    const nameInputRef = useRef<HTMLInputElement>(null);
 
     // Load collections when modal opens
     useEffect(() => {
@@ -88,6 +89,16 @@ export function CollectionsModal({
             loadCollections();
         }
     }, [open, verseId]);
+
+    // Focus name input when new collection form opens
+    useEffect(() => {
+        if (showNewCollectionForm) {
+            // Small delay to ensure the input is rendered and visible
+            setTimeout(() => {
+                nameInputRef.current?.focus();
+            }, 100);
+        }
+    }, [showNewCollectionForm]);
 
     const loadCollections = async () => {
         setIsLoadingCollections(true);
@@ -286,7 +297,8 @@ export function CollectionsModal({
     };
 
     return (
-        <Dialog open={open} onOpenChange={handleOpenChange}>
+        <>
+            <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
@@ -414,144 +426,6 @@ export function CollectionsModal({
                         </div>
                     )}
 
-                    {/* New Collection Form */}
-                    {showNewCollectionForm && (
-                        <form
-                            onSubmit={handleCreateCollection}
-                            className="mt-4 space-y-4 rounded-lg border p-4"
-                        >
-                            <h4 className="font-semibold">Create New Collection</h4>
-
-                            {/* Collection Name */}
-                            <div className="space-y-2">
-                                <Label htmlFor="collection-name">
-                                    Name <span className="text-red-500">*</span>
-                                </Label>
-                                <Input
-                                    id="collection-name"
-                                    placeholder="My favorite verses"
-                                    value={newCollectionName}
-                                    onChange={(e) =>
-                                        setNewCollectionName(e.target.value)
-                                    }
-                                    disabled={isSubmitting}
-                                />
-                                {errors.name && (
-                                    <p className="text-sm text-destructive">
-                                        {errors.name}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Description */}
-                            <div className="space-y-2">
-                                <Label htmlFor="collection-description">
-                                    Description{' '}
-                                    <span className="text-muted-foreground text-sm">
-                                        (optional)
-                                    </span>
-                                </Label>
-                                <textarea
-                                    id="collection-description"
-                                    className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    placeholder="Brief description of this collection..."
-                                    value={newCollectionDescription}
-                                    onChange={(e) =>
-                                        setNewCollectionDescription(
-                                            e.target.value
-                                        )
-                                    }
-                                    maxLength={500}
-                                    disabled={isSubmitting}
-                                />
-                                {errors.description && (
-                                    <p className="text-sm text-destructive">
-                                        {errors.description}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Color Picker */}
-                            <div className="space-y-2">
-                                <Label className="flex items-center gap-2">
-                                    <Palette className="h-4 w-4" />
-                                    Color
-                                </Label>
-                                <div className="flex flex-wrap gap-2">
-                                    {colorOptions.map((color) => (
-                                        <button
-                                            key={color.value}
-                                            type="button"
-                                            className={cn(
-                                                'h-8 w-8 rounded-full transition-all hover:scale-110',
-                                                color.bg,
-                                                newCollectionColor ===
-                                                    color.value &&
-                                                    'ring-2 ring-ring ring-offset-2'
-                                            )}
-                                            onClick={() =>
-                                                setNewCollectionColor(
-                                                    color.value
-                                                )
-                                            }
-                                            title={color.label}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Public Toggle */}
-                            <div className="flex items-center gap-2">
-                                <Checkbox
-                                    id="is-public"
-                                    checked={newCollectionIsPublic}
-                                    onCheckedChange={(checked) =>
-                                        setNewCollectionIsPublic(
-                                            checked as boolean
-                                        )
-                                    }
-                                    disabled={isSubmitting}
-                                />
-                                <Label
-                                    htmlFor="is-public"
-                                    className="cursor-pointer"
-                                >
-                                    Make this collection public
-                                </Label>
-                            </div>
-
-                            <div className="flex justify-end gap-2">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => {
-                                        setShowNewCollectionForm(false);
-                                        setErrors({});
-                                    }}
-                                    disabled={isSubmitting}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button
-                                    type="submit"
-                                    disabled={isSubmitting || !newCollectionName}
-                                >
-                                    {isSubmitting ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Creating...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <FolderPlus className="mr-2 h-4 w-4" />
-                                            Create Collection
-                                        </>
-                                    )}
-                                </Button>
-                            </div>
-                        </form>
-                    )}
-
                     {/* Create Collection Button */}
                     {!showNewCollectionForm && collections.length > 0 && (
                         <Button
@@ -605,5 +479,158 @@ export function CollectionsModal({
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+
+        {/* Separate Dialog for Create Collection Form */}
+        <Dialog open={showNewCollectionForm} onOpenChange={setShowNewCollectionForm}>
+            <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        <FolderPlus className="h-5 w-5" />
+                        Create New Collection
+                    </DialogTitle>
+                    <DialogDescription>
+                        Create a new collection to organize your favorite verses.
+                    </DialogDescription>
+                </DialogHeader>
+
+                {errors.general && (
+                    <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                        {errors.general}
+                    </div>
+                )}
+
+                <form onSubmit={handleCreateCollection} className="space-y-4">
+                    {/* Collection Name */}
+                    <div className="space-y-2">
+                        <Label htmlFor="collection-name">
+                            Name <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                            ref={nameInputRef}
+                            id="collection-name"
+                            placeholder="My favorite verses"
+                            value={newCollectionName}
+                            onChange={(e) =>
+                                setNewCollectionName(e.target.value)
+                            }
+                            disabled={isSubmitting}
+                        />
+                        {errors.name && (
+                            <p className="text-sm text-destructive">
+                                {errors.name}
+                            </p>
+                        )}
+                    </div>
+
+                    {/* Description */}
+                    <div className="space-y-2">
+                        <Label htmlFor="collection-description">
+                            Description{' '}
+                            <span className="text-muted-foreground text-sm">
+                                (optional)
+                            </span>
+                        </Label>
+                        <textarea
+                            id="collection-description"
+                            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            placeholder="Brief description of this collection..."
+                            value={newCollectionDescription}
+                            onChange={(e) =>
+                                setNewCollectionDescription(
+                                    e.target.value
+                                )
+                            }
+                            maxLength={500}
+                            disabled={isSubmitting}
+                        />
+                        {errors.description && (
+                            <p className="text-sm text-destructive">
+                                {errors.description}
+                            </p>
+                        )}
+                    </div>
+
+                    {/* Color Picker */}
+                    <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                            <Palette className="h-4 w-4" />
+                            Color
+                        </Label>
+                        <div className="flex flex-wrap gap-2">
+                            {colorOptions.map((color) => (
+                                <button
+                                    key={color.value}
+                                    type="button"
+                                    className={cn(
+                                        'h-8 w-8 rounded-full transition-all hover:scale-110',
+                                        color.bg,
+                                        newCollectionColor ===
+                                            color.value &&
+                                            'ring-2 ring-ring ring-offset-2'
+                                    )}
+                                    onClick={() =>
+                                        setNewCollectionColor(
+                                            color.value
+                                        )
+                                    }
+                                    title={color.label}
+                                />
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Public Toggle */}
+                    <div className="flex items-center gap-2">
+                        <Checkbox
+                            id="is-public"
+                            checked={newCollectionIsPublic}
+                            onCheckedChange={(checked) =>
+                                setNewCollectionIsPublic(
+                                    checked as boolean
+                                )
+                            }
+                            disabled={isSubmitting}
+                        />
+                        <Label
+                            htmlFor="is-public"
+                            className="cursor-pointer"
+                        >
+                            Make this collection public
+                        </Label>
+                    </div>
+
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                                setShowNewCollectionForm(false);
+                                setErrors({});
+                            }}
+                            disabled={isSubmitting}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            disabled={isSubmitting || !newCollectionName}
+                        >
+                            {isSubmitting ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Creating...
+                                </>
+                            ) : (
+                                <>
+                                    <FolderPlus className="mr-2 h-4 w-4" />
+                                    Create Collection
+                                </>
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+        </>
     );
 }

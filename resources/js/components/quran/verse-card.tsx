@@ -58,7 +58,7 @@ export function VerseCard({
                 {/* Verse Header */}
                 <div className="mb-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-[30%] bg-primary/20 text-sm font-semibold">
                             {verse.verseNumber}
                         </div>
                         <div className="text-sm text-muted-foreground">

@@ -80,7 +80,7 @@ export function ChaptersPanel({
                                     >
                                         <div className="flex w-full items-start gap-3">
                                             <div
-                                                className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
+                                                className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[30%] text-sm font-semibold ${
                                                     selectedChapter ===
                                                     chapter.id
                                                         ? 'bg-rose-500/40'
