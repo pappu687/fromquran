@@ -239,19 +239,6 @@ export function VersesPanel({
                 className,
             )}
         >
-            {/* Chapter Header */}
-            <div className="border-b bg-background/95 p-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold">
-                            {chapter.englishName}
-                        </h1>
-                    </div>
-                    <p className="text-muted-foreground" dir="rtl">
-                        {chapter.name}
-                    </p>
-                </div>
-            </div>
             {/* Verses Content */}
             <div>
                 <div className="p-4">

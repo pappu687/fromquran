@@ -16,10 +16,16 @@ import { Head, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 
+interface ResourceType {
+    id: number;
+    slug: string;
+    name: string;
+}
+
 interface Contribution {
     id: number;
     verse_id: number;
-    resource_type: string;
+    resource_type_id: number;
     resource_url: string;
     comment?: string;
     status: 'pending' | 'approved' | 'rejected';
@@ -30,6 +36,7 @@ interface Contribution {
         verse_key: string;
         chapter_id: number;
     };
+    resource_type?: ResourceType;
 }
 
 interface PaginationData {
@@ -120,18 +127,6 @@ export default function ContributionsPage() {
                     </Badge>
                 );
         }
-    };
-
-    const getResourceTypeLabel = (type: string) => {
-        const types: Record<string, string> = {
-            'video': 'Video',
-            'audio': 'Audio',
-            'article': 'Article',
-            'tafsir': 'Tafsir',
-            'translation': 'Translation',
-            'other': 'Other',
-        };
-        return types[type] || type;
     };
 
     if (isLoading) {
@@ -241,7 +236,7 @@ export default function ContributionsPage() {
                                                         </Badge>
                                                     )}
                                                     <Badge variant="secondary">
-                                                        {getResourceTypeLabel(contribution.resource_type)}
+                                                        {contribution.resource_type?.name || 'N/A'}
                                                     </Badge>
                                                     {getStatusBadge(contribution.status)}
                                                 </div>

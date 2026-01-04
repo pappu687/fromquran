@@ -33,6 +33,8 @@ export default function QuranReaderLayout({
     selectedChapter,
     onChapterSelect,
 }: QuranReaderLayoutProps) {
+    const chapter = selectedChapter ? chapters.find((c) => c.id === selectedChapter) : null;
+
     return (
         <SidebarProvider>
             <QuranSidebar
@@ -52,7 +54,13 @@ export default function QuranReaderLayout({
                             <BreadcrumbList>
                                 <BreadcrumbItem>
                                     <BreadcrumbPage className="line-clamp-1">
-                                        Quran Reader
+                                        {chapter ? (
+                                            <span>
+                                                {chapter.englishName} ({chapter.name})
+                                            </span>
+                                        ) : (
+                                            'Quran Reader'
+                                        )}
                                     </BreadcrumbPage>
                                 </BreadcrumbItem>
                             </BreadcrumbList>

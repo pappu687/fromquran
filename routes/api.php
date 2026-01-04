@@ -36,6 +36,9 @@ Route::middleware('auth')->prefix('bookmarks')->group(function () {
 Route::get('/verses/resources', [VerseResourceController::class, 'index']);
 Route::get('/verses/{verseId}/resources', [VerseResourceController::class, 'show']);
 
+// Resource Types (public)
+Route::get('/resource-types', [\App\Http\Controllers\Admin\ResourceTypeController::class, 'list']);
+
 // Collection Routes (require authentication)
 Route::middleware(['web', 'auth'])->prefix('collections')->group(function () {
     Route::get('/', [CollectionController::class, 'index']);

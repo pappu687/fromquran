@@ -21,15 +21,22 @@ interface Verse {
     chapter_id: number;
 }
 
+interface ResourceType {
+    id: number;
+    slug: string;
+    name: string;
+}
+
 interface Submission {
     id: number;
     user: User;
     verse: Verse;
-    resource_type: string;
+    resource_type_id: number;
     resource_url: string;
     comment: string | null;
     status: 'pending' | 'approved' | 'rejected';
     created_at: string;
+    resource_type: ResourceType;
 }
 
 interface PaginationLink {
@@ -58,21 +65,9 @@ interface Props {
     filters: {
         status: string;
         search: string;
-        resource_type: string;
+        resource_type_id: string;
     };
 }
-
-const resourceTypeLabels: Record<string, string> = {
-    youtube_tafseer: 'YouTube Tafseer',
-    podcast: 'Podcast',
-    article: 'Article',
-    shan_e_nuzul: 'Shan e Nuzul',
-    hadith: 'Related Hadith',
-    fiqh_ruling: 'Fiqh Ruling',
-    fatwa: 'Fatwa',
-    scholarly_commentary: 'Scholarly Commentary',
-    other: 'Other',
-};
 
 export default function ResourceSubmissions({ submissions, stats, filters }: Props) {
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -272,8 +267,8 @@ export default function ResourceSubmissions({ submissions, stats, filters }: Pro
                                 </Select>
 
                                 <Select
-                                    value={filters.resource_type}
-                                    onValueChange={(value) => handleFilter('resource_type', value)}
+                                    value={filters.resource_type_id}
+                                    onValueChange={(value) => handleFilter('resource_type_id', value)}
                                 >
                                     <SelectTrigger className="w-[180px]">
                                         <SelectValue />
@@ -373,7 +368,7 @@ export default function ResourceSubmissions({ submissions, stats, filters }: Pro
                                                 </td>
                                                 <td className="p-3">
                                                     <span className="text-sm">
-                                                        {resourceTypeLabels[submission.resource_type]}
+                                                        {submission.resource_type?.name || 'N/A'}
                                                     </span>
                                                 </td>
                                                 <td className="p-3">

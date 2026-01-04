@@ -17,7 +17,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { router } from '@inertiajs/react';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 
 interface AddResourceModalProps {
     open: boolean;
@@ -25,28 +25,46 @@ interface AddResourceModalProps {
     verseId: number;
 }
 
-const resourceTypes = [
-    { value: 'youtube_tafseer', label: 'YouTube Tafseer' },
-    { value: 'podcast', label: 'Podcast' },
-    { value: 'article', label: 'Article' },
-    { value: 'shan_e_nuzul', label: 'Shan e Nuzul' },
-    { value: 'hadith', label: 'Related Hadith' },
-    { value: 'fiqh_ruling', label: 'Fiqh Ruling' },
-    { value: 'fatwa', label: 'Fatwa' },
-    { value: 'scholarly_commentary', label: 'Scholarly Commentary' },
-    { value: 'other', label: 'Other' },
-];
+interface ResourceType {
+    id: number;
+    slug: string;
+    name: string;
+}
 
 export function AddResourceModal({
     open,
     onOpenChange,
     verseId,
 }: AddResourceModalProps) {
-    const [resourceType, setResourceType] = useState('');
+    const [resourceTypes, setResourceTypes] = useState<ResourceType[]>([]);
+    const [resourceTypeId, setResourceTypeId] = useState('');
     const [resourceUrl, setResourceUrl] = useState('');
     const [comment, setComment] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isLoadingTypes, setIsLoadingTypes] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
+
+    // Fetch resource types when modal opens
+    useEffect(() => {
+        if (open && resourceTypes.length === 0) {
+            fetchResourceTypes();
+        }
+    }, [open]);
+
+    const fetchResourceTypes = async () => {
+        setIsLoadingTypes(true);
+        try {
+            const response = await fetch('/api/resource-types');
+            if (response.ok) {
+                const data = await response.json();
+                setResourceTypes(data);
+            }
+        } catch (error) {
+            console.error('Failed to fetch resource types:', error);
+        } finally {
+            setIsLoadingTypes(false);
+        }
+    };
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -67,7 +85,7 @@ export function AddResourceModal({
                 credentials: 'include',
                 body: JSON.stringify({
                     verse_id: verseId,
-                    resource_type: resourceType,
+                    resource_type_id: resourceTypeId,
                     resource_url: resourceUrl,
                     comment: comment || null,
                 }),
@@ -89,7 +107,7 @@ export function AddResourceModal({
             }
 
             // Success - reset form and close modal
-            setResourceType('');
+            setResourceTypeId('');
             setResourceUrl('');
             setComment('');
             onOpenChange(false);
@@ -110,7 +128,7 @@ export function AddResourceModal({
             onOpenChange(newOpen);
             if (!newOpen) {
                 // Reset form when closing
-                setResourceType('');
+                setResourceTypeId('');
                 setResourceUrl('');
                 setComment('');
                 setErrors({});
@@ -142,27 +160,27 @@ export function AddResourceModal({
                             Resource Type <span className="text-red-500">*</span>
                         </Label>
                         <Select
-                            value={resourceType}
-                            onValueChange={setResourceType}
-                            disabled={isSubmitting}
+                            value={resourceTypeId}
+                            onValueChange={setResourceTypeId}
+                            disabled={isSubmitting || isLoadingTypes}
                         >
                             <SelectTrigger id="resource-type">
-                                <SelectValue placeholder="Select resource type" />
+                                <SelectValue placeholder={isLoadingTypes ? 'Loading types...' : 'Select resource type'} />
                             </SelectTrigger>
                             <SelectContent>
                                 {resourceTypes.map((type) => (
                                     <SelectItem
-                                        key={type.value}
-                                        value={type.value}
+                                        key={type.id}
+                                        value={type.id.toString()}
                                     >
-                                        {type.label}
+                                        {type.name}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
-                        {errors.resource_type && (
+                        {errors.resource_type_id && (
                             <p className="text-sm text-destructive">
-                                {errors.resource_type}
+                                {errors.resource_type_id}
                             </p>
                         )}
                     </div>

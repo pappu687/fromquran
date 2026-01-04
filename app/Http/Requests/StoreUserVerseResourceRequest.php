@@ -23,11 +23,7 @@ class StoreUserVerseResourceRequest extends FormRequest
     {
         return [
             'verse_id' => ['required', 'integer', 'exists:verses,id'],
-            'resource_type' => [
-                'required',
-                'string',
-                'in:youtube_tafseer,podcast,article,shan_e_nuzul,hadith,fiqh_ruling,fatwa,scholarly_commentary,other'
-            ],
+            'resource_type_id' => ['required', 'integer', 'exists:resource_types,id'],
             'resource_url' => ['required', 'url', 'max:2048'],
             'comment' => ['nullable', 'string', 'max:250'],
         ];
@@ -43,8 +39,8 @@ class StoreUserVerseResourceRequest extends FormRequest
         return [
             'verse_id.required' => 'Verse ID is required.',
             'verse_id.exists' => 'The selected verse does not exist.',
-            'resource_type.required' => 'Please select a resource type.',
-            'resource_type.in' => 'Invalid resource type selected.',
+            'resource_type_id.required' => 'Please select a resource type.',
+            'resource_type_id.exists' => 'The selected resource type does not exist.',
             'resource_url.required' => 'Resource URL is required.',
             'resource_url.url' => 'Please provide a valid URL.',
             'comment.max' => 'Comment must not exceed 250 characters.',

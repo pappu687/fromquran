@@ -97,6 +97,20 @@ Route::middleware(['auth', 'role:Admin|Moderator|Reviewer'])->prefix('admin')->g
             ->name('admin.roles.destroy');
     });
 
+    // Resource Types (Admin only)
+    Route::prefix('resource-types')->middleware('role:Admin')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\ResourceTypeController::class, 'index'])
+            ->name('admin.resource-types');
+        Route::get('/{resourceType}', [\App\Http\Controllers\Admin\ResourceTypeController::class, 'show'])
+            ->name('admin.resource-types.show');
+        Route::post('/', [\App\Http\Controllers\Admin\ResourceTypeController::class, 'store'])
+            ->name('admin.resource-types.store');
+        Route::put('/{resourceType}', [\App\Http\Controllers\Admin\ResourceTypeController::class, 'update'])
+            ->name('admin.resource-types.update');
+        Route::delete('/{resourceType}', [\App\Http\Controllers\Admin\ResourceTypeController::class, 'destroy'])
+            ->name('admin.resource-types.destroy');
+    });
+
     // Settings (Admin only)
     Route::get('/settings', function () {
         return Inertia::render('admin/settings');

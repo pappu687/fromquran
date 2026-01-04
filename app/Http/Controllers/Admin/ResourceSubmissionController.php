@@ -14,8 +14,11 @@ class ResourceSubmissionController extends Controller
      */
     public function index(Request $request)
     {
-        $query = UserVerseResource::with(['user:id,name,email', 'verse:id,verse_key,chapter_id'])
-            ->latest();
+        $query = UserVerseResource::with([
+            'user:id,name,email',
+            'verse:id,verse_key,chapter_id',
+            'resourceType:id,slug,name'
+        ])->latest();
 
         // Filter by status
         if ($request->has('status') && $request->status !== 'all') {
@@ -31,13 +34,16 @@ class ResourceSubmissionController extends Controller
                         ->orWhere('email', 'like', "%{$search}%");
                 })
                 ->orWhere('resource_url', 'like', "%{$search}%")
-                ->orWhere('resource_type', 'like', "%{$search}%");
+                ->orWhereHas('resourceType', function ($typeQuery) use ($search) {
+                    $typeQuery->where('name', 'like', "%{$search}%")
+                        ->orWhere('slug', 'like', "%{$search}%");
+                });
             });
         }
 
         // Filter by resource type
-        if ($request->has('resource_type') && $request->resource_type !== 'all') {
-            $query->where('resource_type', $request->resource_type);
+        if ($request->has('resource_type_id') && $request->resource_type_id !== 'all') {
+            $query->where('resource_type_id', $request->resource_type_id);
         }
 
         $submissions = $query->paginate(20)->withQueryString();
@@ -56,7 +62,7 @@ class ResourceSubmissionController extends Controller
             'filters' => [
                 'status' => $request->status ?? 'pending',
                 'search' => $request->search ?? '',
-                'resource_type' => $request->resource_type ?? 'all',
+                'resource_type_id' => $request->resource_type_id ?? 'all',
             ],
         ]);
     }

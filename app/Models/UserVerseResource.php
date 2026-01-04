@@ -10,7 +10,7 @@ class UserVerseResource extends Model
     protected $fillable = [
         'user_id',
         'verse_id',
-        'resource_type',
+        'resource_type_id',
         'resource_url',
         'comment',
         'status',
@@ -21,6 +21,8 @@ class UserVerseResource extends Model
         'updated_at' => 'datetime',
     ];
 
+    protected $with = ['resourceType'];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -29,6 +31,11 @@ class UserVerseResource extends Model
     public function verse(): BelongsTo
     {
         return $this->belongsTo(Verse::class);
+    }
+
+    public function resourceType(): BelongsTo
+    {
+        return $this->belongsTo(ResourceType::class);
     }
 
     public function scopePending($query)

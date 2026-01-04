@@ -16,7 +16,7 @@ class UserResourceController extends Controller
         $resource = UserVerseResource::create([
             'user_id' => $request->user()->id,
             'verse_id' => $request->verse_id,
-            'resource_type' => $request->resource_type,
+            'resource_type_id' => $request->resource_type_id,
             'resource_url' => $request->resource_url,
             'comment' => $request->comment,
             'status' => 'pending',

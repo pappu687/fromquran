@@ -15,11 +15,18 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ExternalLink } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+interface ResourceType {
+    id: number;
+    slug: string;
+    name: string;
+}
+
 interface Resource {
     id: number;
-    resource_type: string;
+    resource_type_id: number;
     resource_url: string;
     comment: string | null;
+    resource_type: ResourceType;
     user: {
         name: string;
     };
@@ -31,18 +38,6 @@ interface ResourcesSheetProps {
     verseId: number;
     verseNumber: number;
 }
-
-const resourceTypeLabels: Record<string, string> = {
-    youtube_tafseer: 'YouTube Tafseer',
-    podcast: 'Podcast',
-    article: 'Article',
-    shan_e_nuzul: 'Shan e Nuzul',
-    hadith: 'Related Hadith',
-    fiqh_ruling: 'Fiqh Ruling',
-    fatwa: 'Fatwa',
-    scholarly_commentary: 'Scholarly Commentary',
-    other: 'Other',
-};
 
 export function ResourcesSheet({
     open,
@@ -77,7 +72,7 @@ export function ResourcesSheet({
     // Group resources by type
     const groupedResources = resources.reduce(
         (acc, resource) => {
-            const type = resource.resource_type;
+            const type = resource.resource_type.name;
             if (!acc[type]) {
                 acc[type] = [];
             }
@@ -116,8 +111,7 @@ export function ResourcesSheet({
                                 ([type, typeResources]) => (
                                     <AccordionItem key={type} value={type}>
                                         <AccordionTrigger>
-                                            {resourceTypeLabels[type] || type} (
-                                            {typeResources.length})
+                                            {type} ({typeResources.length})
                                         </AccordionTrigger>
                                         <AccordionContent>
                                             <div

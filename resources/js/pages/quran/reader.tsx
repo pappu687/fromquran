@@ -1,4 +1,3 @@
-import { ChapterInfoHeader } from '@/components/quran/chapter-info-header';
 import { VersesPanel } from '@/components/quran/verses-panel';
 import QuranReaderLayout from '@/layouts/quran-reader-layout';
 import { Head } from '@inertiajs/react';
@@ -153,8 +152,7 @@ export default function QuranReader({
                     selectedChapter={selectedChapter?.id}
                     onChapterSelect={handleChapterSelect}
                 >
-                    <div className="flex flex-1 flex-col gap-4 px-4 py-5">
-                        <ChapterInfoHeader chapter={selectedChapter} />
+                    <div className="flex flex-1 flex-col px-4 py-5">
                         <div className="mx-auto h-full w-full max-w-3xl rounded-xl">
                             <VersesPanel
                                 chapter={selectedChapter}

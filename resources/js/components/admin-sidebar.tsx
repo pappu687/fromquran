@@ -7,6 +7,7 @@ import {
     Settings,
     BookOpen,
     Languages,
+    Tags,
 } from 'lucide-react';
 
 import { NavMain } from '@/components/nav-main';
@@ -37,6 +38,11 @@ const adminNavData = {
             title: 'Roles / Permission',
             url: '/admin/roles',
             icon: Shield,
+        },
+        {
+            title: 'Resource Types',
+            url: '/admin/resource-types',
+            icon: Tags,
         },
         {
             title: 'Verses',
