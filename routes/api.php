@@ -20,6 +20,7 @@ Route::prefix('quran')->group(function () {
     Route::get('/search', [QuranController::class, 'search']);
     Route::get('/juzs', [QuranController::class, 'juzs']);
     Route::get('/juzs/{juzId}/verses', [QuranController::class, 'juzVerses']);
+    Route::get('/chapters/{chapterId}/resources', [\App\Http\Controllers\Api\ChapterResourceController::class, 'show']);
 });
 
 // Bookmark Routes (require authentication)

@@ -70,8 +70,23 @@ class QuranController extends Controller
         try {
             $verses = $this->quranService->getVerses($chapterId, $page, $limit, $edition);
 
+            if (empty($verses)) {
+                return response()->json([
+                    'error' => 'Chapter not found or has no verses'
+                ], 404);
+            }
+
             // Optional verse range filtering (e.g. from=10&to=15)
             if ($from !== null && $to !== null) {
+                $lastVerse = end($verses);
+                $maxVerseCount = $lastVerse['verseNumber'];
+
+                if ($from < 1 || $from > $maxVerseCount || $to < $from || $to > $maxVerseCount) {
+                    return response()->json([
+                        'error' => "Invalid verse range. Surah {$chapterId} has {$maxVerseCount} verses."
+                    ], 422);
+                }
+
                 $verses = array_values(array_filter($verses, function ($verse) use ($from, $to) {
                     return $verse['verseNumber'] >= $from && $verse['verseNumber'] <= $to;
                 }));

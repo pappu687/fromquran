@@ -23,14 +23,16 @@ Route::get('{chapterNumber}', function (int $chapterNumber) {
 
 // /{chapterNumber}/{from}-{to} e.g. /2/10-15
 Route::get('{chapterNumber}/{range}', function (int $chapterNumber, string $range) {
-    [$from, $to] = array_pad(explode('-', $range), 2, null);
+    $parts = explode('-', $range);
+    $from = $parts[0] ?? null;
+    $to = $parts[1] ?? $from;
 
     return Inertia::render('quran/reader', [
         'chapterNumber' => $chapterNumber,
         'fromVerse' => $from ? (int) $from : null,
         'toVerse' => $to ? (int) $to : null,
     ]);
-})->whereNumber('chapterNumber')->where('range', '[0-9]+-[0-9]+');
+})->whereNumber('chapterNumber')->where('range', '[0-9]+(-[0-9]+)?');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
