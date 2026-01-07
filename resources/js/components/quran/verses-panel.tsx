@@ -4,6 +4,8 @@ import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { VerseCard } from './verse-card';
+import { VerseReading } from './verse-reading';
+import { useReadingMode } from '@/contexts/reading-mode-context';
 
 interface Verse {
     id: number;
@@ -60,6 +62,7 @@ export function VersesPanel({
     const [currentChapterId, setCurrentChapterId] = useState<number | null>(
         null,
     );
+    const { mode } = useReadingMode();
 
     const fetchVerses = async (pageNum: number, reset = false) => {
         if (!chapter) return;
@@ -263,20 +266,24 @@ export function VersesPanel({
                     )}
 
                     {/* Verses */}
-                    {verses.map((verse) => (
-                        <VerseCard
-                            key={verse.id}
-                            verse={verse}
-                            isBookmarked={bookmarkedVerses.has(
-                                verse.id.toString(),
-                            )}
-                            hasResources={verse.hasResources || false}
-                            onBookmarkToggle={() => handleBookmarkToggle(verse)}
-                            onCopy={handleCopy}
-                            onPlayAudio={handlePlayAudio}
-                            showTranslation={showTranslation}
-                        />
-                    ))}
+                    {mode === 'list' ? (
+                        verses.map((verse) => (
+                            <VerseCard
+                                key={verse.id}
+                                verse={verse}
+                                isBookmarked={bookmarkedVerses.has(
+                                    verse.id.toString(),
+                                )}
+                                hasResources={verse.hasResources || false}
+                                onBookmarkToggle={() => handleBookmarkToggle(verse)}
+                                onCopy={handleCopy}
+                                onPlayAudio={handlePlayAudio}
+                                showTranslation={showTranslation}
+                            />
+                        ))
+                    ) : (
+                        <VerseReading verses={verses} />
+                    )}
 
                     {/* Load More Button */}
                     {!fromVerse && !toVerse && hasMore && (

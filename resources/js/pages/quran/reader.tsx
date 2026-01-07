@@ -1,5 +1,6 @@
 import { VersesPanel } from '@/components/quran/verses-panel';
 import QuranReaderLayout from '@/layouts/quran-reader-layout';
+import { ReadingModeProvider } from '@/contexts/reading-mode-context';
 import { Head } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
@@ -132,7 +133,7 @@ export default function QuranReader({
     }
 
     return (
-        <>
+        <ReadingModeProvider>
             <Head title="From Quran" />
             {error ? (
                 <div className="flex h-screen items-center justify-center">
@@ -166,7 +167,7 @@ export default function QuranReader({
                     </div>
                 </QuranReaderLayout>
             )}
-        </>
+        </ReadingModeProvider>
     );
 }
 

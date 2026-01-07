@@ -175,8 +175,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
 
                         {!loading && showChapterResults && (
                             <CommandGroup
-                                heading={searchQuery.length >= 2 ? 'Chapters' : 'Recent Chapters'}
-                                className="[&_[data-cmdk-group-heading]]:px-2"
+                                heading={searchQuery.length >= 2 ? 'Chapters' : 'Recent Chapters'}  
                             >
                                 {filteredChapters.slice(0, 5).map((chapter) => (
                                     <CommandItem
