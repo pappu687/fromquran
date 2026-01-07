@@ -32,6 +32,29 @@ class QuranController extends Controller
     }
 
     /**
+     * Get info for a specific chapter
+     */
+    public function chapterInfo(int $chapterId): JsonResponse
+    {
+        try {
+            $info = $this->quranService->getChapterInfo($chapterId);
+            
+            if (!$info) {
+                return response()->json([
+                    'error' => 'Chapter info not found'
+                ], 404);
+            }
+
+            return response()->json($info);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch chapter info',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Get verses for a specific chapter
      */
     public function verses(Request $request, int $chapterId): JsonResponse

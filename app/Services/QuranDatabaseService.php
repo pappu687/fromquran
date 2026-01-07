@@ -42,6 +42,27 @@ class QuranDatabaseService
     }
 
     /**
+     * Get info for a specific chapter
+     */
+    public function getChapterInfo(int $chapterNumber): ?array
+    {
+        return Cache::remember("quran.db.chapter_info.{$chapterNumber}", $this->cacheTtl, function () use ($chapterNumber) {
+            $info = \App\Models\ChapterInfo::where('surah_number', $chapterNumber)->first();
+            
+            if (!$info) {
+                return null;
+            }
+
+            return [
+                'surah_number' => $info->surah_number,
+                'surah_name' => $info->surah_name,
+                'text' => $info->text,
+                'short_text' => $info->short_text,
+            ];
+        });
+    }
+
+    /**
      * Get verses for a specific chapter from database
      */
     public function getVerses(int $chapterId, int $page = 1, int $limit = 10, string $edition = 'en.sahih'): array

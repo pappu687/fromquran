@@ -8,7 +8,10 @@ import {
 } from '@/components/ui/breadcrumb';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { type ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
+import { Eye } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
+import { ChapterInfoSheet } from '@/components/quran/chapter-info-sheet';
 
 interface Chapter {
     id: number;
@@ -33,6 +36,7 @@ export default function QuranReaderLayout({
     selectedChapter,
     onChapterSelect,
 }: QuranReaderLayoutProps) {
+    const [isChapterInfoOpen, setIsChapterInfoOpen] = useState(false);
     const chapter = selectedChapter ? chapters.find((c) => c.id === selectedChapter) : null;
 
     return (
@@ -55,9 +59,20 @@ export default function QuranReaderLayout({
                                 <BreadcrumbItem>
                                     <BreadcrumbPage className="line-clamp-1">
                                         {chapter ? (
-                                            <span>
-                                                {chapter.englishName} ({chapter.name})
-                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <span>
+                                                    {chapter.englishName} ({chapter.name})
+                                                </span>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-7 w-7 p-0"
+                                                    onClick={() => setIsChapterInfoOpen(true)}
+                                                    title="About this Surah"
+                                                >
+                                                    <Eye className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                                                </Button>
+                                            </div>
                                         ) : (
                                             'Quran Reader'
                                         )}
@@ -71,6 +86,15 @@ export default function QuranReaderLayout({
                     </div>
                 </header>
                 {children}
+
+                {chapter && (
+                    <ChapterInfoSheet
+                        open={isChapterInfoOpen}
+                        onOpenChange={setIsChapterInfoOpen}
+                        chapterNumber={chapter.number}
+                        chapterName={chapter.englishName}
+                    />
+                )}
             </SidebarInset>
         </SidebarProvider>
     );

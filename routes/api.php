@@ -14,6 +14,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 // Quran API Routes
 Route::prefix('quran')->group(function () {
     Route::get('/chapters', [QuranController::class, 'chapters']);
+    Route::get('/chapters/{chapterId}/info', [QuranController::class, 'chapterInfo']);
     Route::get('/chapters/{chapterId}/verses', [QuranController::class, 'verses']);
     Route::get('/editions', [QuranController::class, 'editions']);
     Route::get('/search', [QuranController::class, 'search']);

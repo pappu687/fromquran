@@ -154,6 +154,21 @@
         font-family:
             'Uthmanic Hafs', 'Arabic Typesetting', 'Traditional Arabic', serif;
     }
+
+    .chapter-info-content h1, 
+    .chapter-info-content h2, 
+    .chapter-info-content h3 {
+        @apply font-bold mb-4;
+    }
+
+    .chapter-info-content p {
+        @apply mb-4;
+    }
+
+    .chapter-info-content b, 
+    .chapter-info-content strong {
+        @apply font-bold;
+    }
 }
 
 @theme inline {
