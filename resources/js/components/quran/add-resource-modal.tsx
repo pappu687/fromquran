@@ -22,7 +22,8 @@ import { FormEvent, useEffect, useState } from 'react';
 interface AddResourceModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    verseId: number;
+    verseId?: number;
+    chapterId?: number;
 }
 
 interface ResourceType {
@@ -35,6 +36,7 @@ export function AddResourceModal({
     open,
     onOpenChange,
     verseId,
+    chapterId,
 }: AddResourceModalProps) {
     const [resourceTypes, setResourceTypes] = useState<ResourceType[]>([]);
     const [resourceTypeId, setResourceTypeId] = useState('');
@@ -75,7 +77,16 @@ export function AddResourceModal({
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
         try {
-            const response = await fetch('/user-resources', {
+            const endpoint = chapterId ? '/user-chapter-resources' : '/user-resources';
+            const payload = {
+                resource_type_id: resourceTypeId,
+                resource_url: resourceUrl,
+                comment: comment || null,
+                ...(verseId && { verse_id: verseId }),
+                ...(chapterId && { chapter_id: chapterId }),
+            };
+
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -83,12 +94,7 @@ export function AddResourceModal({
                     'X-CSRF-TOKEN': csrfToken || '',
                 },
                 credentials: 'include',
-                body: JSON.stringify({
-                    verse_id: verseId,
-                    resource_type_id: resourceTypeId,
-                    resource_url: resourceUrl,
-                    comment: comment || null,
-                }),
+                body: JSON.stringify(payload),
             });
 
             const data = await response.json();

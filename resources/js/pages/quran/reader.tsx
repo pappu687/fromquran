@@ -1,8 +1,8 @@
 import { VersesPanel } from '@/components/quran/verses-panel';
 import QuranReaderLayout from '@/layouts/quran-reader-layout';
-import { ReadingModeProvider } from '@/contexts/reading-mode-context';
-import { Head } from '@inertiajs/react';
+import { usePage, Head } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
+import { SharedData } from '@/types';
 
 interface Chapter {
     id: number;
@@ -25,6 +25,8 @@ export default function QuranReader({
     fromVerse,
     toVerse,
 }: QuranReaderProps) {
+    const { auth } = usePage<SharedData>().props;
+    const user = auth?.user;
     const [chapters, setChapters] = useState<Chapter[]>([]);
     const [selectedChapter, setSelectedChapter] = useState<
         Chapter | undefined
@@ -133,7 +135,7 @@ export default function QuranReader({
     }
 
     return (
-        <ReadingModeProvider>
+        <>
             <Head title="From Quran" />
             {error ? (
                 <div className="flex h-screen items-center justify-center">
@@ -160,6 +162,7 @@ export default function QuranReader({
                                 apiUrl="/api/quran"
                                 pageSize={10}
                                 showTranslation={true}
+                                user={user}
                                 fromVerse={fromVerse ?? undefined}
                                 toVerse={toVerse ?? undefined}
                             />
@@ -167,7 +170,7 @@ export default function QuranReader({
                     </div>
                 </QuranReaderLayout>
             )}
-        </ReadingModeProvider>
+        </>
     );
 }
 

@@ -1,5 +1,15 @@
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -53,7 +63,7 @@ export function VersesPanel({
     const [error, setError] = useState<string | null>(null);
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
-    const [bookmarkedVerses, setBookmarkedVerses] = useState<Set<number>>(
+    const [bookmarkedVerses, setBookmarkedVerses] = useState<Set<string>>(
         new Set(),
     );
     const [isAutoScroll, setIsAutoScroll] = useState(false);
@@ -62,6 +72,9 @@ export function VersesPanel({
     const [currentChapterId, setCurrentChapterId] = useState<number | null>(
         null,
     );
+    const [showLoginAlert, setShowLoginAlert] = useState(false);
+    const [showErrorAlert, setShowErrorAlert] = useState(false);
+    const [errorAlertMessage, setErrorAlertMessage] = useState('');
     const { mode } = useReadingMode();
 
     const fetchVerses = async (pageNum: number, reset = false) => {
@@ -134,8 +147,8 @@ export function VersesPanel({
 
             if (response.ok) {
                 const data = await response.json();
-                const bookmarkedIds = new Set(
-                    data.data.map((b: any) => b.verse_id),
+                const bookmarkedIds = new Set<string>(
+                    data.data.map((b: any) => String(b.verse_id)),
                 );
                 setBookmarkedVerses(bookmarkedIds);
             }
@@ -154,8 +167,7 @@ export function VersesPanel({
 
     const handleBookmarkToggle = async (verse: Verse) => {
         if (!user) {
-            // Redirect to login or show message
-            alert('Please login to bookmark verses');
+            setShowLoginAlert(true);
             return;
         }
 
@@ -206,7 +218,8 @@ export function VersesPanel({
             }
         } catch (err) {
             console.error('Failed to toggle bookmark:', err);
-            alert('Failed to update bookmark. Please try again.');
+            setErrorAlertMessage('Failed to update bookmark. Please try again.');
+            setShowErrorAlert(true);
         }
     };
 
@@ -315,6 +328,39 @@ export function VersesPanel({
                     )}
                 </div>
             </div>
+            
+            <AlertDialog open={showLoginAlert} onOpenChange={setShowLoginAlert}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Authentication Required</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Please login to your account to bookmark verses and access other features.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => window.location.href = '/login'}>
+                            Login
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={showErrorAlert} onOpenChange={setShowErrorAlert}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Error</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {errorAlertMessage}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogAction onClick={() => setShowErrorAlert(false)}>
+                            OK
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

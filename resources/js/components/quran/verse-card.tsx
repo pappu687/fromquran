@@ -120,6 +120,16 @@ export function VerseCard({
                         >
                             <BookmarkPlus className="h-4 w-4" />
                         </Button>
+
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setIsResourceModalOpen(true)}
+                            className="h-8 w-8 p-0"
+                            title="Add a resource"
+                        >
+                            <Plus className="h-4 w-4" />
+                        </Button>
                     </div>
                 </div>
 

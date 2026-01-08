@@ -4,6 +4,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -12,8 +13,9 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from '@/components/ui/accordion';
-import { ExternalLink, Info, Link as LinkIcon } from 'lucide-react';
+import { ExternalLink, Info, Link as LinkIcon, Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { AddResourceModal } from './add-resource-modal';
 
 interface ChapterInfo {
     surah_number: number;
@@ -57,6 +59,7 @@ export function ChapterInfoSheet({
     const [loadingInfo, setLoadingInfo] = useState(false);
     const [loadingResources, setLoadingResources] = useState(false);
     const [activeTab, setActiveTab] = useState('intro');
+    const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
 
     useEffect(() => {
         if (open && chapterNumber) {
@@ -169,6 +172,20 @@ export function ChapterInfoSheet({
                             </TabsContent>
 
                             <TabsContent value="resources" className="mt-0 outline-none">
+                                <div className="mb-4 flex items-center justify-between">
+                                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                                        Resources for this Surah
+                                    </h3>
+                                    <Button 
+                                        size="sm" 
+                                        variant="outline" 
+                                        className="gap-1"
+                                        onClick={() => setIsResourceModalOpen(true)}
+                                    >
+                                        <Plus className="h-4 w-4" />
+                                        Add a resource
+                                    </Button>
+                                </div>
                                 {loadingResources ? (
                                     <div className="space-y-4">
                                         <Skeleton className="h-12 w-full" />
@@ -233,6 +250,12 @@ export function ChapterInfoSheet({
                         </div>
                     </Tabs>
                 </div>
+                
+                <AddResourceModal 
+                    open={isResourceModalOpen}
+                    onOpenChange={setIsResourceModalOpen}
+                    chapterId={chapterNumber}
+                />
             </SheetContent>
         </Sheet>
     );

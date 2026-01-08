@@ -67,10 +67,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 // User Resource Submission Routes (require authentication)
-Route::middleware('auth')->prefix('user-resources')->group(function () {
-    Route::post('/', [\App\Http\Controllers\UserResourceController::class, 'store'])->name('user-resources.store');
-    Route::get('/', [\App\Http\Controllers\UserResourceController::class, 'index'])->name('user-resources.index');
-    Route::get('/pending', [\App\Http\Controllers\UserResourceController::class, 'pending'])->name('user-resources.pending'); // For admin
+Route::middleware('auth')->group(function () {
+    Route::prefix('user-resources')->group(function () {
+        Route::post('/', [\App\Http\Controllers\UserResourceController::class, 'store'])->name('user-resources.store');
+        Route::get('/', [\App\Http\Controllers\UserResourceController::class, 'index'])->name('user-resources.index');
+        Route::get('/pending', [\App\Http\Controllers\UserResourceController::class, 'pending'])->name('user-resources.pending'); // For admin
+    });
+
+    Route::prefix('user-chapter-resources')->group(function () {
+        Route::post('/', [\App\Http\Controllers\UserChapterResourceController::class, 'store'])->name('user-chapter-resources.store');
+    });
 });
 
 // Admin Routes (require role-based access)
