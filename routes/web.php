@@ -34,15 +34,21 @@ Route::get('{chapterNumber}/{range}', function (int $chapterNumber, string $rang
     ]);
 })->whereNumber('chapterNumber')->where('range', '[0-9]+(-[0-9]+)?');
 
+// Public Collections
+Route::get('collections', function () {
+    return Inertia::render('user/collections');
+})->name('collections.index');
+
+Route::get('collections/{slug}', function (string $slug) {
+    return Inertia::render('public-collection-detail', [
+        'slug' => $slug,
+    ]);
+})->name('collections.show');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
-
-    // User Collections
-    Route::get('collections', function () {
-        return Inertia::render('user/collections');
-    })->name('collections.index');
 
     // My Collections (new interface)
     Route::get('my-collections', function () {

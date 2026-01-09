@@ -26,7 +26,7 @@ class BookmarkController extends Controller
             $query->forChapter($chapterId);
         }
 
-        $bookmarks = $query->get();
+        $bookmarks = $query->with('chapter')->get();
 
         return response()->json([
             'data' => $bookmarks,

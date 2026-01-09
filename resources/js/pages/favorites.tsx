@@ -17,21 +17,21 @@ import AppLayout from '@/layouts/app-layout';
 
 interface Bookmark {
     id: number;
-    verse_id: number;
-    note?: string;
+    verse_id: string;
+    notes?: string;
     created_at: string;
-    verse: {
+    verse_data: {
         id: number;
         verse_key: string;
         verse_number: number;
         text_uthmani: string;
         text_imlaei_simple?: string;
-        chapter: {
-            id: number;
-            chapter_number: number;
-            name_simple: string;
-            name_arabic: string;
-        };
+    };
+    chapter: {
+        id: number;
+        chapter_number: number;
+        name_simple: string;
+        name_arabic: string;
     };
 }
 
@@ -70,7 +70,7 @@ export default function FavoritesPage() {
             }
 
             const data = await response.json();
-            setBookmarks(data);
+            setBookmarks(data.data);
         } catch (error) {
             console.error('Failed to load favorites:', error);
             setErrors({
@@ -182,13 +182,13 @@ export default function FavoritesPage() {
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2 mb-3">
                                                 <Badge variant="outline" className="font-mono text-xs">
-                                                    {bookmark.verse.verse_key}
+                                                    {bookmark.verse_data.verse_key}
                                                 </Badge>
                                                 <span className="text-sm font-medium">
-                                                    {bookmark.verse.chapter.name_simple}
+                                                    {bookmark.chapter.name_simple}
                                                 </span>
                                                 <span className="text-xs text-muted-foreground">
-                                                    {bookmark.verse.chapter.name_arabic}
+                                                    {bookmark.chapter.name_arabic}
                                                 </span>
                                             </div>
                                             
@@ -196,19 +196,19 @@ export default function FavoritesPage() {
                                                 className="text-right font-arabic text-2xl leading-relaxed mb-3"
                                                 dir="rtl"
                                             >
-                                                {bookmark.verse.text_uthmani}
+                                                {bookmark.verse_data.text_uthmani}
                                             </p>
 
-                                            {bookmark.verse.text_imlaei_simple && (
+                                            {bookmark.verse_data.text_imlaei_simple && (
                                                 <p className="text-sm text-muted-foreground mb-3">
-                                                    {bookmark.verse.text_imlaei_simple}
+                                                    {bookmark.verse_data.text_imlaei_simple}
                                                 </p>
                                             )}
 
-                                            {bookmark.note && (
+                                            {bookmark.notes && (
                                                 <div className="mt-3 p-3 bg-muted/50 rounded-md">
                                                     <p className="text-sm italic">
-                                                        Note: {bookmark.note}
+                                                        Note: {bookmark.notes}
                                                     </p>
                                                 </div>
                                             )}
@@ -225,7 +225,7 @@ export default function FavoritesPage() {
                                                     variant="link"
                                                     size="sm"
                                                     className="h-auto p-0 text-xs"
-                                                    onClick={() => handleViewVerse(bookmark.verse.chapter.chapter_number)}
+                                                    onClick={() => handleViewVerse(bookmark.chapter.chapter_number)}
                                                 >
                                                     View in context
                                                 </Button>

@@ -42,12 +42,18 @@ Route::get('/verses/{verseId}/resources', [VerseResourceController::class, 'show
 Route::get('/resource-types', [\App\Http\Controllers\Admin\ResourceTypeController::class, 'list']);
 
 // Collection Routes (require authentication)
+// Public Collection Routes
+Route::middleware(['web'])->prefix('collections')->group(function () {
+    Route::get('/public', [CollectionController::class, 'publicIndex']);
+    Route::get('/{slug}', [CollectionController::class, 'show']);
+});
+
+// Collection Routes (require authentication)
 Route::middleware(['web', 'auth'])->prefix('collections')->group(function () {
     Route::get('/', [CollectionController::class, 'index']);
     Route::post('/', [CollectionController::class, 'store']);
     Route::get('/verse/{verseId}', [CollectionController::class, 'getCollectionsForVerse']);
     Route::post('/toggle', [CollectionController::class, 'toggleVerse']);
-    Route::get('/{slug}', [CollectionController::class, 'show']);
     Route::put('/{slug}', [CollectionController::class, 'update']);
     Route::delete('/{slug}', [CollectionController::class, 'destroy']);
     Route::post('/{slug}/verses', [CollectionController::class, 'addVerse']);

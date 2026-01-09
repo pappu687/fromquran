@@ -27,6 +27,19 @@ class CollectionController extends Controller
     }
 
     /**
+     * Display a listing of all public collections.
+     */
+    public function publicIndex(Request $request): JsonResponse
+    {
+        $collections = Collection::where('is_public', true)
+            ->withCount('verses')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($collections);
+    }
+
+    /**
      * Store a newly created collection in storage.
      */
     public function store(Request $request): JsonResponse
@@ -60,8 +73,11 @@ class CollectionController extends Controller
             ->firstOrFail();
 
         // Check if user owns the collection or if it's public
-        if ($collection->user_id !== Auth::id() && !$collection->is_public) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+        if (!$collection->is_public) {
+            $user = Auth::user();
+            if (!$user || $collection->user_id !== $user->id) {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
         }
 
         $collection->load(['verses' => function ($query) {

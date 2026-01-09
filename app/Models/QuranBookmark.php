@@ -32,6 +32,14 @@ class QuranBookmark extends Model
     }
 
     /**
+     * Get the chapter that the bookmark belongs to.
+     */
+    public function chapter(): BelongsTo
+    {
+        return $this->belongsTo(Chapter::class);
+    }
+
+    /**
      * Scope to get bookmarks for a specific user.
      */
     public function scopeForUser($query, $userId)
