@@ -9,11 +9,6 @@ use Illuminate\Support\Facades\Auth;
 
 class BookmarkController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth:sanctum');
-    }
-
     /**
      * Get all bookmarks for the authenticated user.
      */
@@ -74,8 +69,8 @@ class BookmarkController extends Controller
             'chapter_id' => $validated['chapter_id'],
             'verse_number' => $validated['verse_number'],
             'verse_id' => $validated['verse_id'],
-            'verse_data' => $validated['verse_data'],
-            'notes' => $validated['notes'],
+            'verse_data' => $validated['verse_data'] ?? null,
+            'notes' => $validated['notes'] ?? null,
             'edition' => $edition,
         ]);
 

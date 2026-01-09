@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 
 class Collection extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, \Illuminate\Database\Eloquent\Factories\HasFactory;
 
     protected $fillable = [
         'user_id',

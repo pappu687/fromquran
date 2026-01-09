@@ -75,6 +75,8 @@ export function VersesPanel({
     const [showLoginAlert, setShowLoginAlert] = useState(false);
     const [showErrorAlert, setShowErrorAlert] = useState(false);
     const [errorAlertMessage, setErrorAlertMessage] = useState('');
+    const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+    const [successAlertMessage, setSuccessAlertMessage] = useState('');
     const { mode } = useReadingMode();
 
     const fetchVerses = async (pageNum: number, reset = false) => {
@@ -174,32 +176,63 @@ export function VersesPanel({
         const verseId = verse.id.toString();
         const isCurrentlyBookmarked = bookmarkedVerses.has(verseId);
 
+        // Get CSRF token
+        const csrfToken = document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute('content');
+
         try {
             if (isCurrentlyBookmarked) {
                 // Remove bookmark
-                const response = await fetch(
+                const checkResponse = await fetch(
                     `/api/bookmarks/check?verse_id=${verseId}&edition=${selectedEdition}`,
-                );
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.bookmark) {
-                        await fetch(`/api/bookmarks/${data.bookmark.id}`, {
-                            method: 'DELETE',
-                        });
+                    {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken || '',
+                        },
                     }
+                );
+                
+                if (!checkResponse.ok) {
+                    throw new Error('Failed to check bookmark status');
                 }
-
-                setBookmarkedVerses((prev) => {
-                    const newSet = new Set(prev);
-                    newSet.delete(verseId);
-                    return newSet;
-                });
+                
+                const checkData = await checkResponse.json();
+                
+                if (checkData.bookmark) {
+                    const deleteResponse = await fetch(`/api/bookmarks/${checkData.bookmark.id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken || '',
+                        },
+                    });
+                    
+                    if (!deleteResponse.ok) {
+                        throw new Error('Failed to remove bookmark');
+                    }
+                    
+                    const deleteData = await deleteResponse.json();
+                    
+                    setBookmarkedVerses((prev) => {
+                        const newSet = new Set(prev);
+                        newSet.delete(verseId);
+                        return newSet;
+                    });
+                    
+                    setSuccessAlertMessage('Bookmark removed successfully');
+                    setShowSuccessAlert(true);
+                }
             } else {
                 // Add bookmark
-                await fetch('/api/bookmarks', {
+                const addResponse = await fetch('/api/bookmarks', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken || '',
                     },
                     body: JSON.stringify({
                         chapter_id: chapter?.id,
@@ -210,15 +243,25 @@ export function VersesPanel({
                     }),
                 });
 
+                if (!addResponse.ok) {
+                    const errorData = await addResponse.json();
+                    throw new Error(errorData.message || 'Failed to add bookmark');
+                }
+                
+                const addData = await addResponse.json();
+
                 setBookmarkedVerses((prev) => {
                     const newSet = new Set(prev);
                     newSet.add(verseId);
                     return newSet;
                 });
+                
+                setSuccessAlertMessage('Added to bookmark successfully');
+                setShowSuccessAlert(true);
             }
         } catch (err) {
             console.error('Failed to toggle bookmark:', err);
-            setErrorAlertMessage('Failed to update bookmark. Please try again.');
+            setErrorAlertMessage(err instanceof Error ? err.message : 'Failed to update bookmark. Please try again.');
             setShowErrorAlert(true);
         }
     };
@@ -356,6 +399,22 @@ export function VersesPanel({
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogAction onClick={() => setShowErrorAlert(false)}>
+                            OK
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={showSuccessAlert} onOpenChange={setShowSuccessAlert}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Success</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {successAlertMessage}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogAction onClick={() => setShowSuccessAlert(false)}>
                             OK
                         </AlertDialogAction>
                     </AlertDialogFooter>

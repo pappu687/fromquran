@@ -34,6 +34,7 @@ class Chapter extends Model
         'rukus_count' => 'integer',
         'hizbs_count' => 'integer',
         'rub_el_hizbs_count' => 'integer',
+        'pages' => 'array',
     ];
 
     /**
