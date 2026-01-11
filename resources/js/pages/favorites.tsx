@@ -1,19 +1,9 @@
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import {
-    Heart,
-    Loader2,
-    Trash2,
-    CheckCircle2,
-    BookmarkX,
-} from 'lucide-react';
-import { Head, router } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
+import { Head, router } from '@inertiajs/react';
+import { BookmarkX, CheckCircle2, Heart, Loader2, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface Bookmark {
     id: number;
@@ -82,7 +72,11 @@ export default function FavoritesPage() {
     };
 
     const handleRemove = async (bookmarkId: number) => {
-        if (!confirm('Are you sure you want to remove this verse from favorites?')) {
+        if (
+            !confirm(
+                'Are you sure you want to remove this verse from favorites?',
+            )
+        ) {
             return;
         }
 
@@ -133,7 +127,7 @@ export default function FavoritesPage() {
             <Head title="Favorites - From Quran" />
             <div className="container mx-auto px-4 py-8">
                 <div className="mb-8">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="mb-2 flex items-center gap-3">
                         <Heart className="h-8 w-8 text-red-500" />
                         <h1 className="text-3xl font-bold">My Favorites</h1>
                     </div>
@@ -163,7 +157,8 @@ export default function FavoritesPage() {
                                 No favorites yet
                             </h2>
                             <p className="mb-6 text-muted-foreground">
-                                Start bookmarking your favorite verses while reading the Quran
+                                Start bookmarking your favorite verses while
+                                reading the Quran
                             </p>
                             <Button onClick={() => router.visit('/')}>
                                 Browse Quran
@@ -175,57 +170,79 @@ export default function FavoritesPage() {
                         {bookmarks.map((bookmark) => (
                             <Card
                                 key={bookmark.id}
-                                className="group hover:shadow-md transition-all"
+                                className="group p-4 transition-all hover:shadow-md"
                             >
-                                <CardContent className="p-6">
+                                <CardContent className="p-3">
                                     <div className="flex items-start gap-4">
                                         <div className="flex-1">
-                                            <div className="flex items-center gap-2 mb-3">
-                                                <Badge variant="outline" className="font-mono text-xs">
-                                                    {bookmark.verse_data.verse_key}
-                                                </Badge>
+                                            <div className="mb-2 flex items-center gap-2">
                                                 <span className="text-sm font-medium">
-                                                    {bookmark.chapter.name_simple}
+                                                    {
+                                                        bookmark.chapter
+                                                            .name_simple
+                                                    }
                                                 </span>
                                                 <span className="text-xs text-muted-foreground">
-                                                    {bookmark.chapter.name_arabic}
+                                                    {
+                                                        bookmark.chapter
+                                                            .name_arabic
+                                                    }
                                                 </span>
                                             </div>
-                                            
+
                                             <p
-                                                className="text-right font-arabic text-2xl leading-relaxed mb-3"
+                                                className="font-arabic mb-3 text-right text-2xl leading-relaxed"
                                                 dir="rtl"
                                             >
-                                                {bookmark.verse_data.text_uthmani}
+                                                {
+                                                    bookmark.verse_data
+                                                        .text_uthmani
+                                                }
                                             </p>
 
-                                            {bookmark.verse_data.text_imlaei_simple && (
-                                                <p className="text-sm text-muted-foreground mb-3">
-                                                    {bookmark.verse_data.text_imlaei_simple}
+                                            {bookmark.verse_data
+                                                .text_imlaei_simple && (
+                                                <p className="mb-3 text-sm text-muted-foreground">
+                                                    ss
+                                                    {
+                                                        bookmark.verse_data
+                                                            .text_imlaei_simple
+                                                    }
                                                 </p>
                                             )}
 
                                             {bookmark.notes && (
-                                                <div className="mt-3 p-3 bg-muted/50 rounded-md">
+                                                <div className="mt-3 rounded-md bg-muted/50 p-3">
                                                     <p className="text-sm italic">
                                                         Note: {bookmark.notes}
                                                     </p>
                                                 </div>
                                             )}
 
-                                            <div className="flex items-center gap-4 mt-4">
-                                                <span className="text-xs text-muted-foreground">
-                                                    Added {new Date(bookmark.created_at).toLocaleDateString('en-US', {
-                                                        year: 'numeric',
-                                                        month: 'long',
-                                                        day: 'numeric',
-                                                    })}
+                                            <div className="mt-4 flex items-center gap-4">
+                                                <span className="text-sm text-muted-foreground">
+                                                    Added{' '}
+                                                    {new Date(
+                                                        bookmark.created_at,
+                                                    ).toLocaleDateString(
+                                                        'en-US',
+                                                        {
+                                                            year: 'numeric',
+                                                            month: 'long',
+                                                            day: 'numeric',
+                                                        },
+                                                    )}
                                                 </span>
                                                 <Button
                                                     variant="link"
                                                     size="sm"
-                                                    className="h-auto p-0 text-xs"
-                                                    onClick={() => handleViewVerse(bookmark.chapter.chapter_number)}
+                                                    className="h-auto p-0 text-sm"
+                                                    onClick={() =>
+                                                        handleViewVerse(
+                                                            bookmark.chapter
+                                                                .chapter_number,
+                                                        )
+                                                    }
                                                 >
                                                     View in context
                                                 </Button>
@@ -235,8 +252,10 @@ export default function FavoritesPage() {
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            onClick={() => handleRemove(bookmark.id)}
-                                            className="text-destructive hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                            onClick={() =>
+                                                handleRemove(bookmark.id)
+                                            }
+                                            className="text-destructive opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </Button>

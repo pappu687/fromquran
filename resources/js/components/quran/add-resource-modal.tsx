@@ -1,5 +1,14 @@
 import { Button } from '@/components/ui/button';
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
     Dialog,
     DialogContent,
     DialogDescription,
@@ -45,6 +54,8 @@ export function AddResourceModal({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoadingTypes, setIsLoadingTypes] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
 
     // Fetch resource types when modal opens
     useEffect(() => {
@@ -116,13 +127,17 @@ export function AddResourceModal({
             setResourceTypeId('');
             setResourceUrl('');
             setComment('');
+            setIsSubmitting(false);
+
+            // Close the modal first
             onOpenChange(false);
 
-            // Show success message (you can use a toast here)
-            alert(
+            // Set success message and show alert dialog
+            setSuccessMessage(
                 data.message ||
                     'Resource submitted successfully and is pending approval.',
             );
+            setShowSuccessDialog(true);
         } catch (error) {
             setErrors({ general: 'Network error. Please try again.' });
             setIsSubmitting(false);
@@ -143,120 +158,139 @@ export function AddResourceModal({
     };
 
     return (
-        <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogContent className="sm:max-w-[500px]">
-                <DialogHeader>
-                    <DialogTitle>Submit Resource</DialogTitle>
-                    <DialogDescription>
-                        Share a helpful resource related to this verse. Your
-                        submission will be reviewed before being published.
-                    </DialogDescription>
-                </DialogHeader>
+        <>
+            <Dialog open={open} onOpenChange={handleOpenChange}>
+                <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle>Submit Resource</DialogTitle>
+                        <DialogDescription>
+                            Share a helpful resource related to this verse. Your
+                            submission will be reviewed before being published.
+                        </DialogDescription>
+                    </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {errors.general && (
-                        <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-                            {errors.general}
-                        </div>
-                    )}
-
-                    {/* Resource Type */}
-                    <div className="space-y-2">
-                        <Label htmlFor="resource-type">
-                            Resource Type <span className="text-red-500">*</span>
-                        </Label>
-                        <Select
-                            value={resourceTypeId}
-                            onValueChange={setResourceTypeId}
-                            disabled={isSubmitting || isLoadingTypes}
-                        >
-                            <SelectTrigger id="resource-type">
-                                <SelectValue placeholder={isLoadingTypes ? 'Loading types...' : 'Select resource type'} />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {resourceTypes.map((type) => (
-                                    <SelectItem
-                                        key={type.id}
-                                        value={type.id.toString()}
-                                    >
-                                        {type.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        {errors.resource_type_id && (
-                            <p className="text-sm text-destructive">
-                                {errors.resource_type_id}
-                            </p>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        {errors.general && (
+                            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                                {errors.general}
+                            </div>
                         )}
-                    </div>
 
-                    {/* Resource URL */}
-                    <div className="space-y-2">
-                        <Label htmlFor="resource-url">
-                            Resource URL <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                            id="resource-url"
-                            type="url"
-                            placeholder="https://example.com/resource"
-                            value={resourceUrl}
-                            onChange={(e) => setResourceUrl(e.target.value)}
-                            disabled={isSubmitting}
-                        />
-                        {errors.resource_url && (
-                            <p className="text-sm text-destructive">
-                                {errors.resource_url}
-                            </p>
-                        )}
-                    </div>
-
-                    {/* Comment */}
-                    <div className="space-y-2">
-                        <Label htmlFor="comment">
-                            Comment{' '}
-                            <span className="text-muted-foreground text-sm">
-                                (optional, max 250 chars)
-                            </span>
-                        </Label>
-                        <textarea
-                            id="comment"
-                            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            placeholder="Add a brief comment about this resource..."
-                            value={comment}
-                            onChange={(e) => setComment(e.target.value)}
-                            maxLength={250}
-                            disabled={isSubmitting}
-                        />
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                            <span>
-                                {errors.comment && (
-                                    <span className="text-destructive">
-                                        {errors.comment}
-                                    </span>
-                                )}
-                            </span>
-                            <span>
-                                {comment.length}/250
-                            </span>
+                        {/* Resource Type */}
+                        <div className="space-y-2">
+                            <Label htmlFor="resource-type">
+                                Resource Type <span className="text-red-500">*</span>
+                            </Label>
+                            <Select
+                                value={resourceTypeId}
+                                onValueChange={setResourceTypeId}
+                                disabled={isSubmitting || isLoadingTypes}
+                            >
+                                <SelectTrigger id="resource-type">
+                                    <SelectValue placeholder={isLoadingTypes ? 'Loading types...' : 'Select resource type'} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {resourceTypes.map((type) => (
+                                        <SelectItem
+                                            key={type.id}
+                                            value={type.id.toString()}
+                                        >
+                                            {type.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {errors.resource_type_id && (
+                                <p className="text-sm text-destructive">
+                                    {errors.resource_type_id}
+                                </p>
+                            )}
                         </div>
-                    </div>
 
-                    <DialogFooter>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => handleOpenChange(false)}
-                            disabled={isSubmitting}
-                        >
-                            Cancel
-                        </Button>
-                        <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? 'Submitting...' : 'Submit Resource'}
-                        </Button>
-                    </DialogFooter>
-                </form>
-            </DialogContent>
-        </Dialog>
+                        {/* Resource URL */}
+                        <div className="space-y-2">
+                            <Label htmlFor="resource-url">
+                                Resource URL <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                                id="resource-url"
+                                type="url"
+                                placeholder="https://example.com/resource"
+                                value={resourceUrl}
+                                onChange={(e) => setResourceUrl(e.target.value)}
+                                disabled={isSubmitting}
+                            />
+                            {errors.resource_url && (
+                                <p className="text-sm text-destructive">
+                                    {errors.resource_url}
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Comment */}
+                        <div className="space-y-2">
+                            <Label htmlFor="comment">
+                                Comment{' '}
+                                <span className="text-muted-foreground text-sm">
+                                    (optional, max 250 chars)
+                                </span>
+                            </Label>
+                            <textarea
+                                id="comment"
+                                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                placeholder="Add a brief comment about this resource..."
+                                value={comment}
+                                onChange={(e) => setComment(e.target.value)}
+                                maxLength={250}
+                                disabled={isSubmitting}
+                            />
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                                <span>
+                                    {errors.comment && (
+                                        <span className="text-destructive">
+                                            {errors.comment}
+                                        </span>
+                                    )}
+                                </span>
+                                <span>
+                                    {comment.length}/250
+                                </span>
+                            </div>
+                        </div>
+
+                        <DialogFooter>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => handleOpenChange(false)}
+                                disabled={isSubmitting}
+                            >
+                                Cancel
+                            </Button>
+                            <Button type="submit" disabled={isSubmitting}>
+                                {isSubmitting ? 'Submitting...' : 'Submit Resource'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Success Alert Dialog */}
+            <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Success</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {successMessage}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogAction onClick={() => setShowSuccessDialog(false)}>
+                            OK
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
     );
 }

@@ -51,20 +51,18 @@ interface MenuItem {
   method?: 'post'
 }
 
-const menuData: MenuItem[][] = [
+const menuData: MenuItem[][] = [  
   [
-    {
+  {
       label: "My Collections",
       icon: FolderOpen,
       href: "/my-collections",
     },
     {
-      label: "Profile",
+      label: "My Contributions",
       icon: User,
-      href: "/dashboard",
+      href: "/my-contributions",
     },
-  ],
-  [
     {
       label: "Favorites",
       icon: Heart,
@@ -167,12 +165,13 @@ export function NavActions() {
             <SearchIcon className="h-4 w-4" />
           </Button>
           <Button
-            variant="default"
-            size="sm"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
             onClick={() => router.visit('/login')}
           >
-            <LogIn className="mr-2 h-4 w-4" />
-            Login
+            <LogIn className="h-4 w-4" />
+            <span className="sr-only">Login</span>
           </Button>
         </div>
         <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />

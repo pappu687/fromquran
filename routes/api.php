@@ -11,6 +11,14 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+// Check authentication status (uses web middleware for session auth)
+Route::middleware(['web'])->get('/check-auth', function (Request $request) {
+    return response()->json([
+        'authenticated' => auth()->check(),
+        'user' => auth()->check() ? $request->user() : null,
+    ]);
+});
+
 // Quran API Routes
 Route::prefix('quran')->group(function () {
     Route::get('/chapters', [QuranController::class, 'chapters']);

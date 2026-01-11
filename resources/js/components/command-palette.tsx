@@ -1,9 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
-import { router } from '@inertiajs/react';
-import {
-    Dialog,
-    DialogContent,
-} from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import {
     Command,
     CommandEmpty,
@@ -13,9 +8,10 @@ import {
     CommandList,
     CommandSeparator,
 } from '@/components/ui/command';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
-import { Search, BookOpen, ArrowRight } from 'lucide-react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { router } from '@inertiajs/react';
+import { ArrowRight, BookOpen, Search } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface Chapter {
     id: number;
@@ -52,7 +48,9 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     const [chapters, setChapters] = useState<Chapter[]>([]);
     const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [loading, setLoading] = useState(false);
-    const [selectedChapterId, setSelectedChapterId] = useState<number | null>(null);
+    const [selectedChapterId, setSelectedChapterId] = useState<number | null>(
+        null,
+    );
 
     // Fetch chapters when dialog opens
     useEffect(() => {
@@ -60,7 +58,9 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             fetch('/api/quran/chapters')
                 .then((res) => res.json())
                 .then((data) => setChapters(data))
-                .catch((err) => console.error('Failed to fetch chapters:', err));
+                .catch((err) =>
+                    console.error('Failed to fetch chapters:', err),
+                );
         }
     }, [open]);
 
@@ -110,12 +110,17 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     const filteredChapters = searchQuery
         ? chapters.filter(
               (chapter) =>
-                  chapter.englishName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  chapter.englishNameTranslation.toLowerCase().includes(searchQuery.toLowerCase())
+                  chapter.englishName
+                      .toLowerCase()
+                      .includes(searchQuery.toLowerCase()) ||
+                  chapter.englishNameTranslation
+                      .toLowerCase()
+                      .includes(searchQuery.toLowerCase()),
           )
         : chapters.slice(0, 10); // Show first 10 when no search
 
-    const showChapterResults = searchQuery.length > 0 || filteredChapters.length > 0;
+    const showChapterResults =
+        searchQuery.length > 0 || filteredChapters.length > 0;
     const showVerseResults = searchResults.length > 0;
 
     return (
@@ -138,9 +143,11 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                             </div>
                         )}
 
-                        {!loading && searchQuery.length >= 2 && searchResults.length === 0 && (
-                            <CommandEmpty>No results found.</CommandEmpty>
-                        )}
+                        {!loading &&
+                            searchQuery.length >= 2 &&
+                            searchResults.length === 0 && (
+                                <CommandEmpty>No results found.</CommandEmpty>
+                            )}
 
                         {!loading && showVerseResults && (
                             <>
@@ -154,18 +161,21 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                                             onSelect={() =>
                                                 handleSelectVerse(
                                                     result.chapterId,
-                                                    result.verseNumber
+                                                    result.verseNumber,
                                                 )
                                             }
                                             className="flex flex-col items-start gap-1 px-4 py-3"
                                         >
                                             <div className="flex w-full items-center justify-between">
                                                 <span className="text-xs font-medium text-muted-foreground">
-                                                    Chapter {result.chapterId}:{result.verseNumber}
+                                                    Chapter {result.chapterId}:
+                                                    {result.verseNumber}
                                                 </span>
                                                 <ArrowRight className="h-3 w-3 text-muted-foreground" />
                                             </div>
-                                            <p className="line-clamp-2 text-sm">{result.text}</p>
+                                            <p className="line-clamp-2 text-sm">
+                                                {result.text}
+                                            </p>
                                         </CommandItem>
                                     ))}
                                 </CommandGroup>
@@ -175,12 +185,19 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
 
                         {!loading && showChapterResults && (
                             <CommandGroup
-                                heading={searchQuery.length >= 2 ? 'Chapters' : 'Recent Chapters'}  
+                                className="p-2 text-sm font-semibold text-gray-500"
+                                heading={
+                                    searchQuery.length >= 2
+                                        ? 'Chapters'
+                                        : 'Recent Chapters'
+                                }
                             >
                                 {filteredChapters.slice(0, 5).map((chapter) => (
                                     <CommandItem
                                         key={chapter.id}
-                                        onSelect={() => handleSelectChapter(chapter.number)}
+                                        onSelect={() =>
+                                            handleSelectChapter(chapter.number)
+                                        }
                                         className="flex items-center justify-between px-4 py-2"
                                     >
                                         <div className="flex items-center gap-3">
@@ -195,12 +212,16 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                                                     {chapter.englishName}
                                                 </span>
                                                 <span className="text-xs text-muted-foreground">
-                                                    {chapter.englishNameTranslation}
+                                                    {
+                                                        chapter.englishNameTranslation
+                                                    }
                                                 </span>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                            <span>{chapter.numberOfVerses} verses</span>
+                                            <span>
+                                                {chapter.numberOfVerses} verses
+                                            </span>
                                             <ArrowRight className="h-3 w-3" />
                                         </div>
                                     </CommandItem>
@@ -210,7 +231,10 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
 
                         {!loading && searchQuery.length === 0 && (
                             <div className="py-4">
-                                <CommandGroup heading="Quick Actions">
+                                <CommandGroup
+                                    heading="Quick Actions"
+                                    className="p-2 text-sm font-semibold text-gray-500"
+                                >
                                     <CommandItem
                                         onSelect={() => {
                                             router.get('/dashboard');
@@ -223,8 +247,14 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                                 </CommandGroup>
                                 <div className="px-4 py-2">
                                     <p className="text-xs text-muted-foreground">
-                                        Use <kbd className="rounded bg-muted px-1.5 py-0.5">↑↓</kbd> to
-                                        navigate, <kbd className="rounded bg-muted px-1.5 py-0.5">Enter</kbd>{' '}
+                                        Use{' '}
+                                        <kbd className="rounded bg-muted px-1.5 py-0.5">
+                                            ↑↓
+                                        </kbd>{' '}
+                                        to navigate,{' '}
+                                        <kbd className="rounded bg-muted px-1.5 py-0.5">
+                                            Enter
+                                        </kbd>{' '}
                                         to select
                                     </p>
                                 </div>

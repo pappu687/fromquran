@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Bookmark, BookmarkCheck, BookmarkPlus, Eye, Plus, Volume2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { AddResourceModal } from './add-resource-modal';
 import { CollectionsModal } from './collections-modal';
 import { ResourcesSheet } from './resources-sheet';
@@ -50,6 +50,10 @@ export function VerseCard({
         if (verse.audioUrl) {
             onPlayAudio?.(verse.audioUrl);
         }
+    };
+
+    const handleAddResource = () => {
+        setIsResourceModalOpen(true);
     };
 
     return (
@@ -124,7 +128,7 @@ export function VerseCard({
                         <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => setIsResourceModalOpen(true)}
+                            onClick={handleAddResource}
                             className="h-8 w-8 p-0"
                             title="Add a resource"
                         >
