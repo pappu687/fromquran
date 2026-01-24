@@ -22,6 +22,10 @@
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
 
+    --font-serif:
+        'Young Serif', ui-serif, Georgia, Cambria, 'Times New Roman',
+        Times, serif;
+
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);
@@ -155,8 +159,12 @@
             'Uthmanic Hafs', 'Arabic Typesetting', 'Traditional Arabic', serif;
     }
 
-    .chapter-info-content h1, 
-    .chapter-info-content h2, 
+    .font-young {
+        font-family: 'Young Serif', Georgia, 'Times New Roman', serif;
+    }
+
+    .chapter-info-content h1,
+    .chapter-info-content h2,
     .chapter-info-content h3 {
         @apply font-bold mb-4;
     }
@@ -165,7 +173,7 @@
         @apply mb-4;
     }
 
-    .chapter-info-content b, 
+    .chapter-info-content b,
     .chapter-info-content strong {
         @apply font-bold;
     }

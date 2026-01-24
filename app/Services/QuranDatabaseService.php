@@ -68,7 +68,7 @@ class QuranDatabaseService
      */
     public function getVerses(int $chapterId, int $page = 1, int $limit = 10, string $edition = 'en.sahih'): array
     {
-        $cacheKey = "quran.db.verses.{$chapterId}.{$page}.{$limit}.{$edition}";
+        $cacheKey = "q.verses.{$chapterId}.{$page}.{$limit}.{$edition}";
 
         return Cache::remember($cacheKey, $this->cacheTtl, function () use ($chapterId, $edition) {
             $chapter = Chapter::where('id', $chapterId)
@@ -78,6 +78,7 @@ class QuranDatabaseService
             if (!$chapter) {
                 return [];
             }
+
 
             // Get verses with resource counts using a join
             $verses = Verse::where('verses.chapter_id', $chapter->id)
@@ -141,6 +142,7 @@ class QuranDatabaseService
 
                     $translation = $translationRecord?->text;
                 }
+
 
                 return [
                     'id' => $verse->id,

@@ -29,9 +29,11 @@ import {
     Globe,
     Lock,
     Loader2,
-    Eye,
+    BookOpen,
     CheckCircle2,
     MoreVertical,
+    Calendar,
+    ArrowRight,
 } from 'lucide-react';
 import { Head, router } from '@inertiajs/react';
 import { FormEvent, useEffect, useState } from 'react';
@@ -153,8 +155,11 @@ export default function MyCollectionsPage() {
         return (
             <AppLayout>
                 <Head title="My Collections - From Quran" />
-                <div className="flex items-center justify-center py-20">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gradient-to-b from-background to-muted/20">
+                    <div className="text-center">
+                        <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+                        <p className="text-muted-foreground">Loading your collections...</p>
+                    </div>
                 </div>
             </AppLayout>
         );
@@ -163,169 +168,244 @@ export default function MyCollectionsPage() {
     return (
         <AppLayout>
             <Head title="My Collections - From Quran" />
-            <div className="container mx-auto px-4 py-8">
-                <div className="mb-8 flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold">My Collections</h1>
-                        <p className="text-muted-foreground">
-                            Organize and manage your Quran verse collections
-                        </p>
-                    </div>
-                    <Button onClick={() => router.visit('/')}>
-                        <FolderPlus className="mr-2 h-4 w-4" />
-                        Browse Quran to Add Verses
-                    </Button>
-                </div>
-
-                {successMessage && (
-                    <div className="mb-6 flex items-center gap-2 rounded-md bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400">
-                        <CheckCircle2 className="h-4 w-4" />
-                        {successMessage}
-                    </div>
-                )}
-
-                {errors.general && (
-                    <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">
-                        {errors.general}
-                    </div>
-                )}
-
-                {collections.length === 0 ? (
-                    <Card className="text-center">
-                        <CardContent className="py-16">
-                            <Folder className="mx-auto mb-4 h-16 w-16 text-muted-foreground opacity-50" />
-                            <h2 className="mb-2 text-xl font-semibold">
-                                No collections yet
-                            </h2>
-                            <p className="mb-6 text-muted-foreground">
-                                Create your first collection to start organizing your
-                                favorite verses
-                            </p>
-                            <Button onClick={() => router.visit('/')}>
-                                <FolderPlus className="mr-2 h-4 w-4" />
-                                Browse Quran to Add Verses
-                            </Button>
-                        </CardContent>
-                    </Card>
-                ) : (
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {collections.map((collection) => (
-                            <Card
-                                key={collection.id}
-                                className="group relative transition-all hover:shadow-md cursor-pointer"
-                                onClick={() => handleViewCollection(collection.slug)}
+            <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-b from-background to-muted/20">
+                <div className="container mx-auto px-4 py-12">
+                    {/* Header Section */}
+                    <div className="mb-10">
+                        <div className="flex items-start justify-between gap-6">
+                            <div className="flex items-center gap-3">
+                                <div className="rounded-lg bg-primary/10 p-3">
+                                    <Folder className="h-6 w-6 text-primary" />
+                                </div>
+                                <div>
+                                    <h1 className="text-3xl font-bold tracking-tight">
+                                        My Collections
+                                    </h1>
+                                    <p className="text-muted-foreground">
+                                        Organize and manage your Quran verse collections
+                                    </p>
+                                </div>
+                            </div>
+                            <Button
+                                onClick={() => router.visit('/')}
+                                className="gap-2 shadow-sm whitespace-nowrap"
                             >
-                                <div
-                                    className="absolute left-0 top-0 h-full w-1.5 rounded-l-lg"
-                                    style={{ backgroundColor: collection.color }}
-                                />
-                                <CardHeader>
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex-1">
-                                            <CardTitle className="mb-1">
-                                                {collection.name}
-                                            </CardTitle>
-                                            {collection.description && (
-                                                <CardDescription className="line-clamp-2">
-                                                    {collection.description}
-                                                </CardDescription>
-                                            )}
-                                        </div>
-                                        <div className="flex items-center gap-2 ml-2">
+                                <FolderPlus className="h-4 w-4" />
+                                Browse Quran to Add Verses
+                                <ArrowRight className="h-4 w-4" />
+                            </Button>
+                        </div>
+                        <div className="mt-4 text-sm text-muted-foreground">
+                            {collections.length} {collections.length === 1 ? 'collection' : 'collections'}
+                        </div>
+                    </div>
+
+                    {/* Success Message */}
+                    {successMessage && (
+                        <div className="mb-6 flex items-center gap-3 rounded-lg border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-700 dark:text-green-400 animate-in fade-in slide-in-from-top-2">
+                            <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
+                            {successMessage}
+                        </div>
+                    )}
+
+                    {/* Error Message */}
+                    {errors.general && (
+                        <div className="mb-6 rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive animate-in fade-in slide-in-from-top-2">
+                            {errors.general}
+                        </div>
+                    )}
+
+                    {/* Empty State */}
+                    {collections.length === 0 ? (
+                        <Card className="border-dashed">
+                            <CardContent className="flex flex-col items-center justify-center py-20">
+                                <div className="rounded-full bg-muted p-6 mb-6">
+                                    <Folder className="h-12 w-12 text-muted-foreground" />
+                                </div>
+                                <h2 className="text-2xl font-semibold mb-2">
+                                    No collections yet
+                                </h2>
+                                <p className="text-muted-foreground mb-8 max-w-md text-center">
+                                    Create your first collection to start organizing your favorite verses from the Quran
+                                </p>
+                                <Button
+                                    onClick={() => router.visit('/')}
+                                    size="lg"
+                                    className="gap-2 shadow-md"
+                                >
+                                    <FolderPlus className="h-5 w-5" />
+                                    Browse Quran to Add Verses
+                                    <ArrowRight className="h-5 w-5" />
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        /* Collections Grid */
+                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                            {collections.map((collection) => (
+                                <Card
+                                    key={collection.id}
+                                    className="group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer border-border/50"
+                                    onClick={() => handleViewCollection(collection.slug)}
+                                >
+                                    {/* Color accent strip */}
+                                    <div
+                                        className="absolute left-0 top-0 h-full w-1.5"
+                                        style={{ backgroundColor: collection.color }}
+                                    />
+
+                                    {/* Background gradient on hover */}
+                                    <div
+                                        className="absolute inset-0 bg-gradient-to-br from-transparent to-muted/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                                        style={{
+                                            background: `linear-gradient(135deg, ${collection.color}08 0%, transparent 100%)`
+                                        }}
+                                    />
+
+                                    <CardHeader className="relative pb-3 px-4 pt-4">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="flex-1 min-w-0">
+                                                <CardTitle className="text-lg mb-1 group-hover:text-primary transition-colors">
+                                                    {collection.name}
+                                                </CardTitle>
+                                                {collection.description && (
+                                                    <CardDescription className="line-clamp-2 text-xs">
+                                                        {collection.description}
+                                                    </CardDescription>
+                                                )}
+                                            </div>
                                             <Badge
-                                                variant="secondary"
-                                                className="flex items-center gap-1"
+                                                variant={collection.is_public ? "default" : "secondary"}
+                                                className="flex items-center gap-1 flex-shrink-0 px-2 py-0.5 text-xs"
                                             >
                                                 {collection.is_public ? (
-                                                    <Globe className="h-3 w-3" />
+                                                    <>
+                                                        <Globe className="h-2.5 w-2.5" />
+                                                        Public
+                                                    </>
                                                 ) : (
-                                                    <Lock className="h-3 w-3" />
+                                                    <>
+                                                        <Lock className="h-2.5 w-2.5" />
+                                                        Private
+                                                    </>
                                                 )}
-                                                {collection.is_public
-                                                    ? 'Public'
-                                                    : 'Private'}
                                             </Badge>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-8 w-8 p-0"
-                                                    >
-                                                        <MoreVertical className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleDelete(collection);
-                                                        }}
-                                                        className="text-destructive focus:text-destructive"
-                                                    >
-                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                        Delete Collection
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
                                         </div>
-                                    </div>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                                        <span>{collection.verses_count} verses</span>
-                                        <span>
-                                            {new Date(
-                                                collection.created_at
-                                            ).toLocaleDateString()}
-                                        </span>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
-                )}
+                                    </CardHeader>
 
-                {/* Delete Confirmation Dialog */}
-                <Dialog
-                    open={isDeleteDialogOpen}
-                    onOpenChange={setIsDeleteDialogOpen}
-                >
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Delete Collection</DialogTitle>
-                            <DialogDescription>
-                                Are you sure you want to delete "{selectedCollection?.name}"?
-                                This action cannot be undone and will remove all
-                                verses from this collection.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter>
-                            <Button
-                                variant="outline"
-                                onClick={() => setIsDeleteDialogOpen(false)}
-                                disabled={isSubmitting}
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                variant="destructive"
-                                onClick={confirmDelete}
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Deleting...
-                                    </>
-                                ) : (
-                                    'Delete Collection'
-                                )}
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                                    <CardContent className="relative pb-3 px-4">
+                                        <div className="flex items-center gap-5 text-xs">
+                                            <div className="flex items-center gap-1.5 text-muted-foreground">
+                                                <div className="rounded bg-muted p-1">
+                                                    <BookOpen className="h-3 w-3" />
+                                                </div>
+                                                <span>{collection.verses_count}</span>
+                                                <span>{collection.verses_count === 1 ? 'verse' : 'verses'}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 text-muted-foreground">
+                                                <div className="rounded bg-muted p-1">
+                                                    <Calendar className="h-3 w-3" />
+                                                </div>
+                                                <span className="text-[10px]">
+                                                    {new Date(collection.created_at).toLocaleDateString('en-US', {
+                                                        month: 'short',
+                                                        day: 'numeric',
+                                                        year: 'numeric'
+                                                    })}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* View indicator on hover */}
+                                        <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                            <div className="rounded-full bg-primary p-1.5 text-primary-foreground shadow-md">
+                                                <ArrowRight className="h-3 w-3" />
+                                            </div>
+                                        </div>
+                                    </CardContent>
+
+                                    {/* Action button */}
+                                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-7 w-7 p-0 hover:bg-background/80 backdrop-blur-sm"
+                                                >
+                                                    <MoreVertical className="h-3.5 w-3.5" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                                                <DropdownMenuItem
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDelete(collection);
+                                                    }}
+                                                    className="text-destructive focus:text-destructive"
+                                                >
+                                                    <Trash2 className="mr-2 h-3.5 w-3.5" />
+                                                    Delete Collection
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog
+                open={isDeleteDialogOpen}
+                onOpenChange={setIsDeleteDialogOpen}
+            >
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="rounded-full bg-destructive/10 p-2">
+                                <Trash2 className="h-5 w-5 text-destructive" />
+                            </div>
+                            <DialogTitle className="text-lg">Delete Collection</DialogTitle>
+                        </div>
+                        <DialogDescription className="text-base pt-2">
+                            Are you sure you want to delete <span className="font-semibold text-foreground">"{selectedCollection?.name}"</span>?
+                            <br className="my-2" />
+                            This action cannot be undone and will permanently remove all verses from this collection.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsDeleteDialogOpen(false)}
+                            disabled={isSubmitting}
+                            className="flex-1 sm:flex-none"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={confirmDelete}
+                            disabled={isSubmitting}
+                            className="flex-1 sm:flex-none gap-2"
+                        >
+                            {isSubmitting ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Deleting...
+                                </>
+                            ) : (
+                                <>
+                                    <Trash2 className="h-4 w-4" />
+                                    Delete Collection
+                                </>
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 }

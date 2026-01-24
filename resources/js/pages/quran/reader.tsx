@@ -117,7 +117,7 @@ export default function QuranReader({
         window.history.pushState(
             {},
             '',
-            `/${chapterUrlNumber}`
+            `/read/${chapterUrlNumber}`
         );
     };
 
