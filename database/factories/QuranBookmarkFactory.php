@@ -29,10 +29,6 @@ class QuranBookmarkFactory extends Factory
             'verse_id' => function (array $attributes) {
                 return $attributes['chapter_id'] . ':' . $attributes['verse_number'];
             },
-            'verse_data' => [
-                'text' => $this->faker->sentence,
-                'translation' => $this->faker->sentence,
-            ],
             'notes' => $this->faker->sentence,
             'edition' => 'en.sahih',
         ];

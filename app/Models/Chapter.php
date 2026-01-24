@@ -17,6 +17,7 @@ class Chapter extends Model
         'revelation_place',
         'name_complex',
         'name_arabic',
+        'name_roman',
         'name_simple',
         'pages',
         'verses_count',

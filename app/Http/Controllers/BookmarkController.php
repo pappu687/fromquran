@@ -26,7 +26,7 @@ class BookmarkController extends Controller
             $query->forChapter($chapterId);
         }
 
-        $bookmarks = $query->with('chapter')->get();
+        $bookmarks = $query->with(['chapter', 'verse'])->get();
 
         return response()->json([
             'data' => $bookmarks,
@@ -43,7 +43,6 @@ class BookmarkController extends Controller
             'chapter_id' => 'required|integer|min:1|max:114',
             'verse_number' => 'required|integer|min:1',
             'verse_id' => 'required|string',
-            'verse_data' => 'nullable|array',
             'notes' => 'nullable|string|max:1000',
             'edition' => 'nullable|string|max:20'
         ]);
@@ -69,7 +68,6 @@ class BookmarkController extends Controller
             'chapter_id' => $validated['chapter_id'],
             'verse_number' => $validated['verse_number'],
             'verse_id' => $validated['verse_id'],
-            'verse_data' => $validated['verse_data'] ?? null,
             'notes' => $validated['notes'] ?? null,
             'edition' => $edition,
         ]);

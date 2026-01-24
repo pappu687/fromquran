@@ -19,6 +19,7 @@ import { useReadingMode } from '@/contexts/reading-mode-context';
 
 interface Verse {
     id: number;
+    chapterId: number;
     verseNumber: number;
     text: string;
     translation?: string;
@@ -35,6 +36,7 @@ interface Chapter {
     name: string;
     englishName: string;
     englishNameTranslation: string;
+    verses?: number;
 }
 
 interface VersesPanelProps {
@@ -140,7 +142,7 @@ export function VersesPanel({
     }, [user, chapter, selectedEdition]);
 
     const loadUserBookmarks = async () => {
-        if (!user) return;
+        if (!user || !chapter) return;
 
         try {
             const response = await fetch(
@@ -231,14 +233,13 @@ export function VersesPanel({
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json',
+                        Accept: 'application/json',
                         'X-CSRF-TOKEN': csrfToken || '',
                     },
                     body: JSON.stringify({
                         chapter_id: chapter?.id,
                         verse_number: verse.verseNumber,
                         verse_id: verseId,
-                        verse_data: verse,
                         edition: selectedEdition,
                     }),
                 });
@@ -326,12 +327,18 @@ export function VersesPanel({
                         verses.map((verse) => (
                             <VerseCard
                                 key={verse.id}
-                                verse={verse}
+                                verse={{
+                                    ...verse,
+                                    chapterId: verse.chapterId || chapter?.id,
+                                }}
+                                totalVerses={chapter?.verses}
                                 isBookmarked={bookmarkedVerses.has(
                                     verse.id.toString(),
                                 )}
                                 hasResources={verse.hasResources || false}
-                                onBookmarkToggle={() => handleBookmarkToggle(verse)}
+                                onBookmarkToggle={() =>
+                                    handleBookmarkToggle(verse)
+                                }
                                 onCopy={handleCopy}
                                 onPlayAudio={handlePlayAudio}
                                 showTranslation={showTranslation}
@@ -371,18 +378,23 @@ export function VersesPanel({
                     )}
                 </div>
             </div>
-            
+
             <AlertDialog open={showLoginAlert} onOpenChange={setShowLoginAlert}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Authentication Required</AlertDialogTitle>
+                        <AlertDialogTitle>
+                            Authentication Required
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                            Please login to your account to bookmark verses and access other features.
+                            Please login to your account to bookmark verses and
+                            access other features.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => window.location.href = '/login'}>
+                        <AlertDialogAction
+                            onClick={() => (window.location.href = '/login')}
+                        >
                             Login
                         </AlertDialogAction>
                     </AlertDialogFooter>
@@ -398,14 +410,19 @@ export function VersesPanel({
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogAction onClick={() => setShowErrorAlert(false)}>
+                        <AlertDialogAction
+                            onClick={() => setShowErrorAlert(false)}
+                        >
                             OK
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
 
-            <AlertDialog open={showSuccessAlert} onOpenChange={setShowSuccessAlert}>
+            <AlertDialog
+                open={showSuccessAlert}
+                onOpenChange={setShowSuccessAlert}
+            >
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Success</AlertDialogTitle>
@@ -414,7 +431,9 @@ export function VersesPanel({
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogAction onClick={() => setShowSuccessAlert(false)}>
+                        <AlertDialogAction
+                            onClick={() => setShowSuccessAlert(false)}
+                        >
                             OK
                         </AlertDialogAction>
                     </AlertDialogFooter>

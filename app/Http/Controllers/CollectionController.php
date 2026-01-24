@@ -241,13 +241,16 @@ class CollectionController extends Controller
     public function toggleVerse(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'verse_id' => 'required|integer|exists:verses,id',
+            'verse_id' => 'required_without:range|integer|exists:verses,id',
+            'range' => 'nullable|array',
+            'range.chapter_id' => 'required_with:range|integer|exists:chapters,id',
+            'range.from' => 'required_with:range|integer|min:1',
+            'range.to' => 'required_with:range|integer|min:1',
             'collection_ids' => 'required|array',
             'collection_ids.*' => 'integer|exists:collections,id',
         ]);
 
         $user = Auth::user();
-        $verseId = $validated['verse_id'];
         $collectionIds = $validated['collection_ids'];
 
         // Verify user owns all collections
@@ -256,11 +259,32 @@ class CollectionController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        // Add verse to each collection
-        foreach ($collections as $collection) {
-            $collection->addVerse($verseId);
+        $verseIds = [];
+        if ($request->has('range')) {
+            $range = $validated['range'];
+            $verseIds = Verse::where('chapter_id', $range['chapter_id'])
+                ->whereBetween('verse_number', [$range['from'], $range['to']])
+                ->pluck('id')
+                ->toArray();
+        } else {
+            $verseIds = [$validated['verse_id']];
         }
 
-        return response()->json(['message' => 'Verse added to collections'], 200);
+        if (empty($verseIds)) {
+            return response()->json(['message' => 'No verses found in the specified range'], 422);
+        }
+
+        // Add verses to each collection
+        foreach ($collections as $collection) {
+            foreach ($verseIds as $vId) {
+                $collection->addVerse($vId);
+            }
+        }
+
+        $message = count($verseIds) > 1
+            ? count($verseIds) . " verses added to collections"
+            : "Verse added to collections";
+
+        return response()->json(['message' => $message], 200);
     }
 }

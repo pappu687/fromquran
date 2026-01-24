@@ -1,7 +1,19 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { Bookmark, BookmarkCheck, BookmarkPlus, Eye, Plus, Volume2 } from 'lucide-react';
+import {
+    Bookmark,
+    BookmarkCheck,
+    BookmarkPlus,
+    Eye,
+    Plus,
+    Volume2,
+} from 'lucide-react';
 import { useState } from 'react';
 import { AddResourceModal } from './add-resource-modal';
 import { CollectionsModal } from './collections-modal';
@@ -9,6 +21,7 @@ import { ResourcesSheet } from './resources-sheet';
 
 interface Verse {
     id: number;
+    chapterId: number;
     verseNumber: number;
     text: string;
     translation?: string;
@@ -19,6 +32,7 @@ interface Verse {
 
 interface VerseCardProps {
     verse: Verse;
+    totalVerses?: number;
     isBookmarked?: boolean;
     hasResources?: boolean;
     onBookmarkToggle?: (verseId: number) => void;
@@ -30,6 +44,7 @@ interface VerseCardProps {
 
 export function VerseCard({
     verse,
+    totalVerses,
     isBookmarked = false,
     hasResources = false,
     onBookmarkToggle,
@@ -73,67 +88,94 @@ export function VerseCard({
                     {/* Action Buttons */}
                     <div className="flex items-center gap-1">
                         {verse.audioUrl && (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={handlePlayAudio}
-                                className="h-8 w-8 p-0"
-                                title="Play audio"
-                            >
-                                <Volume2 className="h-4 w-4" />
-                            </Button>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={handlePlayAudio}
+                                        className="h-8 w-8 p-0"
+                                    >
+                                        <Volume2 className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Play audio</TooltipContent>
+                            </Tooltip>
                         )}
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setIsResourcesSheetOpen(true)}
-                            className="h-8 w-8 p-0"
-                            title="View resources"
-                        >
-                            <Eye
-                                className={cn(
-                                    'h-4 w-4',
-                                    hasResources && 'text-orange-500',
-                                )}
-                            />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleBookmark}
-                            className="h-8 w-8 p-0"
-                            title={
-                                isBookmarked
-                                    ? 'Remove bookmark'
-                                    : 'Add bookmark'
-                            }
-                        >
-                            {isBookmarked ? (
-                                <BookmarkCheck className="h-4 w-4 text-primary" />
-                            ) : (
-                                <Bookmark className="h-4 w-4" />
-                            )}
-                        </Button>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                        setIsResourcesSheetOpen(true)
+                                    }
+                                    className="h-8 w-8 p-0"
+                                >
+                                    <Eye
+                                        className={cn(
+                                            'h-4 w-4',
+                                            hasResources && 'text-orange-500',
+                                        )}
+                                    />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>View Resources</TooltipContent>
+                        </Tooltip>
 
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setIsCollectionsModalOpen(true)}
-                            className="h-8 w-8 p-0"
-                            title="Add to collection"
-                        >
-                            <BookmarkPlus className="h-4 w-4" />
-                        </Button>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleBookmark}
+                                    className="h-8 w-8 p-0"
+                                >
+                                    {isBookmarked ? (
+                                        <BookmarkCheck className="h-4 w-4 text-primary" />
+                                    ) : (
+                                        <Bookmark className="h-4 w-4" />
+                                    )}
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                {isBookmarked
+                                    ? 'Bookmark this verse'
+                                    : 'Bookmark this verse'}
+                            </TooltipContent>
+                        </Tooltip>
 
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleAddResource}
-                            className="h-8 w-8 p-0"
-                            title="Add a resource"
-                        >
-                            <Plus className="h-4 w-4" />
-                        </Button>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                        setIsCollectionsModalOpen(true)
+                                    }
+                                    className="h-8 w-8 p-0"
+                                >
+                                    <BookmarkPlus className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Add to collection</TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleAddResource}
+                                    className="h-8 w-8 p-0"
+                                >
+                                    <Plus className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                Add resource to this verse
+                            </TooltipContent>
+                        </Tooltip>
                     </div>
                 </div>
 
@@ -169,6 +211,9 @@ export function VerseCard({
                 open={isCollectionsModalOpen}
                 onOpenChange={setIsCollectionsModalOpen}
                 verseId={verse.id}
+                chapterId={verse.chapterId}
+                verseNumber={verse.verseNumber}
+                totalVerses={totalVerses}
             />
 
             {/* Resources Sheet */}

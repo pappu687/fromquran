@@ -14,13 +14,12 @@ class QuranBookmark extends Model
         'chapter_id',
         'verse_number',
         'verse_id',
-        'verse_data',
         'notes',
         'edition',
     ];
 
     protected $casts = [
-        'verse_data' => 'array',
+        // 'verse_data' removed
     ];
 
     /**
@@ -37,6 +36,14 @@ class QuranBookmark extends Model
     public function chapter(): BelongsTo
     {
         return $this->belongsTo(Chapter::class);
+    }
+
+    /**
+     * Get the verse that the bookmark belongs to.
+     */
+    public function verse(): BelongsTo
+    {
+        return $this->belongsTo(Verse::class, 'verse_id', 'verse_key');
     }
 
     /**

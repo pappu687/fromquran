@@ -40,6 +40,11 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from '@/components/ui/toggle-group'
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useReadingMode } from '@/contexts/reading-mode-context'
 import { usePage, router } from '@inertiajs/react'
 import type { SharedData } from '@/types'
@@ -115,40 +120,54 @@ export function NavActions() {
 
   // Search input component
   const SearchInput = () => (
-    <div className="hidden sm:flex sm:items-center sm:gap-2">
-      <ToggleGroup
-        type="single"
-        value={mode}
-        onValueChange={(value) => {
-          if (value) setMode(value as 'list' | 'reading')
-        }}
-        variant="outline"
-        size="sm"
-      >
-        <ToggleGroupItem value="list" aria-label="List view">
-          <List className="h-4 w-4" />
-        </ToggleGroupItem>
-        <ToggleGroupItem value="reading" aria-label="Reading view">
-          <BookOpen className="h-4 w-4" />
-        </ToggleGroupItem>
-      </ToggleGroup>
-      <InputGroup className="max-w-[200px] lg:max-w-xs">
-        <InputGroupInput
-          placeholder="Search..."
-          readOnly
-          onClick={() => setCommandPaletteOpen(true)}
-          className="cursor-pointer pl-9 pr-16"
-        />
-        <InputGroupAddon align="start">
-          <SearchIcon className="h-4 w-4" />
-        </InputGroupAddon>
-        <InputGroupAddon align="inline-end">
-          <Kbd>⌘</Kbd>
-          <Kbd>K</Kbd>
-        </InputGroupAddon>
-      </InputGroup>
-    </div>
-  )
+      <div className="hidden sm:flex sm:items-center sm:gap-2">
+          <ToggleGroup
+              type="single"
+              value={mode}
+              onValueChange={(value) => {
+                  if (value) setMode(value as 'list' | 'reading');
+              }}
+              variant="outline"
+              size="sm"
+          >
+              <Tooltip>
+                  <TooltipTrigger asChild>
+                      <ToggleGroupItem value="list" aria-label="List view">
+                          <List className="h-4 w-4" />
+                      </ToggleGroupItem>
+                  </TooltipTrigger>
+                  <TooltipContent>List view</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                  <TooltipTrigger asChild>
+                      <ToggleGroupItem
+                          value="reading"
+                          aria-label="Reading view"
+                      >
+                          <BookOpen className="h-4 w-4" />
+                      </ToggleGroupItem>
+                  </TooltipTrigger>
+                  <TooltipContent>Reading view</TooltipContent>
+              </Tooltip>
+          </ToggleGroup>
+          <InputGroup className="max-w-[200px] lg:max-w-xs">
+              <InputGroupInput
+                  placeholder="Search..."
+                  readOnly
+                  onClick={() => setCommandPaletteOpen(true)}
+                  className="cursor-pointer pr-16 pl-9"
+              />
+              <InputGroupAddon align="start">
+                  <SearchIcon className="h-4 w-4" />
+              </InputGroupAddon>
+              <InputGroupAddon align="inline-end">
+                  <Kbd>⌘</Kbd>
+                  <Kbd>K</Kbd>
+              </InputGroupAddon>
+          </InputGroup>
+      </div>
+  );
 
   // If user is not logged in, show search and login button
   if (!user) {

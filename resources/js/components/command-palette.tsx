@@ -230,7 +230,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                         )}
 
                         {!loading && searchQuery.length === 0 && (
-                            <div className="py-4">
+                            <div className="py-3">
                                 <CommandGroup
                                     heading="Quick Actions"
                                     className="p-2 text-sm font-semibold text-gray-500"

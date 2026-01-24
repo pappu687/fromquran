@@ -32,6 +32,7 @@ class QuranDatabaseService
                         'number' => $chapter->chapter_number,
                         'name' => $chapter->name_arabic,
                         'englishName' => $chapter->name_simple,
+                    'romanName' => $chapter->name_roman,
                         'englishNameTranslation' => $chapter->name_simple,
                         'revelationType' => ucfirst($chapter->revelation_place),
                         'verses' => $chapter->verses_count
@@ -48,7 +49,7 @@ class QuranDatabaseService
     {
         return Cache::remember("quran.db.chapter_info.{$chapterNumber}", $this->cacheTtl, function () use ($chapterNumber) {
             $info = \App\Models\ChapterInfo::where('surah_number', $chapterNumber)->first();
-            
+
             if (!$info) {
                 return null;
             }
@@ -82,7 +83,7 @@ class QuranDatabaseService
             $verses = Verse::where('verses.chapter_id', $chapter->id)
                 ->leftJoin('user_verse_resources', function ($join) {
                     $join->on('verses.id', '=', 'user_verse_resources.verse_id')
-                         ->where('user_verse_resources.status', '=', 'approved');
+                    ->where('user_verse_resources.status', '=', 'approved');
                 })
                 ->select(
                     'verses.id',
@@ -118,17 +119,17 @@ class QuranDatabaseService
 
             return $verses->map(function ($verse) use ($edition) {
                 $translation = null;
-                
+
                 // Get translation if requested
                 if ($edition !== 'ar') {
                     $translationRecord = Translation::where('verse_id', $verse->id)
                         ->whereHas('resourceContent', function ($query) use ($edition) {
                             // Try to match by resource_id or slug
                             $query->where('resource_id', 'like', "%{$edition}%")
-                                  ->orWhere('slug', 'like', "%{$edition}%");
+                            ->orWhere('slug', 'like', "%{$edition}%");
                         })
                         ->first();
-                    
+
                     // Fallback to any English translation
                     if (!$translationRecord) {
                         $translationRecord = Translation::where('verse_id', $verse->id)
@@ -137,12 +138,13 @@ class QuranDatabaseService
                             })
                             ->first();
                     }
-                    
+
                     $translation = $translationRecord?->text;
                 }
 
                 return [
                     'id' => $verse->id,
+                    'chapterId' => $verse->chapter_id,
                     'verseNumber' => $verse->verse_number,
                     'text' => $verse->text_uthmani,
                     'translation' => $translation,
@@ -183,6 +185,7 @@ class QuranDatabaseService
                         'language' => $resource->language->iso_code ?? 'en',
                         'name' => $resource->name,
                         'englishName' => $resource->name,
+                    'romanName' => $resource->roman_name,
                         'format' => 'text',
                         'type' => 'translation',
                         'direction' => $resource->language->direction ?? 'ltr'
@@ -220,7 +223,7 @@ class QuranDatabaseService
                 $translationResults = Translation::where('text', 'like', "%{$query}%")
                     ->whereHas('resourceContent', function ($q) use ($edition) {
                         $q->where('resource_id', 'like', "%{$edition}%")
-                          ->orWhere('slug', 'like', "%{$edition}%");
+                        ->orWhere('slug', 'like', "%{$edition}%");
                     })
                     ->with(['verse.chapter'])
                     ->limit(50)
@@ -238,10 +241,10 @@ class QuranDatabaseService
                     $translationRecord = Translation::where('verse_id', $verse->id)
                         ->whereHas('resourceContent', function ($q) use ($edition) {
                             $q->where('resource_id', 'like', "%{$edition}%")
-                              ->orWhere('slug', 'like', "%{$edition}%");
+                            ->orWhere('slug', 'like', "%{$edition}%");
                         })
                         ->first();
-                    
+
                     $translation = $translationRecord?->text;
                 }
 
@@ -265,10 +268,10 @@ class QuranDatabaseService
     {
         return Cache::remember('quran.db.juzs', $this->cacheTtl * 24, function () {
             $juzs = [];
-            
+
             for ($i = 1; $i <= 30; $i++) {
                 $verseCount = Verse::where('juz_number', $i)->count();
-                
+
                 $juzs[] = [
                     'id' => $i,
                     'name' => "Juz {$i}",
@@ -276,7 +279,7 @@ class QuranDatabaseService
                     'verseCount' => $verseCount
                 ];
             }
-            
+
             return $juzs;
         });
     }

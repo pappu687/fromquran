@@ -10,7 +10,7 @@ interface Bookmark {
     verse_id: string;
     notes?: string;
     created_at: string;
-    verse_data: {
+    verse: {
         id: number;
         verse_key: string;
         verse_number: number;
@@ -194,18 +194,14 @@ export default function FavoritesPage() {
                                                 className="font-arabic mb-3 text-right text-2xl leading-relaxed"
                                                 dir="rtl"
                                             >
-                                                {
-                                                    bookmark.verse_data
-                                                        .text_uthmani
-                                                }
+                                                {bookmark.verse.text_uthmani}
                                             </p>
 
-                                            {bookmark.verse_data
+                                            {bookmark.verse
                                                 .text_imlaei_simple && (
                                                 <p className="mb-3 text-sm text-muted-foreground">
-                                                    ss
                                                     {
-                                                        bookmark.verse_data
+                                                        bookmark.verse
                                                             .text_imlaei_simple
                                                     }
                                                 </p>

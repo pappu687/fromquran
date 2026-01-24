@@ -36,12 +36,6 @@ class BookmarkTest extends TestCase
             'chapter_id' => 2,
             'verse_number' => 255,
             'verse_id' => '2:255',
-            'verse_data' => [
-                'id' => 2255,
-                'verseNumber' => 255,
-                'text' => 'Test Arabic text',
-                'translation' => 'Test translation',
-            ],
             'edition' => 'en.sahih',
             'notes' => 'Ayatul Kursi',
         ];
@@ -82,7 +76,6 @@ class BookmarkTest extends TestCase
             'chapter_id' => 2,
             'verse_number' => 255,
             'verse_id' => '2:255',
-            'verse_data' => ['text' => 'Test'],
             'edition' => 'en.sahih',
         ];
 
@@ -281,7 +274,6 @@ class BookmarkTest extends TestCase
             'chapter_id' => 115, // Invalid - only 114 chapters
             'verse_number' => 1,
             'verse_id' => '115:1',
-            'verse_data' => ['text' => 'Test'],
         ];
 
         $response = $this->actingAs($this->user)
@@ -297,7 +289,6 @@ class BookmarkTest extends TestCase
         $bookmarkData = [
             'chapter_id' => 2,
             'verse_id' => '2:255',
-            'verse_data' => ['text' => 'Test'],
         ];
 
         $response = $this->actingAs($this->user)
