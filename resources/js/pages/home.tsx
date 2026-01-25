@@ -7,15 +7,7 @@ import {
 } from '@/components/ui/card';
 import LandingLayout from '@/layouts/landing-layout';
 import { router } from '@inertiajs/react';
-import {
-    ArrowRight,
-    BookOpen,
-    FolderHeart,
-    Link2,
-    Network,
-    Sparkles,
-    Youtube,
-} from 'lucide-react';
+import { ArrowRight, BookOpen, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Chapter {
@@ -30,17 +22,13 @@ interface Chapter {
 }
 
 interface FeatureProps {
-    icon: React.ReactNode;
     title: string;
     description: string;
 }
 
-const FeatureCard = ({ icon, title, description }: FeatureProps) => (
-    <Card className="border-border/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+const FeatureCard = ({ title, description }: FeatureProps) => (
+    <Card className="border-none shadow-none transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
         <CardHeader>
-            <div className="mb-4 inline-flex rounded-lg bg-primary/10 p-3 text-primary">
-                {icon}
-            </div>
             <CardTitle className="text-xl">{title}</CardTitle>
             <CardDescription className="text-base leading-relaxed">
                 {description}
@@ -52,8 +40,8 @@ const FeatureCard = ({ icon, title, description }: FeatureProps) => (
 const ChapterCard = ({ chapter }: { chapter: Chapter }) => (
     <Card
         key={chapter.id}
-        className="group cursor-pointer border-border/50 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
-        onClick={() => router.visit(`/read/${chapter.number}`)}
+        className="group cursor-pointer border-none shadow-none transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
+        onClick={() => router.visit(`/${chapter.number}`)}
     >
         <CardHeader className="pb-3">
             <div className="flex items-start justify-between gap-3">
@@ -185,22 +173,18 @@ export default function HomePage() {
 
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                         <FeatureCard
-                            icon={<Network className="h-6 w-6" />}
                             title="Knowledge Graphs"
                             description="Visualize connections between Quran verses, hadith, tafseer, and scholarly resources through beautiful, interactive node graphs."
                         />
                         <FeatureCard
-                            icon={<Youtube className="h-6 w-6" />}
                             title="Rich Resources"
                             description="Access tagged YouTube tafseer, podcasts, articles, and discussions—all linked to specific verses from authentic Islamic sources."
                         />
                         <FeatureCard
-                            icon={<Link2 className="h-6 w-6" />}
                             title="Cross-References"
                             description="Explore related verses, hadith, and fiqh rulings for any ayah. Understand the Quranic narrative through interconnected knowledge."
                         />
                         <FeatureCard
-                            icon={<FolderHeart className="h-6 w-6" />}
                             title="Personal Collections"
                             description="Save, organize, and share your favorite verses. Create collections for study, reflection, or teaching."
                         />

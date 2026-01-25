@@ -43,7 +43,7 @@ class QuranBookmark extends Model
      */
     public function verse(): BelongsTo
     {
-        return $this->belongsTo(Verse::class, 'verse_id', 'verse_key');
+        return $this->belongsTo(Verse::class, 'verse_id');
     }
 
     /**

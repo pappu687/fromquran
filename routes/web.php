@@ -14,36 +14,6 @@ Route::get('explore', function () {
     return redirect()->route('home');
 })->name('explore');
 
-// Quran Reader routes
-Route::prefix('read')->group(function () {
-    // /read - Default to chapter 1
-    Route::get('/', function () {
-        return Inertia::render('quran/reader', [
-            'chapterNumber' => 1,
-        ]);
-    })->name('reader.index');
-
-    // /read/{chapterNumber} e.g. /read/2
-    Route::get('{chapterNumber}', function (int $chapterNumber) {
-        return Inertia::render('quran/reader', [
-            'chapterNumber' => $chapterNumber,
-        ]);
-    })->whereNumber('chapterNumber')->name('reader.chapter');
-
-    // /read/{chapterNumber}/{from}-{to} e.g. /read/2/10-15
-    Route::get('{chapterNumber}/{range}', function (int $chapterNumber, string $range) {
-        $parts = explode('-', $range);
-        $from = $parts[0] ?? null;
-        $to = $parts[1] ?? $from;
-
-        return Inertia::render('quran/reader', [
-            'chapterNumber' => $chapterNumber,
-            'fromVerse' => $from ? (int) $from : null,
-            'toVerse' => $to ? (int) $to : null,
-        ]);
-    })->whereNumber('chapterNumber')->where('range', '[0-9]+(-[0-9]+)?')->name('reader.range');
-});
-
 // Public Collections
 Route::get('collections', function () {
     return Inertia::render('user/collections');
@@ -54,6 +24,33 @@ Route::get('collections/{slug}', function (string $slug) {
         'slug' => $slug,
     ]);
 })->name('collections.show');
+
+// Quran Reader routes (Root Level)
+// /read - Alias for backwards compatibility
+Route::get('read', function () {
+    return redirect()->route('reader.chapter', ['chapterNumber' => 1]);
+});
+
+// /{chapterNumber} e.g. /2
+Route::get('{chapterNumber}', function (int $chapterNumber) {
+    return Inertia::render('quran/reader', [
+        'chapterNumber' => $chapterNumber,
+    ]);
+})->whereNumber('chapterNumber')->name('reader.chapter');
+
+// /{chapterNumber}/{range} e.g. /2/10-15 or /2/6
+Route::get('{chapterNumber}/{range}', function (int $chapterNumber, string $range) {
+    $parts = explode('-', $range);
+    $from = $parts[0] ?? null;
+    $to = $parts[1] ?? $from;
+
+    return Inertia::render('quran/reader', [
+        'chapterNumber' => $chapterNumber,
+        'fromVerse' => $from ? (int) $from : null,
+        'toVerse' => $to ? (int) $to : null,
+    ]);
+})->whereNumber('chapterNumber')->where('range', '[0-9]+(-[0-9]+)?')->name('reader.range');
+
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {

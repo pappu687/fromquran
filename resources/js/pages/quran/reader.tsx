@@ -114,11 +114,7 @@ export default function QuranReader({
 
         // Update URL without page reload using browser history API
         const chapterUrlNumber = chapter.number;
-        window.history.pushState(
-            {},
-            '',
-            `/read/${chapterUrlNumber}`
-        );
+        window.history.pushState({}, '', `/${chapterUrlNumber}`);
     };
 
     if (loading) {

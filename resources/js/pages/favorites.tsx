@@ -60,7 +60,11 @@ export default function FavoritesPage() {
             }
 
             const data = await response.json();
-            setBookmarks(data.data);
+            // Filter out bookmarks that might have missing relations to prevent crashes
+            const validBookmarks = (data.data || []).filter(
+                (b: Bookmark) => b.verse && b.chapter,
+            );
+            setBookmarks(validBookmarks);
         } catch (error) {
             console.error('Failed to load favorites:', error);
             setErrors({
@@ -107,8 +111,8 @@ export default function FavoritesPage() {
         }
     };
 
-    const handleViewVerse = (chapterNumber: number) => {
-        router.visit(`/${chapterNumber}`);
+    const handleViewVerse = (chapterNumber: number, verseNumber: number) => {
+        router.visit(`/${chapterNumber}/${verseNumber}`);
     };
 
     if (isLoading) {
@@ -179,13 +183,13 @@ export default function FavoritesPage() {
                                                 <span className="text-sm font-medium">
                                                     {
                                                         bookmark.chapter
-                                                            .name_simple
+                                                            ?.name_simple
                                                     }
                                                 </span>
                                                 <span className="text-xs text-muted-foreground">
                                                     {
                                                         bookmark.chapter
-                                                            .name_arabic
+                                                            ?.name_arabic
                                                     }
                                                 </span>
                                             </div>
@@ -194,11 +198,11 @@ export default function FavoritesPage() {
                                                 className="font-arabic mb-3 text-right text-2xl leading-relaxed"
                                                 dir="rtl"
                                             >
-                                                {bookmark.verse.text_uthmani}
+                                                {bookmark.verse?.text_uthmani}
                                             </p>
 
                                             {bookmark.verse
-                                                .text_imlaei_simple && (
+                                                ?.text_imlaei_simple && (
                                                 <p className="mb-3 text-sm text-muted-foreground">
                                                     {
                                                         bookmark.verse
@@ -234,9 +238,15 @@ export default function FavoritesPage() {
                                                     size="sm"
                                                     className="h-auto p-0 text-sm"
                                                     onClick={() =>
+                                                        bookmark.chapter
+                                                            ?.chapter_number &&
+                                                        bookmark.verse
+                                                            ?.verse_number &&
                                                         handleViewVerse(
                                                             bookmark.chapter
                                                                 .chapter_number,
+                                                            bookmark.verse
+                                                                .verse_number,
                                                         )
                                                     }
                                                 >
