@@ -12,6 +12,13 @@ import {
     XCircle,
     ExternalLink,
 } from 'lucide-react';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+} from '@/components/ui/dialog';
 import { Head, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
@@ -54,6 +61,18 @@ export default function ContributionsPage() {
     const [pagination, setPagination] = useState<Omit<PaginationData, 'data'> | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [selectedComment, setSelectedComment] = useState<string | null>(null);
+
+    const truncateWords = (str: string, numWords: number) => {
+        const words = str.split(' ');
+        if (words.length > numWords) {
+            return {
+                text: words.slice(0, numWords).join(' ') + '...',
+                isTruncated: true,
+            };
+        }
+        return { text: str, isTruncated: false };
+    };
 
     useEffect(() => {
         loadContributions();
@@ -145,12 +164,13 @@ export default function ContributionsPage() {
             <Head title="My Contributions - From Quran" />
             <div className="container mx-auto px-4 py-8">
                 <div className="mb-8">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="mb-2 flex items-center gap-3">
                         <FileUp className="h-8 w-8 text-primary" />
                         <h1 className="text-3xl font-bold">My Contributions</h1>
                     </div>
                     <p className="text-muted-foreground">
-                        Track your resource submissions and their approval status
+                        Track your resource submissions and their approval
+                        status
                     </p>
                 </div>
 
@@ -162,25 +182,36 @@ export default function ContributionsPage() {
 
                 {/* Stats */}
                 {pagination && pagination.total > 0 && (
-                    <div className="grid gap-4 md:grid-cols-3 mb-6">
+                    <div className="mb-6 grid gap-4 md:grid-cols-3">
                         <Card>
-                            <CardContent className="p-6">
+                            <CardContent className="p-3">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm text-muted-foreground">Total</p>
-                                        <p className="text-2xl font-bold">{pagination.total}</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            Total
+                                        </p>
+                                        <p className="text-2xl font-bold">
+                                            {pagination.total}
+                                        </p>
                                     </div>
                                     <FileUp className="h-8 w-8 text-muted-foreground" />
                                 </div>
                             </CardContent>
                         </Card>
                         <Card>
-                            <CardContent className="p-6">
+                            <CardContent className="p-3">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm text-muted-foreground">Pending</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            Pending
+                                        </p>
                                         <p className="text-2xl font-bold">
-                                            {contributions.filter(c => c.status === 'pending').length}
+                                            {
+                                                contributions.filter(
+                                                    (c) =>
+                                                        c.status === 'pending',
+                                                ).length
+                                            }
                                         </p>
                                     </div>
                                     <Clock className="h-8 w-8 text-yellow-500" />
@@ -188,12 +219,19 @@ export default function ContributionsPage() {
                             </CardContent>
                         </Card>
                         <Card>
-                            <CardContent className="p-6">
+                            <CardContent className="p-3">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm text-muted-foreground">Approved</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            Approved
+                                        </p>
                                         <p className="text-2xl font-bold">
-                                            {contributions.filter(c => c.status === 'approved').length}
+                                            {
+                                                contributions.filter(
+                                                    (c) =>
+                                                        c.status === 'approved',
+                                                ).length
+                                            }
                                         </p>
                                     </div>
                                     <CheckCircle2 className="h-8 w-8 text-green-500" />
@@ -211,7 +249,8 @@ export default function ContributionsPage() {
                                 No contributions yet
                             </h2>
                             <p className="mb-6 text-muted-foreground">
-                                Start contributing by submitting resources while reading the Quran
+                                Start contributing by submitting resources while
+                                reading the Quran
                             </p>
                             <Button onClick={() => router.visit('/')}>
                                 Browse Quran
@@ -224,56 +263,111 @@ export default function ContributionsPage() {
                             {contributions.map((contribution) => (
                                 <Card
                                     key={contribution.id}
-                                    className="hover:shadow-md transition-all"
+                                    className="transition-all hover:shadow-md"
                                 >
                                     <CardContent className="p-6">
                                         <div className="flex items-start justify-between gap-4">
                                             <div className="flex-1">
-                                                <div className="flex items-center gap-2 mb-2">
+                                                <div className="mb-2 flex items-center gap-2">
                                                     {contribution.verse && (
-                                                        <Badge variant="outline" className="font-mono text-xs">
-                                                            {contribution.verse.verse_key}
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="font-mono text-xs"
+                                                        >
+                                                            {
+                                                                contribution
+                                                                    .verse
+                                                                    .verse_key
+                                                            }
                                                         </Badge>
                                                     )}
                                                     <Badge variant="secondary">
-                                                        {contribution.resource_type?.name || 'N/A'}
+                                                        {contribution
+                                                            .resource_type
+                                                            ?.name || 'N/A'}
                                                     </Badge>
-                                                    {getStatusBadge(contribution.status)}
+                                                    {getStatusBadge(
+                                                        contribution.status,
+                                                    )}
                                                 </div>
 
                                                 <a
-                                                    href={contribution.resource_url}
+                                                    href={
+                                                        contribution.resource_url
+                                                    }
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="text-primary hover:underline flex items-center gap-1 mb-2"
+                                                    className="mb-2 flex items-center gap-1 text-primary hover:underline"
                                                 >
                                                     {contribution.resource_url}
                                                     <ExternalLink className="h-3 w-3" />
                                                 </a>
 
                                                 {contribution.comment && (
-                                                    <div className="mt-2 p-3 bg-muted/50 rounded-md">
+                                                    <div className="mt-2 rounded-md bg-muted/50 p-3">
                                                         <p className="text-sm">
-                                                            {contribution.comment}
+                                                            {(() => {
+                                                                const {
+                                                                    text,
+                                                                    isTruncated,
+                                                                } =
+                                                                    truncateWords(
+                                                                        contribution.comment,
+                                                                        20,
+                                                                    );
+                                                                return (
+                                                                    <>
+                                                                        {text}
+                                                                        {isTruncated && (
+                                                                            <Button
+                                                                                variant="link"
+                                                                                className="h-auto px-1 font-normal text-primary"
+                                                                                onClick={() =>
+                                                                                    setSelectedComment(
+                                                                                        contribution.comment ||
+                                                                                            '',
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                See
+                                                                                more
+                                                                            </Button>
+                                                                        )}
+                                                                    </>
+                                                                );
+                                                            })()}
                                                         </p>
                                                     </div>
                                                 )}
 
-                                                <div className="flex items-center gap-4 mt-3">
+                                                <div className="mt-3 flex items-center gap-4">
                                                     <span className="text-xs text-muted-foreground">
-                                                        Submitted {new Date(contribution.created_at).toLocaleDateString('en-US', {
-                                                            year: 'numeric',
-                                                            month: 'long',
-                                                            day: 'numeric',
-                                                        })}
-                                                    </span>
-                                                    {contribution.status !== 'pending' && (
-                                                        <span className="text-xs text-muted-foreground">
-                                                            Updated {new Date(contribution.updated_at).toLocaleDateString('en-US', {
+                                                        Submitted{' '}
+                                                        {new Date(
+                                                            contribution.created_at,
+                                                        ).toLocaleDateString(
+                                                            'en-US',
+                                                            {
                                                                 year: 'numeric',
                                                                 month: 'long',
                                                                 day: 'numeric',
-                                                            })}
+                                                            },
+                                                        )}
+                                                    </span>
+                                                    {contribution.status !==
+                                                        'pending' && (
+                                                        <span className="text-xs text-muted-foreground">
+                                                            Updated{' '}
+                                                            {new Date(
+                                                                contribution.updated_at,
+                                                            ).toLocaleDateString(
+                                                                'en-US',
+                                                                {
+                                                                    year: 'numeric',
+                                                                    month: 'long',
+                                                                    day: 'numeric',
+                                                                },
+                                                            )}
                                                         </span>
                                                     )}
                                                 </div>
@@ -286,15 +380,20 @@ export default function ContributionsPage() {
 
                         {/* Pagination */}
                         {pagination && pagination.last_page > 1 && (
-                            <div className="flex items-center justify-between mt-6">
+                            <div className="mt-6 flex items-center justify-between">
                                 <p className="text-sm text-muted-foreground">
-                                    Showing {pagination.from} to {pagination.to} of {pagination.total} contributions
+                                    Showing {pagination.from} to {pagination.to}{' '}
+                                    of {pagination.total} contributions
                                 </p>
                                 <div className="flex gap-2">
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => loadContributions(pagination.current_page - 1)}
+                                        onClick={() =>
+                                            loadContributions(
+                                                pagination.current_page - 1,
+                                            )
+                                        }
                                         disabled={pagination.current_page === 1}
                                     >
                                         Previous
@@ -302,8 +401,15 @@ export default function ContributionsPage() {
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => loadContributions(pagination.current_page + 1)}
-                                        disabled={pagination.current_page === pagination.last_page}
+                                        onClick={() =>
+                                            loadContributions(
+                                                pagination.current_page + 1,
+                                            )
+                                        }
+                                        disabled={
+                                            pagination.current_page ===
+                                            pagination.last_page
+                                        }
                                     >
                                         Next
                                     </Button>
@@ -312,6 +418,20 @@ export default function ContributionsPage() {
                         )}
                     </>
                 )}
+
+                <Dialog
+                    open={!!selectedComment}
+                    onOpenChange={(open) => !open && setSelectedComment(null)}
+                >
+                    <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle>Full Description</DialogTitle>
+                        </DialogHeader>
+                        <DialogDescription className="whitespace-pre-wrap text-foreground">
+                            {selectedComment}
+                        </DialogDescription>
+                    </DialogContent>
+                </Dialog>
             </div>
         </AppLayout>
     );

@@ -11,6 +11,14 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ExternalLink } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -47,6 +55,18 @@ export function ResourcesSheet({
 }: ResourcesSheetProps) {
     const [resources, setResources] = useState<Resource[]>([]);
     const [loading, setLoading] = useState(false);
+    const [selectedComment, setSelectedComment] = useState<string | null>(null);
+
+    const truncateWords = (str: string, numWords: number) => {
+        const words = str.split(' ');
+        if (words.length > numWords) {
+            return {
+                text: words.slice(0, numWords).join(' ') + '...',
+                isTruncated: true,
+            };
+        }
+        return { text: str, isTruncated: false };
+    };
 
     useEffect(() => {
         if (open) {
@@ -141,9 +161,37 @@ export function ResourcesSheet({
                                                             </a>
                                                             {resource.comment && (
                                                                 <p className="mt-2 text-sm text-muted-foreground">
-                                                                    {
-                                                                        resource.comment
-                                                                    }
+                                                                    {(() => {
+                                                                        const {
+                                                                            text,
+                                                                            isTruncated,
+                                                                        } =
+                                                                            truncateWords(
+                                                                                resource.comment,
+                                                                                50,
+                                                                            );
+                                                                        return (
+                                                                            <>
+                                                                                {
+                                                                                    text
+                                                                                }
+                                                                                {isTruncated && (
+                                                                                    <Button
+                                                                                        variant="link"
+                                                                                        className="ml-1 h-auto p-0 px-1 font-normal text-primary"
+                                                                                        onClick={() =>
+                                                                                            setSelectedComment(
+                                                                                                resource.comment,
+                                                                                            )
+                                                                                        }
+                                                                                    >
+                                                                                        See
+                                                                                        more
+                                                                                    </Button>
+                                                                                )}
+                                                                            </>
+                                                                        );
+                                                                    })()}
                                                                 </p>
                                                             )}
                                                             <p className="mt-2 text-xs text-muted-foreground">
@@ -166,6 +214,20 @@ export function ResourcesSheet({
                     )}
                 </div>
             </SheetContent>
+
+            <Dialog
+                open={!!selectedComment}
+                onOpenChange={(open) => !open && setSelectedComment(null)}
+            >
+                <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Full Description</DialogTitle>
+                    </DialogHeader>
+                    <DialogDescription className="whitespace-pre-wrap text-foreground">
+                        {selectedComment}
+                    </DialogDescription>
+                </DialogContent>
+            </Dialog>
         </Sheet>
     );
 }
