@@ -43,10 +43,30 @@ class VerseResourceController extends Controller
             ->where('verse_id', $verseId)
             ->where('status', 'approved')
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->map(function ($resource) {
+                $resource->is_truncated = \Illuminate\Support\Str::wordCount($resource->comment) > 50;
+                $resource->comment = \Illuminate\Support\Str::words($resource->comment, 50, '...');
+                return $resource;
+            });
 
         return response()->json([
             'data' => $resources,
+        ]);
+    }
+
+    /**
+     * Get specific resource details
+     */
+    public function getResource($id)
+    {
+        $resource = UserVerseResource::with('user:id,name')->findOrFail($id);
+        
+        // Format comment with nl2br and wrap in p tags
+        $resource->comment = '<p>' . nl2br($resource->comment) . '</p>';
+        
+        return response()->json([
+            'data' => $resource,
         ]);
     }
 }

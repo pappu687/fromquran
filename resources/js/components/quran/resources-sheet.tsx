@@ -17,6 +17,8 @@ import {
     DialogHeader,
     DialogTitle,
     DialogDescription,
+    DialogFooter,
+    DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -34,6 +36,7 @@ interface Resource {
     resource_type_id: number;
     resource_url: string;
     comment: string | null;
+    is_truncated?: boolean;
     resource_type: ResourceType;
     user: {
         name: string;
@@ -55,18 +58,8 @@ export function ResourcesSheet({
 }: ResourcesSheetProps) {
     const [resources, setResources] = useState<Resource[]>([]);
     const [loading, setLoading] = useState(false);
+    const [loadingFull, setLoadingFull] = useState(false);
     const [selectedComment, setSelectedComment] = useState<string | null>(null);
-
-    const truncateWords = (str: string, numWords: number) => {
-        const words = str.split(' ');
-        if (words.length > numWords) {
-            return {
-                text: words.slice(0, numWords).join(' ') + '...',
-                isTruncated: true,
-            };
-        }
-        return { text: str, isTruncated: false };
-    };
 
     useEffect(() => {
         if (open) {
@@ -86,6 +79,21 @@ export function ResourcesSheet({
             console.error('Failed to fetch resources:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleSeeMore = async (resourceId: number) => {
+        setLoadingFull(true);
+        try {
+            const response = await fetch(`/api/resources/${resourceId}`);
+            if (response.ok) {
+                const data = await response.json();
+                setSelectedComment(data.data.comment);
+            }
+        } catch (error) {
+            console.error('Failed to fetch full resource:', error);
+        } finally {
+            setLoadingFull(false);
         }
     };
 
@@ -161,37 +169,27 @@ export function ResourcesSheet({
                                                             </a>
                                                             {resource.comment && (
                                                                 <p className="mt-2 text-sm text-muted-foreground">
-                                                                    {(() => {
-                                                                        const {
-                                                                            text,
-                                                                            isTruncated,
-                                                                        } =
-                                                                            truncateWords(
-                                                                                resource.comment,
-                                                                                50,
-                                                                            );
-                                                                        return (
-                                                                            <>
-                                                                                {
-                                                                                    text
-                                                                                }
-                                                                                {isTruncated && (
-                                                                                    <Button
-                                                                                        variant="link"
-                                                                                        className="ml-1 h-auto p-0 px-1 font-normal text-primary"
-                                                                                        onClick={() =>
-                                                                                            setSelectedComment(
-                                                                                                resource.comment,
-                                                                                            )
-                                                                                        }
-                                                                                    >
-                                                                                        See
-                                                                                        more
-                                                                                    </Button>
-                                                                                )}
-                                                                            </>
-                                                                        );
-                                                                    })()}
+                                                                    {
+                                                                        resource.comment
+                                                                    }
+                                                                    {resource.is_truncated && (
+                                                                        <Button
+                                                                            variant="link"
+                                                                            className="ml-1 h-auto p-0 px-1 font-normal text-primary"
+                                                                            disabled={
+                                                                                loadingFull
+                                                                            }
+                                                                            onClick={() =>
+                                                                                handleSeeMore(
+                                                                                    resource.id,
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            {loadingFull
+                                                                                ? 'Loading...'
+                                                                                : 'See more'}
+                                                                        </Button>
+                                                                    )}
                                                                 </p>
                                                             )}
                                                             <p className="mt-2 text-xs text-muted-foreground">
@@ -219,13 +217,29 @@ export function ResourcesSheet({
                 open={!!selectedComment}
                 onOpenChange={(open) => !open && setSelectedComment(null)}
             >
-                <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
+                <DialogContent className="max-w-[80rem]">
                     <DialogHeader>
                         <DialogTitle>Full Description</DialogTitle>
+                        <DialogDescription>
+                            View the complete description and details
+                        </DialogDescription>
                     </DialogHeader>
-                    <DialogDescription className="whitespace-pre-wrap text-foreground">
-                        {selectedComment}
-                    </DialogDescription>
+                    <div className="no-scrollbar -mx-4 max-h-[50vh] overflow-y-auto px-4">
+                        <div
+                            className="whitespace-pre-wrap text-foreground"
+                            dangerouslySetInnerHTML={{
+                                __html: selectedComment || '',
+                            }}
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setSelectedComment(null)}
+                        >
+                            Close
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </Sheet>
