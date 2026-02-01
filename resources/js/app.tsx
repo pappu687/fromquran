@@ -7,6 +7,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { initializeTheme } from './hooks/use-appearance';
 import { ReadingModeProvider } from './contexts/reading-mode-context';
+import { ReaderSettingsProvider } from './contexts/reader-settings-context';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -22,9 +23,11 @@ createInertiaApp({
 
         root.render(
             <StrictMode>
-                <ReadingModeProvider>
-                    <App {...props} />
-                </ReadingModeProvider>
+                <ReaderSettingsProvider>
+                    <ReadingModeProvider>
+                        <App {...props} />
+                    </ReadingModeProvider>
+                </ReaderSettingsProvider>
             </StrictMode>,
         );
     },

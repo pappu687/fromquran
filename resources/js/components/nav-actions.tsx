@@ -48,6 +48,7 @@ import {
 import { useReadingMode } from '@/contexts/reading-mode-context'
 import { usePage, router } from '@inertiajs/react'
 import type { SharedData } from '@/types'
+import { ReaderSettingsSheet } from '@/components/reader-settings-sheet';
 
 interface MenuItem {
   label: string
@@ -92,6 +93,7 @@ const menuData: MenuItem[][] = [
 export function NavActions() {
   const [isOpen, setIsOpen] = React.useState(false)
   const [commandPaletteOpen, setCommandPaletteOpen] = React.useState(false)
+  const [readerSettingsOpen, setReaderSettingsOpen] = React.useState(false);
   const { auth } = usePage<SharedData>().props
   const user = auth?.user
   const { mode, setMode } = useReadingMode()
@@ -151,6 +153,20 @@ export function NavActions() {
                   <TooltipContent>Reading view</TooltipContent>
               </Tooltip>
           </ToggleGroup>
+
+          <Tooltip>
+              <TooltipTrigger asChild>
+                  <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setReaderSettingsOpen(true)}
+                  >
+                      <Settings className="h-4 w-4" />
+                  </Button>
+              </TooltipTrigger>
+              <TooltipContent>Reader Settings</TooltipContent>
+          </Tooltip>
+
           <InputGroup className="max-w-[200px] lg:max-w-xs">
               <InputGroupInput
                   placeholder="Search..."
@@ -172,85 +188,113 @@ export function NavActions() {
   // If user is not logged in, show search and login button
   if (!user) {
     return (
-      <>
-        <div className="flex items-center gap-2 text-sm">
-          <SearchInput />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 sm:hidden"
-            onClick={() => setCommandPaletteOpen(true)}
-          >
-            <SearchIcon className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={() => router.visit('/login')}
-          >
-            <LogIn className="h-4 w-4" />
-            <span className="sr-only">Login</span>
-          </Button>
-        </div>
-        <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
-      </>
-    )
+        <>
+            <div className="flex items-center gap-2 text-sm">
+                <SearchInput />
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 sm:hidden"
+                    onClick={() => setCommandPaletteOpen(true)}
+                >
+                    <SearchIcon className="h-4 w-4" />
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => router.visit('/login')}
+                >
+                    <LogIn className="h-4 w-4" />
+                    <span className="sr-only">Login</span>
+                </Button>
+            </div>
+            <CommandPalette
+                open={commandPaletteOpen}
+                onOpenChange={setCommandPaletteOpen}
+            />
+            <ReaderSettingsSheet
+                open={readerSettingsOpen}
+                onOpenChange={setReaderSettingsOpen}
+            />
+        </>
+    );
   }
 
   // If user is logged in, show search, welcome message and dropdown
   return (
-    <>
-      <div className="flex items-center gap-2 text-sm">
-        <SearchInput />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 sm:hidden"
-          onClick={() => setCommandPaletteOpen(true)}
-        >
-          <SearchIcon className="h-4 w-4" />
-        </Button>
-        <div className="text-muted-foreground hidden font-medium md:inline-block">
-          Welcome, {user.name}
-        </div>
-        <Popover open={isOpen} onOpenChange={setIsOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="data-[state=open]:bg-accent h-7 w-7"
-            >
-              <MoreHorizontal />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent
-            className="w-56 overflow-hidden rounded-lg p-0"
-            align="end"
-          >
-            <Sidebar collapsible="none" className="bg-transparent">
-              <SidebarContent>
-                {menuData.map((group, index) => (
-                  <SidebarGroup key={index} className="border-b last:border-none">
-                    <SidebarGroupContent className="gap-0">
-                      <SidebarMenu>
-                        {group.map((item, itemIndex) => (
-                          <SidebarMenuItem key={itemIndex}>
-                            <SidebarMenuButton onClick={() => handleMenuClick(item)}>
-                              <item.icon /> <span>{item.label}</span>
-                            </SidebarMenuButton>
-                          </SidebarMenuItem>
-                        ))}
-                      </SidebarMenu>
-                    </SidebarGroupContent>
-                  </SidebarGroup>
-                ))}
-              </SidebarContent>
-            </Sidebar>
-          </PopoverContent>
-        </Popover>
-      </div>
-      <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
-    </>
-  )
+      <>
+          <div className="flex items-center gap-2 text-sm">
+              <SearchInput />
+              <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 sm:hidden"
+                  onClick={() => setCommandPaletteOpen(true)}
+              >
+                  <SearchIcon className="h-4 w-4" />
+              </Button>
+              <div className="hidden font-medium text-muted-foreground md:inline-block">
+                  Welcome, {user.name}
+              </div>
+              <Popover open={isOpen} onOpenChange={setIsOpen}>
+                  <PopoverTrigger asChild>
+                      <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 data-[state=open]:bg-accent"
+                      >
+                          <MoreHorizontal />
+                      </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                      className="w-56 overflow-hidden rounded-lg p-0"
+                      align="end"
+                  >
+                      <Sidebar collapsible="none" className="bg-transparent">
+                          <SidebarContent>
+                              {menuData.map((group, index) => (
+                                  <SidebarGroup
+                                      key={index}
+                                      className="border-b last:border-none"
+                                  >
+                                      <SidebarGroupContent className="gap-0">
+                                          <SidebarMenu>
+                                              {group.map((item, itemIndex) => (
+                                                  <SidebarMenuItem
+                                                      key={itemIndex}
+                                                  >
+                                                      <SidebarMenuButton
+                                                          onClick={() =>
+                                                              handleMenuClick(
+                                                                  item,
+                                                              )
+                                                          }
+                                                      >
+                                                          <item.icon />{' '}
+                                                          <span>
+                                                              {item.label}
+                                                          </span>
+                                                      </SidebarMenuButton>
+                                                  </SidebarMenuItem>
+                                              ))}
+                                          </SidebarMenu>
+                                      </SidebarGroupContent>
+                                  </SidebarGroup>
+                              ))}
+                          </SidebarContent>
+                      </Sidebar>
+                  </PopoverContent>
+              </Popover>
+          </div>
+          <CommandPalette
+              open={commandPaletteOpen}
+              onOpenChange={setCommandPaletteOpen}
+          />
+          <ReaderSettingsSheet
+              open={readerSettingsOpen}
+              onOpenChange={setReaderSettingsOpen}
+          />
+      </>
+  );
 }

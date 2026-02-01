@@ -220,13 +220,10 @@ export function ResourcesSheet({
                 <DialogContent className="max-w-[80rem]">
                     <DialogHeader>
                         <DialogTitle>Full Description</DialogTitle>
-                        <DialogDescription>
-                            View the complete description and details
-                        </DialogDescription>
                     </DialogHeader>
                     <div className="no-scrollbar -mx-4 max-h-[50vh] overflow-y-auto px-4">
                         <div
-                            className="whitespace-pre-wrap text-foreground"
+                            className="text-sm whitespace-pre-wrap text-foreground"
                             dangerouslySetInnerHTML={{
                                 __html: selectedComment || '',
                             }}

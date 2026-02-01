@@ -8,6 +8,13 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import {
+    Item,
+    ItemContent,
+    ItemDescription,
+    ItemMedia,
+    ItemTitle,
+} from '@/components/ui/item';
+import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
@@ -182,13 +189,14 @@ export default function MyCollectionsPage() {
                                         My Collections
                                     </h1>
                                     <p className="text-muted-foreground">
-                                        Organize and manage your Quran verse collections
+                                        Organize and manage your Quran verse
+                                        collections
                                     </p>
                                 </div>
                             </div>
                             <Button
                                 onClick={() => router.visit('/')}
-                                className="gap-2 shadow-sm whitespace-nowrap"
+                                className="gap-2 whitespace-nowrap shadow-sm"
                             >
                                 <FolderPlus className="h-4 w-4" />
                                 Browse Quran to Add Verses
@@ -196,13 +204,16 @@ export default function MyCollectionsPage() {
                             </Button>
                         </div>
                         <div className="mt-4 text-sm text-muted-foreground">
-                            {collections.length} {collections.length === 1 ? 'collection' : 'collections'}
+                            {collections.length}{' '}
+                            {collections.length === 1
+                                ? 'collection'
+                                : 'collections'}
                         </div>
                     </div>
 
                     {/* Success Message */}
                     {successMessage && (
-                        <div className="mb-6 flex items-center gap-3 rounded-lg border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-700 dark:text-green-400 animate-in fade-in slide-in-from-top-2">
+                        <div className="mb-6 flex animate-in items-center gap-3 rounded-lg border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-700 fade-in slide-in-from-top-2 dark:text-green-400">
                             <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
                             {successMessage}
                         </div>
@@ -210,7 +221,7 @@ export default function MyCollectionsPage() {
 
                     {/* Error Message */}
                     {errors.general && (
-                        <div className="mb-6 rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive animate-in fade-in slide-in-from-top-2">
+                        <div className="mb-6 animate-in rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive fade-in slide-in-from-top-2">
                             {errors.general}
                         </div>
                     )}
@@ -219,14 +230,16 @@ export default function MyCollectionsPage() {
                     {collections.length === 0 ? (
                         <Card className="border-dashed">
                             <CardContent className="flex flex-col items-center justify-center py-20">
-                                <div className="rounded-full bg-muted p-6 mb-6">
+                                <div className="mb-6 rounded-full bg-muted p-6">
                                     <Folder className="h-12 w-12 text-muted-foreground" />
                                 </div>
-                                <h2 className="text-2xl font-semibold mb-2">
+                                <h2 className="mb-2 text-2xl font-semibold">
                                     No collections yet
                                 </h2>
-                                <p className="text-muted-foreground mb-8 max-w-md text-center">
-                                    Create your first collection to start organizing your favorite verses from the Quran
+                                <p className="mb-8 max-w-md text-center text-muted-foreground">
+                                    Create your first collection to start
+                                    organizing your favorite verses from the
+                                    Quran
                                 </p>
                                 <Button
                                     onClick={() => router.visit('/')}
@@ -241,106 +254,136 @@ export default function MyCollectionsPage() {
                         </Card>
                     ) : (
                         /* Collections Grid */
-                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        <div className="grid auto-rows-fr gap-6 md:grid-cols-2 lg:grid-cols-3">
                             {collections.map((collection) => (
-                                <Card
+                                <div
                                     key={collection.id}
-                                    className="group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer border-border/50"
-                                    onClick={() => handleViewCollection(collection.slug)}
+                                    className="group relative h-full"
                                 >
-                                    {/* Color accent strip */}
-                                    <div
-                                        className="absolute left-0 top-0 h-full w-1.5"
-                                        style={{ backgroundColor: collection.color }}
-                                    />
+                                    <Item
+                                        className="h-full cursor-pointer overflow-hidden border-1 bg-transparent transition-all duration-300"
+                                        variant="outline"
+                                        onClick={() =>
+                                            handleViewCollection(
+                                                collection.slug,
+                                            )
+                                        }
+                                    >
+                                        {/* Background gradient on hover */}
+                                        <div
+                                            className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent to-muted/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                                            style={{
+                                                background: `linear-gradient(135deg, ${collection.color}08 0%, transparent 100%)`,
+                                            }}
+                                        />
 
-                                    {/* Background gradient on hover */}
-                                    <div
-                                        className="absolute inset-0 bg-gradient-to-br from-transparent to-muted/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                                        style={{
-                                            background: `linear-gradient(135deg, ${collection.color}08 0%, transparent 100%)`
-                                        }}
-                                    />
+                                        <ItemMedia variant="icon">
+                                            <div
+                                                className="h-5 w-5 rounded-full"
+                                                style={{
+                                                    backgroundColor:
+                                                        collection.color,
+                                                }}
+                                            />
+                                        </ItemMedia>
 
-                                    <CardHeader className="relative pb-3 px-4 pt-4">
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="flex-1 min-w-0">
-                                                <CardTitle className="text-lg mb-1 group-hover:text-primary transition-colors">
-                                                    {collection.name}
-                                                </CardTitle>
-                                                {collection.description && (
-                                                    <CardDescription className="line-clamp-2 text-xs">
-                                                        {collection.description}
-                                                    </CardDescription>
-                                                )}
-                                            </div>
-                                            <Badge
-                                                variant={collection.is_public ? "default" : "secondary"}
-                                                className="flex items-center gap-1 flex-shrink-0 px-2 py-0.5 text-xs"
-                                            >
-                                                {collection.is_public ? (
-                                                    <>
-                                                        <Globe className="h-2.5 w-2.5" />
-                                                        Public
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Lock className="h-2.5 w-2.5" />
-                                                        Private
-                                                    </>
-                                                )}
-                                            </Badge>
-                                        </div>
-                                    </CardHeader>
-
-                                    <CardContent className="relative pb-3 px-4">
-                                        <div className="flex items-center gap-5 text-xs">
-                                            <div className="flex items-center gap-1.5 text-muted-foreground">
-                                                <div className="rounded bg-muted p-1">
-                                                    <BookOpen className="h-3 w-3" />
+                                        <ItemContent className="relative flex flex-col justify-between">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0 flex-1">
+                                                    <ItemTitle className="mb-1 text-lg transition-colors group-hover:text-primary">
+                                                        {collection.name}
+                                                    </ItemTitle>
+                                                    {collection.description && (
+                                                        <ItemDescription className="line-clamp-2 text-sm">
+                                                            {
+                                                                collection.description
+                                                            }
+                                                        </ItemDescription>
+                                                    )}
                                                 </div>
-                                                <span>{collection.verses_count}</span>
-                                                <span>{collection.verses_count === 1 ? 'verse' : 'verses'}</span>
                                             </div>
-                                            <div className="flex items-center gap-1.5 text-muted-foreground">
-                                                <div className="rounded bg-muted p-1">
-                                                    <Calendar className="h-3 w-3" />
-                                                </div>
-                                                <span className="text-[10px]">
-                                                    {new Date(collection.created_at).toLocaleDateString('en-US', {
-                                                        month: 'short',
-                                                        day: 'numeric',
-                                                        year: 'numeric'
-                                                    })}
-                                                </span>
-                                            </div>
-                                        </div>
 
-                                        {/* View indicator on hover */}
-                                        <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                            <div className="rounded-full bg-primary p-1.5 text-primary-foreground shadow-md">
-                                                <ArrowRight className="h-3 w-3" />
+                                            <div className="mt-3 flex items-center gap-5 text-xs">
+                                                <div className="flex items-center gap-1.5 text-muted-foreground">
+                                                    <div className="rounded bg-muted p-1">
+                                                        <BookOpen className="h-3 w-3" />
+                                                    </div>
+                                                    <span>
+                                                        {
+                                                            collection.verses_count
+                                                        }
+                                                    </span>
+                                                    <span>
+                                                        {collection.verses_count ===
+                                                        1
+                                                            ? 'verse'
+                                                            : 'verses'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5 text-muted-foreground">
+                                                    <span className="text-[10px]">
+                                                        <Badge
+                                                            variant={
+                                                                collection.is_public
+                                                                    ? 'default'
+                                                                    : 'secondary'
+                                                            }
+                                                            className="flex flex-shrink-0 items-center gap-1 px-2 py-0.5 text-xs"
+                                                        >
+                                                            {collection.is_public ? (
+                                                                <>
+                                                                    <Globe className="h-2.5 w-2.5" />
+                                                                    Public
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <Lock className="h-2.5 w-2.5" />
+                                                                    Private
+                                                                </>
+                                                            )}
+                                                        </Badge>
+                                                    </span>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </CardContent>
+
+                                            {/* View indicator on hover */}
+                                            <div className="absolute right-0 bottom-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                                                <div className="rounded-full bg-primary p-1.5 text-primary-foreground shadow-md">
+                                                    <ArrowRight className="h-3 w-3" />
+                                                </div>
+                                            </div>
+                                        </ItemContent>
+                                    </Item>
 
                                     {/* Action button */}
-                                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                    <div className="absolute top-3 right-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                                         <DropdownMenu>
-                                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                            <DropdownMenuTrigger
+                                                asChild
+                                                onClick={(e) =>
+                                                    e.stopPropagation()
+                                                }
+                                            >
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="h-7 w-7 p-0 hover:bg-background/80 backdrop-blur-sm"
+                                                    className="h-7 w-7 p-0 backdrop-blur-sm hover:bg-background/80"
                                                 >
                                                     <MoreVertical className="h-3.5 w-3.5" />
                                                 </Button>
                                             </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                                            <DropdownMenuContent
+                                                align="end"
+                                                onClick={(e) =>
+                                                    e.stopPropagation()
+                                                }
+                                            >
                                                 <DropdownMenuItem
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        handleDelete(collection);
+                                                        handleDelete(
+                                                            collection,
+                                                        );
                                                     }}
                                                     className="text-destructive focus:text-destructive"
                                                 >
@@ -350,7 +393,7 @@ export default function MyCollectionsPage() {
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </div>
-                                </Card>
+                                </div>
                             ))}
                         </div>
                     )}
@@ -364,16 +407,23 @@ export default function MyCollectionsPage() {
             >
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
-                        <div className="flex items-center gap-3 mb-2">
+                        <div className="mb-2 flex items-center gap-3">
                             <div className="rounded-full bg-destructive/10 p-2">
                                 <Trash2 className="h-5 w-5 text-destructive" />
                             </div>
-                            <DialogTitle className="text-lg">Delete Collection</DialogTitle>
+                            <DialogTitle className="text-lg">
+                                Delete Collection
+                            </DialogTitle>
                         </div>
-                        <DialogDescription className="text-base pt-2">
-                            Are you sure you want to delete <span className="font-semibold text-foreground">"{selectedCollection?.name}"</span>?
+                        <DialogDescription className="pt-2 text-base">
+                            Are you sure you want to delete{' '}
+                            <span className="font-semibold text-foreground">
+                                "{selectedCollection?.name}"
+                            </span>
+                            ?
                             <br className="my-2" />
-                            This action cannot be undone and will permanently remove all verses from this collection.
+                            This action cannot be undone and will permanently
+                            remove all verses from this collection.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="gap-2 sm:gap-0">
@@ -389,7 +439,7 @@ export default function MyCollectionsPage() {
                             variant="destructive"
                             onClick={confirmDelete}
                             disabled={isSubmitting}
-                            className="flex-1 sm:flex-none gap-2"
+                            className="flex-1 gap-2 sm:flex-none"
                         >
                             {isSubmitting ? (
                                 <>

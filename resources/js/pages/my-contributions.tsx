@@ -3,6 +3,12 @@ import {
     Card,
     CardContent,
 } from '@/components/ui/card';
+import {
+    Item,
+    ItemContent,
+    ItemDescription,
+    ItemTitle,
+} from '@/components/ui/item';
 import { Badge } from '@/components/ui/badge';
 import {
     FileUp,
@@ -261,11 +267,12 @@ export default function ContributionsPage() {
                     <>
                         <div className="space-y-4">
                             {contributions.map((contribution) => (
-                                <Card
+                                <Item
                                     key={contribution.id}
+                                    variant="outline"
                                     className="transition-all hover:shadow-md"
                                 >
-                                    <CardContent className="p-6">
+                                    <ItemContent className="flex flex-col gap-3">
                                         <div className="flex items-start justify-between gap-4">
                                             <div className="flex-1">
                                                 <div className="mb-2 flex items-center gap-2">
@@ -373,8 +380,8 @@ export default function ContributionsPage() {
                                                 </div>
                                             </div>
                                         </div>
-                                    </CardContent>
-                                </Card>
+                                    </ItemContent>
+                                </Item>
                             ))}
                         </div>
 
