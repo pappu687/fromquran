@@ -28,39 +28,16 @@ import {
 import { Head, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
 
-interface ResourceType {
-    id: number;
-    slug: string;
-    name: string;
-}
+// ... (existing helper function code)
 
-interface Contribution {
-    id: number;
-    verse_id: number;
-    resource_type_id: number;
-    resource_url: string;
-    comment?: string;
-    status: 'pending' | 'approved' | 'rejected';
-    created_at: string;
-    updated_at: string;
-    verse?: {
-        id: number;
-        verse_key: string;
-        chapter_id: number;
-    };
-    resource_type?: ResourceType;
-}
-
-interface PaginationData {
-    current_page: number;
-    last_page: number;
-    per_page: number;
-    total: number;
-    from: number;
-    to: number;
-    data: Contribution[];
-}
+const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: 'My Contributions',
+        href: '/contributions',
+    },
+];
 
 export default function ContributionsPage() {
     const [contributions, setContributions] = useState<Contribution[]>([]);
@@ -156,7 +133,7 @@ export default function ContributionsPage() {
 
     if (isLoading) {
         return (
-            <AppLayout>
+            <AppLayout breadcrumbs={breadcrumbs}>
                 <Head title="My Contributions - From Quran" />
                 <div className="flex items-center justify-center py-20">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -166,20 +143,9 @@ export default function ContributionsPage() {
     }
 
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="My Contributions - From Quran" />
             <div className="container mx-auto px-4 py-8">
-                <div className="mb-8">
-                    <div className="mb-2 flex items-center gap-3">
-                        <FileUp className="h-8 w-8 text-primary" />
-                        <h1 className="text-3xl font-bold">My Contributions</h1>
-                    </div>
-                    <p className="text-muted-foreground">
-                        Track your resource submissions and their approval
-                        status
-                    </p>
-                </div>
-
                 {errors.general && (
                     <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">
                         {errors.general}

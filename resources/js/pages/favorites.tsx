@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import { Head, router } from '@inertiajs/react';
 import { BookmarkX, CheckCircle2, Heart, Loader2, Trash2 } from 'lucide-react';
+import { type BreadcrumbItem } from '@/types';
 import { useEffect, useState } from 'react';
 
 interface Bookmark {
@@ -24,6 +25,13 @@ interface Bookmark {
         name_arabic: string;
     };
 }
+
+const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: 'My Favorites',
+        href: '/favorites',
+    },
+];
 
 export default function FavoritesPage() {
     const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
@@ -117,7 +125,7 @@ export default function FavoritesPage() {
 
     if (isLoading) {
         return (
-            <AppLayout>
+            <AppLayout breadcrumbs={breadcrumbs}>
                 <Head title="Favorites - From Quran" />
                 <div className="flex items-center justify-center py-20">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -127,19 +135,9 @@ export default function FavoritesPage() {
     }
 
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Favorites - From Quran" />
             <div className="container mx-auto px-4 py-8">
-                <div className="mb-8">
-                    <div className="mb-2 flex items-center gap-3">
-                        <Heart className="h-8 w-8 text-red-500" />
-                        <h1 className="text-3xl font-bold">My Favorites</h1>
-                    </div>
-                    <p className="text-muted-foreground">
-                        Your bookmarked verses from the Quran
-                    </p>
-                </div>
-
                 {successMessage && (
                     <div className="mb-6 flex items-center gap-2 rounded-md bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400">
                         <CheckCircle2 className="h-4 w-4" />

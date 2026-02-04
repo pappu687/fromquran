@@ -40,7 +40,7 @@ const FeatureCard = ({ title, description }: FeatureProps) => (
 const ChapterCard = ({ chapter }: { chapter: Chapter }) => (
     <Card
         key={chapter.id}
-        className="group cursor-pointer border-none shadow-none transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md"
+        className="group cursor-pointer border-2 border-transparent shadow-none transition-all duration-200 hover:border-gray-200 hover:bg-muted/70"
         onClick={() => router.visit(`/${chapter.number}`)}
     >
         <CardHeader className="pb-3">

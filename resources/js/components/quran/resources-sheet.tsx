@@ -134,7 +134,12 @@ export function ResourcesSheet({
                             </p>
                         </div>
                     ) : (
-                        <Accordion type="single" collapsible className="w-full">
+                        <Accordion
+                            type="single"
+                            collapsible
+                            defaultValue={Object.keys(groupedResources)[0]}
+                            className="w-full"
+                        >
                             {Object.entries(groupedResources).map(
                                 ([type, typeResources]) => (
                                     <AccordionItem key={type} value={type}>
@@ -168,10 +173,13 @@ export function ResourcesSheet({
                                                                 </span>
                                                             </a>
                                                             {resource.comment && (
-                                                                <p className="mt-2 text-sm text-muted-foreground">
-                                                                    {
-                                                                        resource.comment
-                                                                    }
+                                                                <div className="mt-2 text-sm text-muted-foreground">
+                                                                    <div
+                                                                        className="whitespace-pre-wrap"
+                                                                        dangerouslySetInnerHTML={{
+                                                                            __html: resource.comment,
+                                                                        }}
+                                                                    />
                                                                     {resource.is_truncated && (
                                                                         <Button
                                                                             variant="link"
@@ -190,7 +198,7 @@ export function ResourcesSheet({
                                                                                 : 'See more'}
                                                                         </Button>
                                                                     )}
-                                                                </p>
+                                                                </div>
                                                             )}
                                                             <p className="mt-2 text-xs text-muted-foreground">
                                                                 Submitted by{' '}

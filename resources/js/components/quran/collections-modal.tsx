@@ -340,7 +340,7 @@ export function CollectionsModal({
 
                     <div className="max-h-[400px] overflow-y-auto p-1">
                         {/* Range Selection */}
-                        {(totalVerses || 286) > 0 && (
+                        {isAuthenticated === true && (totalVerses || 286) > 0 && (
                             <div className="mb-6 rounded-lg border bg-muted/30 p-4">
                                 <h4 className="mb-3 text-sm font-medium">
                                     Select Verse Range
@@ -466,7 +466,6 @@ export function CollectionsModal({
                                         type="button"
                                         onClick={() => router.visit('/login')}
                                     >
-                                        <LogIn className="mr-2 h-4 w-4" />
                                         Log In
                                     </Button>
                                 </div>

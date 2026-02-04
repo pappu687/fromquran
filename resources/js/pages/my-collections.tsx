@@ -45,6 +45,7 @@ import {
 import { Head, router } from '@inertiajs/react';
 import { FormEvent, useEffect, useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
 
 interface Collection {
     id: number;
@@ -56,6 +57,13 @@ interface Collection {
     slug: string;
     created_at: string;
 }
+
+const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: 'My Collections',
+        href: '/my-collections',
+    },
+];
 
 export default function MyCollectionsPage() {
     const [collections, setCollections] = useState<Collection[]>([]);
@@ -160,7 +168,7 @@ export default function MyCollectionsPage() {
 
     if (isLoading) {
         return (
-            <AppLayout>
+            <AppLayout breadcrumbs={breadcrumbs}>
                 <Head title="My Collections - From Quran" />
                 <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gradient-to-b from-background to-muted/20">
                     <div className="text-center">
@@ -173,26 +181,18 @@ export default function MyCollectionsPage() {
     }
 
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="My Collections - From Quran" />
             <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-b from-background to-muted/20">
                 <div className="container mx-auto px-4 py-12">
                     {/* Header Section */}
                     <div className="mb-10">
-                        <div className="flex items-start justify-between gap-6">
-                            <div className="flex items-center gap-3">
-                                <div className="rounded-lg bg-primary/10 p-3">
-                                    <Folder className="h-6 w-6 text-primary" />
-                                </div>
-                                <div>
-                                    <h1 className="text-3xl font-bold tracking-tight">
-                                        My Collections
-                                    </h1>
-                                    <p className="text-muted-foreground">
-                                        Organize and manage your Quran verse
-                                        collections
-                                    </p>
-                                </div>
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="text-sm text-muted-foreground">
+                                {collections.length}{' '}
+                                {collections.length === 1
+                                    ? 'collection'
+                                    : 'collections'}
                             </div>
                             <Button
                                 onClick={() => router.visit('/')}
@@ -202,12 +202,6 @@ export default function MyCollectionsPage() {
                                 Browse Quran to Add Verses
                                 <ArrowRight className="h-4 w-4" />
                             </Button>
-                        </div>
-                        <div className="mt-4 text-sm text-muted-foreground">
-                            {collections.length}{' '}
-                            {collections.length === 1
-                                ? 'collection'
-                                : 'collections'}
                         </div>
                     </div>
 
