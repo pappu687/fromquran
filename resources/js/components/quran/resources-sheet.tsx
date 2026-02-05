@@ -22,8 +22,10 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ExternalLink } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ExternalLink, Tags } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { router } from '@inertiajs/react';
 
 interface ResourceType {
     id: number;
@@ -43,6 +45,29 @@ interface Resource {
     };
 }
 
+interface SimilarVerse {
+    id: number;
+    verse_key: string;
+    verse_number: number;
+    chapter_id: number;
+    chapter_number: number;
+    chapter_name: string;
+    chapter_name_roman: string;
+    text_uthmani: string;
+    translation: string;
+    translation_resource: string;
+    matched_words_count: number;
+    coverage: number;
+    score: number;
+    match_words_range: number[][];
+}
+
+interface Topic {
+    topic_id: number;
+    name: string;
+    arabic_name: string;
+}
+
 interface ResourcesSheetProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -60,10 +85,16 @@ export function ResourcesSheet({
     const [loading, setLoading] = useState(false);
     const [loadingFull, setLoadingFull] = useState(false);
     const [selectedComment, setSelectedComment] = useState<string | null>(null);
+    const [similarVerses, setSimilarVerses] = useState<SimilarVerse[]>([]);
+    const [loadingSimilar, setLoadingSimilar] = useState(false);
+    const [topics, setTopics] = useState<Topic[]>([]);
+    const [loadingTopics, setLoadingTopics] = useState(false);
 
     useEffect(() => {
         if (open) {
             fetchResources();
+            fetchSimilarVerses();
+            fetchTopics();
         }
     }, [open, verseId]);
 
@@ -79,6 +110,36 @@ export function ResourcesSheet({
             console.error('Failed to fetch resources:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchSimilarVerses = async () => {
+        setLoadingSimilar(true);
+        try {
+            const response = await fetch(`/api/verses/${verseId}/similar`);
+            if (response.ok) {
+                const data = await response.json();
+                setSimilarVerses(data.data || []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch similar verses:', error);
+        } finally {
+            setLoadingSimilar(false);
+        }
+    };
+
+    const fetchTopics = async () => {
+        setLoadingTopics(true);
+        try {
+            const response = await fetch(`/api/verses/${verseId}/topics`);
+            if (response.ok) {
+                const data = await response.json();
+                setTopics(data.data || []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch topics:', error);
+        } finally {
+            setLoadingTopics(false);
         }
     };
 
@@ -109,6 +170,20 @@ export function ResourcesSheet({
         },
         {} as Record<string, Resource[]>,
     );
+
+    // Handle verse click - navigate to the verse
+    const handleVerseClick = (chapterNumber: number, verseNumber: number) => {
+        router.visit(`/${chapterNumber}/${verseNumber}`, {
+            method: 'get',
+        });
+        onOpenChange(false);
+    };
+
+    // Format match words range for display
+    const formatMatchRange = (range: number[][]): string => {
+        if (!range || range.length === 0) return '';
+        return range.map(r => `words ${r[0]}-${r[1]}`).join(', ');
+    };
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -215,6 +290,103 @@ export function ResourcesSheet({
                                         </AccordionContent>
                                     </AccordionItem>
                                 ),
+                            )}
+                            {topics.length > 0 && (
+                                <AccordionItem value="Topics">
+                                    <AccordionTrigger>
+                                        Topics ({topics.length})
+                                    </AccordionTrigger>
+                                    <AccordionContent>
+                                        <div className="flex flex-wrap gap-2 p-2">
+                                            {topics.map((topic) => (
+                                                <Badge
+                                                    key={topic.topic_id}
+                                                    variant="secondary"
+                                                    className="cursor-pointer bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 hover:from-purple-200 hover:to-pink-200 dark:from-purple-900 dark:to-pink-900 dark:text-purple-100"
+                                                    onClick={() => {
+                                                        router.visit(
+                                                            `/topic/${topic.topic_id}`,
+                                                        );
+                                                        onOpenChange(false);
+                                                    }}
+                                                >
+                                                    <Tags className="mr-1 h-3 w-3" />
+                                                    {topic.name}
+                                                    {topic.arabic_name && (
+                                                        <span className="ml-1 font-arabic text-xs">
+                                                            ({topic.arabic_name})
+                                                        </span>
+                                                    )}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            )}
+                            {similarVerses.length > 0 && (
+                                <AccordionItem value="Related Verses">
+                                    <AccordionTrigger>
+                                        Related Verses ({similarVerses.length})
+                                    </AccordionTrigger>
+                                    <AccordionContent>
+                                        <div
+                                            className="space-y-4 overflow-y-auto pr-2"
+                                            style={{ maxHeight: '500px' }}
+                                        >
+                                            {similarVerses.map((similar) => (
+                                                <div
+                                                    key={similar.id}
+                                                    className="cursor-pointer rounded-lg border p-3 transition-colors hover:bg-muted/50"
+                                                    onClick={() =>
+                                                        handleVerseClick(
+                                                            similar.chapter_number,
+                                                            similar.verse_number,
+                                                        )
+                                                    }
+                                                >
+                                                    <div className="mb-2 flex items-center justify-between">
+                                                        <span className="text-sm font-semibold text-primary">
+                                                            {similar.chapter_name} (
+                                                            {similar.chapter_number}:
+                                                            {similar.verse_number})
+                                                        </span>
+                                                        <div className="flex gap-2 text-xs text-muted-foreground">
+                                                            <span>
+                                                                Score: {similar.score}
+                                                            </span>
+                                                            <span>
+                                                                Coverage:{' '}
+                                                                {similar.coverage}%
+                                                            </span>
+                                                            <span>
+                                                                Words:{' '}
+                                                                {similar.matched_words_count}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <p className="mb-2 text-right text-sm font-arabic text-foreground ltr:font-sans rtl:font-arabic">
+                                                        {similar.text_uthmani}
+                                                    </p>
+                                                    {similar.translation && (
+                                                        <p className="text-sm text-muted-foreground">
+                                                            {similar.translation}
+                                                        </p>
+                                                    )}
+                                                    {similar.match_words_range &&
+                                                        similar.match_words_range
+                                                            .length > 0 && (
+                                                            <p className="mt-2 text-xs text-muted-foreground">
+                                                                Match:{' '}
+                                                                {formatMatchRange(
+                                                                    similar.match_words_range,
+                                                                )}
+                                                            </p>
+                                                        )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
                             )}
                         </Accordion>
                     )}

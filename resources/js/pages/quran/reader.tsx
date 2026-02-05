@@ -1,6 +1,6 @@
 import { VersesPanel } from '@/components/quran/verses-panel';
 import QuranReaderLayout from '@/layouts/quran-reader-layout';
-import { usePage, Head } from '@inertiajs/react';
+import { usePage, Head, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { SharedData } from '@/types';
 
@@ -109,12 +109,12 @@ export default function QuranReader({
         const chapter = chapters.find((ch) => ch.id === chapterId);
         if (!chapter) return;
 
-        // Update local state immediately (no page reload)
-        setSelectedChapter(chapter);
-
-        // Update URL without page reload using browser history API
-        const chapterUrlNumber = chapter.number;
-        window.history.pushState({}, '', `/${chapterUrlNumber}`);
+        // Use Inertia router to navigate to the chapter
+        // This ensures proper state reset and fresh page props
+        router.visit(`/${chapter.number}`, {
+            method: 'get',
+            preserveState: false, // Don't preserve React state
+        });
     };
 
     if (loading) {

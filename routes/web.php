@@ -25,6 +25,17 @@ Route::get('collections/{slug}', function (string $slug) {
     ]);
 })->name('collections.show');
 
+// Topics
+Route::get('topics', function () {
+    return Inertia::render('topics');
+})->name('topics.index');
+
+Route::get('topic/{topicId}', function (int $topicId) {
+    return Inertia::render('topic-detail', [
+        'topicId' => $topicId,
+    ]);
+})->whereNumber('topicId')->name('topics.show');
+
 // Quran Reader routes (Root Level)
 // /read - Alias for backwards compatibility
 Route::get('read', function () {

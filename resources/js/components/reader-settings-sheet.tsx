@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/sheet';
 import { useReaderSettings } from '@/contexts/reader-settings-context';
 import { Minus, Plus } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 
 interface ReaderSettingsSheetProps {
     open: boolean;
@@ -40,7 +40,7 @@ export function ReaderSettingsSheet({
 }: ReaderSettingsSheetProps) {
     const { settings, updateSettings } = useReaderSettings();
 
-    // Local state for form
+    // Local state for form - initialized from settings
     const [fontSize, setFontSize] = useState(settings.fontSize);
     const [selectedTranslations, setSelectedTranslations] = useState(
         settings.selectedTranslations,
@@ -48,8 +48,8 @@ export function ReaderSettingsSheet({
     const [showArabic, setShowArabic] = useState(settings.showArabic);
     const [mushafFont, setMushafFont] = useState(settings.mushafFont);
 
-    // Sync local state with context when sheet opens
-    useEffect(() => {
+    // useLayoutEffect runs synchronously before paint, making it feel instant
+    useLayoutEffect(() => {
         if (open) {
             setFontSize(settings.fontSize);
             setSelectedTranslations(settings.selectedTranslations);

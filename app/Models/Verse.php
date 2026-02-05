@@ -145,6 +145,22 @@ class Verse extends Model
     }
 
     /**
+     * Get the similar verses for this verse.
+     */
+    public function similarVerses(): HasMany
+    {
+        return $this->hasMany(SimilarAyah::class, 'verse_key', 'verse_key');
+    }
+
+    /**
+     * Get verses where this verse is marked as similar.
+     */
+    public function relatedVerses(): HasMany
+    {
+        return $this->hasMany(SimilarAyah::class, 'matched_ayah_key', 'verse_key');
+    }
+
+    /**
      * Scope a query to only include verses from specific Juz.
      */
     public function scopeInJuz($query, $juzNumber)

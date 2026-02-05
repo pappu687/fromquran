@@ -45,10 +45,16 @@ Route::middleware(['web', 'auth'])->prefix('bookmarks')->group(function () {
 // Verse Resources (public - approved resources only)
 Route::get('/verses/resources', [VerseResourceController::class, 'index']);
 Route::get('/verses/{verseId}/resources', [VerseResourceController::class, 'show']);
+Route::get('/verses/{verseId}/similar', [VerseResourceController::class, 'similarVerses']);
 Route::get('/resources/{id}', [VerseResourceController::class, 'getResource']);
 
 // Resource Types (public)
 Route::get('/resource-types', [\App\Http\Controllers\Admin\ResourceTypeController::class, 'list']);
+
+// Topics (public)
+Route::get('/topics', [\App\Http\Controllers\TopicController::class, 'index']);
+Route::get('/topics/{topicId}', [\App\Http\Controllers\TopicController::class, 'show']);
+Route::get('/verses/{verseId}/topics', [\App\Http\Controllers\TopicController::class, 'forVerse']);
 
 // Collection Routes (require authentication)
 // Public Collection Routes

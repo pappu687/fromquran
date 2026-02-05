@@ -370,7 +370,7 @@ export function VersesPanel({
                     )}
 
                     {/* End Message */}
-                    {!hasMore && verses.length > 0 && (
+                    {!fromVerse && !toVerse && !hasMore && verses.length > 0 && (
                         <div className="py-8 text-center text-muted-foreground">
                             <Separator className="mb-4" />
                             <p>You've reached the end of this chapter</p>
