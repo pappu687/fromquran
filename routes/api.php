@@ -28,6 +28,8 @@ Route::prefix('quran')->group(function () {
     Route::get('/search', [QuranController::class, 'search']);
     Route::get('/juzs', [QuranController::class, 'juzs']);
     Route::get('/juzs/{juzId}/verses', [QuranController::class, 'juzVerses']);
+    Route::get('/audio/{reciterId}/{chapterId}', [QuranController::class, 'audio']);
+    Route::get('/reciters', [QuranController::class, 'reciters']);
     Route::get('/chapters/{chapterId}/resources', [\App\Http\Controllers\Api\ChapterResourceController::class, 'show']);
 });
 

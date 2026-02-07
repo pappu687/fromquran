@@ -1,6 +1,12 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
@@ -10,11 +16,14 @@ import {
     Bookmark,
     BookmarkCheck,
     BookmarkPlus,
+    Ellipsis,
     Eye,
+    Play,
     Plus,
     Volume2,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useAudioPlayer } from '@/store/use-audio-player';
 import { AddResourceModal } from './add-resource-modal';
 import { CollectionsModal } from './collections-modal';
 import { ResourcesSheet } from './resources-sheet';
@@ -40,6 +49,7 @@ interface VerseCardProps {
     onPlayAudio?: (audioUrl: string) => void;
     showTranslation?: boolean;
     className?: string;
+    reciterId?: number;
 }
 
 export function VerseCard({
@@ -52,27 +62,40 @@ export function VerseCard({
     onPlayAudio,
     showTranslation = true,
     className,
+    reciterId = 1, // Default reciter ID
 }: VerseCardProps) {
     const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
     const [isResourcesSheetOpen, setIsResourcesSheetOpen] = useState(false);
     const [isCollectionsModalOpen, setIsCollectionsModalOpen] = useState(false);
+    const { playVerse, currentVerse, audioData, isPlaying } = useAudioPlayer();
 
     const handleBookmark = () => {
         onBookmarkToggle?.(verse.id);
     };
 
     const handlePlayAudio = () => {
-        if (verse.audioUrl) {
-            onPlayAudio?.(verse.audioUrl);
-        }
+        playVerse(verse.chapterId, verse.verseNumber, reciterId);
     };
 
     const handleAddResource = () => {
         setIsResourceModalOpen(true);
     };
 
+    // Check if this is the currently playing verse
+    const isCurrentlyPlaying =
+        currentVerse?.chapterId === verse.chapterId &&
+        currentVerse?.verseNumber === verse.verseNumber &&
+        isPlaying;
+
     return (
-        <Card className={cn('mb-4 border-0 shadow-none', className)}>
+        <Card
+            className={cn(
+                'mb-4 border-0 shadow-none',
+                isCurrentlyPlaying && 'bg-primary/5',
+                className
+            )}
+            id={`verse-${verse.chapterId}-${verse.verseNumber}`}
+        >
             <CardContent className="p-1">
                 {/* Verse Header */}
                 <div className="mb-4 flex items-center justify-between">
@@ -80,28 +103,35 @@ export function VerseCard({
                         <div className="flex h-8 w-8 items-center justify-center rounded-[30%] bg-primary/20 text-sm font-semibold">
                             {verse.verseNumber}
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                            Juz {verse.juzNumber} • Page {verse.pageNumber}
-                        </div>
                     </div>
 
                     {/* Action Buttons */}
                     <div className="flex items-center gap-1">
-                        {verse.audioUrl && (
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={handlePlayAudio}
-                                        className="h-8 w-8 p-0"
-                                    >
-                                        <Volume2 className="h-4 w-4" />
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Play audio</TooltipContent>
-                            </Tooltip>
-                        )}
+                        {/* Play Button */}
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handlePlayAudio}
+                                    className="h-8 w-8 p-0"
+                                >
+                                    {isCurrentlyPlaying ? (
+                                        <div className="flex items-end gap-0.5 h-4 w-4 items-center justify-center">
+                                            <span className="w-0.5 h-2 bg-current animate-pulse" />
+                                            <span className="w-0.5 h-3 bg-current animate-pulse delay-75" />
+                                            <span className="w-0.5 h-2 bg-current animate-pulse delay-150" />
+                                        </div>
+                                    ) : (
+                                        <Play className="h-4 w-4" />
+                                    )}
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                {isCurrentlyPlaying ? 'Playing' : 'Play audio'}
+                            </TooltipContent>
+                        </Tooltip>
+
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button
@@ -123,59 +153,44 @@ export function VerseCard({
                             <TooltipContent>View Resources</TooltipContent>
                         </Tooltip>
 
-                        <Tooltip>
-                            <TooltipTrigger asChild>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={handleBookmark}
                                     className="h-8 w-8 p-0"
                                 >
-                                    {isBookmarked ? (
-                                        <BookmarkCheck className="h-4 w-4 text-primary" />
-                                    ) : (
-                                        <Bookmark className="h-4 w-4" />
-                                    )}
+                                    <Ellipsis className="h-4 w-4" />
                                 </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                {isBookmarked
-                                    ? 'Bookmark this verse'
-                                    : 'Bookmark this verse'}
-                            </TooltipContent>
-                        </Tooltip>
-
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={handleBookmark}>
+                                    {isBookmarked ? (
+                                        <>
+                                            <BookmarkCheck className="h-4 w-4 text-primary" />
+                                            <span>Remove bookmark</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Bookmark className="h-4 w-4" />
+                                            <span>Bookmark this verse</span>
+                                        </>
+                                    )}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
                                     onClick={() =>
                                         setIsCollectionsModalOpen(true)
                                     }
-                                    className="h-8 w-8 p-0"
                                 >
                                     <BookmarkPlus className="h-4 w-4" />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Add to collection</TooltipContent>
-                        </Tooltip>
-
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={handleAddResource}
-                                    className="h-8 w-8 p-0"
-                                >
+                                    <span>Add to collection</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleAddResource}>
                                     <Plus className="h-4 w-4" />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                Add resource to this verse
-                            </TooltipContent>
-                        </Tooltip>
+                                    <span>Add resource to this verse</span>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                 </div>
 

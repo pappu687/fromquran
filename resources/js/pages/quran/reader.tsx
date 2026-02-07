@@ -109,11 +109,15 @@ export default function QuranReader({
         const chapter = chapters.find((ch) => ch.id === chapterId);
         if (!chapter) return;
 
-        // Use Inertia router to navigate to the chapter
-        // This ensures proper state reset and fresh page props
+        // Update the local state immediately for instant feedback
+        setSelectedChapter(chapter);
+
+        // Use Inertia router to update the URL without full page refresh
         router.visit(`/${chapter.number}`, {
             method: 'get',
-            preserveState: false, // Don't preserve React state
+            preserveState: true, // Keep React state for smooth navigation
+            preserveScroll: true, // Keep scroll position
+            only: [], // Don't request any specific props - use existing data
         });
     };
 

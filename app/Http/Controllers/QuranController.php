@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ChapterAudioFile;
 use App\Services\QuranDatabaseService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -213,6 +214,74 @@ class QuranController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Failed to fetch Juz verses',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get audio file with verse timings for a specific reciter and chapter
+     */
+    public function audio(int $reciterId, int $chapterId): JsonResponse
+    {
+        try {
+            $audioFile = ChapterAudioFile::with(['verseTimings', 'reciter'])
+                ->where('chapter_id', $chapterId)
+                ->where('reciter_id', $reciterId)
+                ->where('is_enabled', true)
+                ->first();
+
+            if (!$audioFile) {
+                return response()->json([
+                    'error' => 'Audio file not found for this reciter and chapter'
+                ], 404);
+            }
+
+            return response()->json([
+                'audio_files' => [
+                    [
+                        'id' => $audioFile->id,
+                        'chapter_id' => $audioFile->chapter_id,
+                        'file_size' => $audioFile->file_size,
+                        'format' => $audioFile->format,
+                        'audio_url' => $audioFile->audio_url,
+                        'duration' => $audioFile->duration,
+                        'reciter_id' => $audioFile->reciter_id,
+                        'reciter_name' => $audioFile->reciter?->name,
+                        'verse_timings' => $audioFile->verseTimings->map(function ($timing) {
+                            return [
+                                'verse_key' => $timing->verse_key,
+                                'timestamp_from' => $timing->timestamp_from,
+                                'timestamp_to' => $timing->timestamp_to,
+                                'duration' => $timing->duration,
+                                'segments' => $timing->segments,
+                            ];
+                        })->toArray(),
+                    ]
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch audio',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get available reciters
+     */
+    public function reciters(): JsonResponse
+    {
+        try {
+            $reciters = \App\Models\Reciter::enabled()
+                ->orderByPriority()
+                ->get(['id', 'name', 'arabic_name', 'description']);
+
+            return response()->json($reciters);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch reciters',
                 'message' => $e->getMessage()
             ], 500);
         }
