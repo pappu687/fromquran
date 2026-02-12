@@ -37,13 +37,26 @@ class VerseResourceController extends Controller
 
     /**
      * Get approved resources for a single verse (legacy endpoint)
+     *
+     * Supports an optional ?limit= parameter to return only a subset of
+     * resources while also including total count and hasMore flag.
      */
-    public function show($verseId)
+    public function show(Request $request, $verseId)
     {
-        $resources = UserVerseResource::with('user:id,name')
+        $limit = (int) $request->query('limit', 5);
+
+        $baseQuery = UserVerseResource::with('user:id,name')
             ->where('verse_id', $verseId)
             ->where('status', 'approved')
-            ->orderBy('created_at', 'desc')
+            ->orderBy('created_at', 'desc');
+
+        $total = (clone $baseQuery)->count();
+
+        if ($limit > 0) {
+            $baseQuery->limit($limit);
+        }
+
+        $resources = $baseQuery
             ->get()
             ->map(function ($resource) {
                 $resource->is_truncated = \Illuminate\Support\Str::wordCount($resource->comment) > 50;
@@ -53,6 +66,11 @@ class VerseResourceController extends Controller
 
         return response()->json([
             'data' => $resources,
+            'meta' => [
+                'total' => $total,
+                'limit' => $limit,
+                'hasMore' => $limit > 0 && $total > $limit,
+            ],
         ]);
     }
 

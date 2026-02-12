@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
+use App\Models\Chapter;
+use App\Models\Verse;
 
 // Home page - Landing page
 Route::get('/', function () {
@@ -35,6 +37,38 @@ Route::get('topic/{topicId}', function (int $topicId) {
         'topicId' => $topicId,
     ]);
 })->whereNumber('topicId')->name('topics.show');
+
+// Related resources for a specific verse
+Route::get('related/{chapterNumber}/{verseNumber}', function (int $chapterNumber, int $verseNumber) {
+    $chapter = Chapter::where('chapter_number', $chapterNumber)->firstOrFail();
+
+    $verse = Verse::where('chapter_id', $chapter->id)
+        ->where('verse_number', $verseNumber)
+        ->firstOrFail();
+
+    // Find previous and next verses based on global verse_index
+    $previous = Verse::where('verse_index', '<', $verse->verse_index)
+        ->orderByDesc('verse_index')
+        ->first();
+
+    $next = Verse::where('verse_index', '>', $verse->verse_index)
+        ->orderBy('verse_index')
+        ->first();
+
+    return Inertia::render('quran/related', [
+        'chapterNumber' => $chapterNumber,
+        'verseNumber' => $verseNumber,
+        'verseId' => $verse->id,
+        'previousVerse' => $previous ? [
+            'chapterNumber' => $previous->chapter->chapter_number,
+            'verseNumber' => $previous->verse_number,
+        ] : null,
+        'nextVerse' => $next ? [
+            'chapterNumber' => $next->chapter->chapter_number,
+            'verseNumber' => $next->verse_number,
+        ] : null,
+    ]);
+})->whereNumber('chapterNumber')->whereNumber('verseNumber')->name('related.verse');
 
 // Quran Reader routes (Root Level)
 // /read - Alias for backwards compatibility

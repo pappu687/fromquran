@@ -97,8 +97,8 @@ export function ChaptersPanel({
                                                     className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[30%] text-sm font-semibold ${
                                                         selectedChapter ===
                                                         chapter.id
-                                                            ? 'bg-rose-500/40'
-                                                            : 'bg-primary/10'
+                                                            ? 'bg-rose-500/30 border-2 border-rose-400/20'
+                                                            : 'bg-gray-400/20'
                                                     }`}
                                                 >
                                                     {chapter.number}
@@ -118,15 +118,7 @@ export function ChaptersPanel({
                                                     >
                                                         {chapter.name}
                                                     </div>
-                                                </div>
-                                                <BookOpen
-                                                    className={`h-4 w-4 flex-shrink-0 ${
-                                                        selectedChapter ===
-                                                        chapter.id
-                                                            ? 'text-black/80'
-                                                            : 'text-muted-foreground'
-                                                    }`}
-                                                />
+                                                </div>                                                
                                             </div>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>

@@ -25,7 +25,8 @@ export default function QuranReader({
     fromVerse,
     toVerse,
 }: QuranReaderProps) {
-    const { auth } = usePage<SharedData>().props;
+    const page = usePage<SharedData>();
+    const { auth } = page.props;
     const user = auth?.user;
     const [chapters, setChapters] = useState<Chapter[]>([]);
     const [selectedChapter, setSelectedChapter] = useState<
@@ -33,6 +34,13 @@ export default function QuranReader({
     >();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Optional start-verse query param to continue reading from a specific verse
+    const searchParams = new URLSearchParams(
+        page.url.split('?')[1] ?? '',
+    );
+    const startVerseParam = searchParams.get('start-verse');
+    const startFromVerse = startVerseParam ? Number(startVerseParam) || undefined : undefined;
 
     // Mock chapters data - replace with actual API call
     const mockChapters: Chapter[] = [
@@ -165,6 +173,7 @@ export default function QuranReader({
                                 user={user}
                                 fromVerse={fromVerse ?? undefined}
                                 toVerse={toVerse ?? undefined}
+                                startFromVerse={startFromVerse}
                             />
                         </div>
                     </div>

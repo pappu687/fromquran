@@ -73,6 +73,7 @@ interface ResourcesSheetProps {
     onOpenChange: (open: boolean) => void;
     verseId: number;
     verseNumber: number;
+    chapterNumber?: number;
 }
 
 export function ResourcesSheet({
@@ -80,6 +81,7 @@ export function ResourcesSheet({
     onOpenChange,
     verseId,
     verseNumber,
+    chapterNumber,
 }: ResourcesSheetProps) {
     const [resources, setResources] = useState<Resource[]>([]);
     const [loading, setLoading] = useState(false);
@@ -89,6 +91,7 @@ export function ResourcesSheet({
     const [loadingSimilar, setLoadingSimilar] = useState(false);
     const [topics, setTopics] = useState<Topic[]>([]);
     const [loadingTopics, setLoadingTopics] = useState(false);
+    const [hasMore, setHasMore] = useState(false);
 
     useEffect(() => {
         if (open) {
@@ -101,10 +104,13 @@ export function ResourcesSheet({
     const fetchResources = async () => {
         setLoading(true);
         try {
-            const response = await fetch(`/api/verses/${verseId}/resources`);
+            const response = await fetch(
+                `/api/verses/${verseId}/resources?limit=5`,
+            );
             if (response.ok) {
                 const data = await response.json();
                 setResources(data.data || []);
+                setHasMore(Boolean(data.meta?.hasMore));
             }
         } catch (error) {
             console.error('Failed to fetch resources:', error);
@@ -171,6 +177,9 @@ export function ResourcesSheet({
         {} as Record<string, Resource[]>,
     );
 
+    const hasGroupWithMoreThanFive =
+        Object.values(groupedResources).some((items) => items.length > 5);
+
     // Handle verse click - navigate to the verse
     const handleVerseClick = (chapterNumber: number, verseNumber: number) => {
         router.visit(`/${chapterNumber}/${verseNumber}`, {
@@ -194,6 +203,22 @@ export function ResourcesSheet({
                         Resources for Verse {verseNumber}
                     </SheetDescription>
                 </SheetHeader>
+
+                {chapterNumber && hasMore && (
+                    <div className="px-4 pb-2">
+                        <Button
+                            variant="outline"
+                            size="sm"                            
+                            onClick={() =>
+                                router.visit(
+                                    `/related/${chapterNumber}/${verseNumber}`,
+                                )
+                            }
+                        >
+                            View all ({resources.length})
+                        </Button>
+                    </div>
+                )}
 
                 <div className="px-4">
                     {loading ? (
@@ -302,7 +327,7 @@ export function ResourcesSheet({
                                                 <Badge
                                                     key={topic.topic_id}
                                                     variant="secondary"
-                                                    className="cursor-pointer bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 hover:from-purple-200 hover:to-pink-200 dark:from-purple-900 dark:to-pink-900 dark:text-purple-100"
+                                                    className="cursor-pointer bg-amber-400/20 border-amber-500/50"
                                                     onClick={() => {
                                                         router.visit(
                                                             `/topic/${topic.topic_id}`,

@@ -134,20 +134,17 @@ export default function HomePage() {
                             <Button
                                 size="lg"
                                 onClick={scrollToChapters}
-                                className="gap-2 text-base shadow-md"
-                            >
-                                <BookOpen className="h-5 w-5" />
-                                Start Reading
-                                <ArrowRight className="h-5 w-5" />
+                                className="gap-2 text-base shadow-sm"
+                            >                                
+                                Start Reading                                
                             </Button>
                             <Button
                                 size="lg"
                                 variant="outline"
                                 onClick={scrollToFeatures}
-                                className="gap-2 text-base"
+                                className="gap-2 text-base shadow-sm"
                             >
-                                Learn More
-                                <ArrowRight className="h-5 w-5" />
+                                Learn More                                
                             </Button>
                         </div>
                     </div>

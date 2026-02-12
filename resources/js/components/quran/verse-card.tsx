@@ -31,6 +31,7 @@ import { ResourcesSheet } from './resources-sheet';
 interface Verse {
     id: number;
     chapterId: number;
+    chapterNumber?: number;
     verseNumber: number;
     text: string;
     translation?: string;
@@ -50,6 +51,7 @@ interface VerseCardProps {
     showTranslation?: boolean;
     className?: string;
     reciterId?: number;
+    hideHeaderActions?: boolean;
 }
 
 export function VerseCard({
@@ -63,6 +65,7 @@ export function VerseCard({
     showTranslation = true,
     className,
     reciterId = 1, // Default reciter ID
+    hideHeaderActions = false,
 }: VerseCardProps) {
     const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
     const [isResourcesSheetOpen, setIsResourcesSheetOpen] = useState(false);
@@ -98,100 +101,101 @@ export function VerseCard({
         >
             <CardContent className="p-1">
                 {/* Verse Header */}
-                <div className="mb-4 flex items-center justify-between">
+                <div className="mb-5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-[30%] bg-primary/20 text-sm font-semibold">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-[40%] bg-gray-400/20 mr-2 text-sm font-semibold align-middle">
                             {verse.verseNumber}
                         </div>
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex items-center gap-1">
-                        {/* Play Button */}
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={handlePlayAudio}
-                                    className="h-8 w-8 p-0"
-                                >
-                                    {isCurrentlyPlaying ? (
-                                        <div className="flex items-end gap-0.5 h-4 w-4 items-center justify-center">
-                                            <span className="w-0.5 h-2 bg-current animate-pulse" />
-                                            <span className="w-0.5 h-3 bg-current animate-pulse delay-75" />
-                                            <span className="w-0.5 h-2 bg-current animate-pulse delay-150" />
-                                        </div>
-                                    ) : (
-                                        <Play className="h-4 w-4" />
-                                    )}
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                {isCurrentlyPlaying ? 'Playing' : 'Play audio'}
-                            </TooltipContent>
-                        </Tooltip>
-
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() =>
-                                        setIsResourcesSheetOpen(true)
-                                    }
-                                    className="h-8 w-8 p-0"
-                                >
-                                    <Eye
-                                        className={cn(
-                                            'h-4 w-4',
-                                            hasResources && 'text-orange-500',
+                    {!hideHeaderActions && (
+                        <div className="flex items-center gap-1">
+                            {/* Play Button */}
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={handlePlayAudio}
+                                        className="h-8 w-8 p-0"
+                                    >
+                                        {isCurrentlyPlaying ? (
+                                            <div className="flex items-end gap-0.5 h-4 w-4 items-center justify-center">
+                                                <span className="w-0.5 h-2 bg-current animate-pulse" />
+                                                <span className="w-0.5 h-3 bg-current animate-pulse delay-75" />
+                                                <span className="w-0.5 h-2 bg-current animate-pulse delay-150" />
+                                            </div>
+                                        ) : (
+                                            <Play className="h-4 w-4" />
                                         )}
-                                    />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>View Resources</TooltipContent>
-                        </Tooltip>
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    {isCurrentlyPlaying ? 'Playing' : 'Play audio'}
+                                </TooltipContent>
+                            </Tooltip>
 
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 w-8 p-0"
-                                >
-                                    <Ellipsis className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={handleBookmark}>
-                                    {isBookmarked ? (
-                                        <>
-                                            <BookmarkCheck className="h-4 w-4 text-primary" />
-                                            <span>Remove bookmark</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Bookmark className="h-4 w-4" />
-                                            <span>Bookmark this verse</span>
-                                        </>
-                                    )}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onClick={() =>
-                                        setIsCollectionsModalOpen(true)
-                                    }
-                                >
-                                    <BookmarkPlus className="h-4 w-4" />
-                                    <span>Add to collection</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={handleAddResource}>
-                                    <Plus className="h-4 w-4" />
-                                    <span>Add resource to this verse</span>
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() =>
+                                            setIsResourcesSheetOpen(true)
+                                        }
+                                        className="h-8 w-8 p-0"
+                                    >
+                                        <Eye
+                                            className={cn(
+                                                'h-4 w-4',
+                                                hasResources && 'text-orange-500',
+                                            )}
+                                        />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>View Resources</TooltipContent>
+                            </Tooltip>
+
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 w-8 p-0"
+                                    >
+                                        <Ellipsis className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={handleBookmark}>
+                                        {isBookmarked ? (
+                                            <>
+                                                <BookmarkCheck className="h-4 w-4 text-primary" />
+                                                <span>Remove bookmark</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Bookmark className="h-4 w-4" />
+                                                <span>Bookmark this verse</span>
+                                            </>
+                                        )}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        onClick={() =>
+                                            setIsCollectionsModalOpen(true)
+                                        }
+                                    >
+                                        <BookmarkPlus className="h-4 w-4" />
+                                        <span>Add to collection</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={handleAddResource}>
+                                        <Plus className="h-4 w-4" />
+                                        <span>Add resource to this verse</span>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    )}
                 </div>
 
                 {/* Arabic Text */}
@@ -207,7 +211,7 @@ export function VerseCard({
                 {/* Translation */}
                 {showTranslation && verse.translation && (
                     <div className="border-t pt-4">
-                        <p className="leading-relaxed text-muted-foreground">
+                        <p className="leading-relaxed text-blue-950/60 font-medium">
                             {verse.translation}
                         </p>
                     </div>
@@ -237,6 +241,7 @@ export function VerseCard({
                 onOpenChange={setIsResourcesSheetOpen}
                 verseId={verse.id}
                 verseNumber={verse.verseNumber}
+                chapterNumber={verse.chapterNumber}
             />
         </Card>
     );

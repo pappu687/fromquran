@@ -37,7 +37,7 @@ export function VerseReading({ verses, className }: VerseReadingProps) {
                         {verses.map((verse, index) => (
                             <span key={verse.id}>
                                 {verse.text}
-                                <span className="inline-flex h-8 w-8 items-center justify-center rounded-[30%] bg-primary/20 text-sm font-semibold mx-1 align-middle">
+                                <span className="inline-flex h-8 w-8 items-center justify-center rounded-[40%] bg-gray-400/20 mr-2 text-sm font-semibold align-middle">
                                     {verse.verseNumber}
                                 </span>
                                 {index < verses.length - 1 && ' '}

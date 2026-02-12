@@ -12,14 +12,16 @@ import {
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { VerseCard } from './verse-card';
 import { VerseReading } from './verse-reading';
 import { useReadingMode } from '@/contexts/reading-mode-context';
+import { router } from '@inertiajs/react';
 
 interface Verse {
     id: number;
     chapterId: number;
+    chapterNumber?: number;
     verseNumber: number;
     text: string;
     translation?: string;
@@ -48,6 +50,7 @@ interface VersesPanelProps {
     user?: any; // User authentication object
     fromVerse?: number;
     toVerse?: number;
+    startFromVerse?: number;
 }
 
 export function VersesPanel({
@@ -59,6 +62,7 @@ export function VersesPanel({
     className,
     fromVerse,
     toVerse,
+    startFromVerse,
 }: VersesPanelProps) {
     const [verses, setVerses] = useState<Verse[]>([]);
     const [loading, setLoading] = useState(false);
@@ -80,6 +84,7 @@ export function VersesPanel({
     const [showSuccessAlert, setShowSuccessAlert] = useState(false);
     const [successAlertMessage, setSuccessAlertMessage] = useState('');
     const { mode } = useReadingMode();
+    const hasScrolledToStartRef = useRef(false);
 
     const fetchVerses = async (pageNum: number, reset = false) => {
         if (!chapter) return;
@@ -128,11 +133,47 @@ export function VersesPanel({
         if (chapter && chapter.id !== currentChapterId) {
             setCurrentChapterId(chapter.id);
             setVerses([]);
-            setPage(1);
             setHasMore(true);
-            fetchVerses(1, true);
+            hasScrolledToStartRef.current = false;
+
+            const initialPage =
+                startFromVerse && !fromVerse && !toVerse
+                    ? Math.max(1, Math.ceil(startFromVerse / pageSize))
+                    : 1;
+
+            setPage(initialPage);
+            fetchVerses(initialPage, true);
         }
-    }, [chapter?.id, apiUrl, pageSize, selectedEdition, fromVerse, toVerse]);
+    }, [
+        chapter?.id,
+        apiUrl,
+        pageSize,
+        selectedEdition,
+        fromVerse,
+        toVerse,
+        startFromVerse,
+    ]);
+
+    // Auto-scroll to the requested start verse (if present on the page)
+    useEffect(() => {
+        if (
+            !chapter ||
+            !startFromVerse ||
+            verses.length === 0 ||
+            hasScrolledToStartRef.current
+        ) {
+            return;
+        }
+
+        const el = document.getElementById(
+            `verse-${chapter.id}-${startFromVerse}`,
+        );
+
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            hasScrolledToStartRef.current = true;
+        }
+    }, [chapter?.id, startFromVerse, verses]);
 
     // Load user bookmarks if authenticated
     useEffect(() => {
@@ -326,10 +367,13 @@ export function VersesPanel({
                     {mode === 'list' ? (
                         verses.map((verse) => (
                             <VerseCard
+                                className="p-3 bg-transparent"
                                 key={verse.id}
                                 verse={{
                                     ...verse,
                                     chapterId: verse.chapterId || chapter?.id,
+                                    chapterNumber:
+                                        verse.chapterNumber || chapter?.number,
                                 }}
                                 totalVerses={chapter?.verses}
                                 isBookmarked={bookmarkedVerses.has(
@@ -374,6 +418,23 @@ export function VersesPanel({
                         <div className="py-8 text-center text-muted-foreground">
                             <Separator className="mb-4" />
                             <p>You've reached the end of this chapter</p>
+                        </div>
+                    )}
+
+                    {/* Continue button for single-verse/range view */}
+                    {fromVerse && chapter && (
+                        <div className="mt-6 flex justify-center">
+                            <Button
+                                variant="default"
+                                className="min-w-32"
+                                onClick={() =>
+                                    router.visit(
+                                        `/${chapter.number}?start-verse=${fromVerse}`,
+                                    )
+                                }
+                            >
+                                Continue
+                            </Button>
                         </div>
                     )}
                 </div>
