@@ -200,10 +200,7 @@ export function ResourcesSheet({
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent className="sm:max-w-lg">
                 <SheetHeader>
-                    <SheetTitle>Related Resources</SheetTitle>
-                    <SheetDescription>
-                        Resources for Verse {verseNumber}
-                    </SheetDescription>
+                    <SheetTitle>Related Resources for ({chapterNumber} : {verseNumber})</SheetTitle>                    
                 </SheetHeader>
 
                 {chapterNumber && hasMore && (

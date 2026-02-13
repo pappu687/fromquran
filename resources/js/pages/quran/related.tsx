@@ -301,7 +301,6 @@ export default function RelatedPage({
 
     const content = (
         <>
-            <Head title={`Related Resources (${chapterNumber}:${verseNumber})`} />
             <div className="flex h-full flex-col px-4 py-5">
                 <div className="mx-auto h-full w-full max-w-3xl rounded-xl">
                     {/* Top navigation */}
@@ -378,24 +377,6 @@ export default function RelatedPage({
                         </div>
                     )}
 
-                    {/* Main verse (using shared VerseCard) */}
-                    <section className="mb-6">
-                        {loadingMainVerse ? (
-                            <div className="space-y-3 rounded-lg border bg-card p-4">
-                                <Skeleton className="h-8 w-32" />
-                                <Skeleton className="h-10 w-full" />
-                                <Skeleton className="h-5 w-3/4" />
-                            </div>
-                        ) : mainVerse ? (
-                            <VerseCard
-                                className="p-3 bg-white/70 border-2"
-                                verse={mainVerse}
-                                showTranslation
-                                hideHeaderActions
-                            />
-                        ) : null}
-                    </section>
-
                     {/* Resources */}
                     <section className="mb-8">
                         <div className="mb-4 flex items-center justify-between">
@@ -441,7 +422,7 @@ export default function RelatedPage({
                                                     {typeResources.map((resource) => (
                                                         <div
                                                             key={resource.id}
-                                                            className="rounded-lg border p-3"
+                                                            className="rounded-lg border p-3 bg-white/70"
                                                         >
                                                             <a
                                                                 href={
@@ -502,6 +483,24 @@ export default function RelatedPage({
                                 )}
                             </Accordion>
                         )}
+                    </section>
+
+                    {/* Main verse (using shared VerseCard) */}
+                    <section className="mb-6">
+                        {loadingMainVerse ? (
+                            <div className="space-y-3 rounded-lg border bg-card p-4">
+                                <Skeleton className="h-8 w-32" />
+                                <Skeleton className="h-10 w-full" />
+                                <Skeleton className="h-5 w-3/4" />
+                            </div>
+                        ) : mainVerse ? (
+                            <VerseCard
+                                className="p-3 bg-white/70 border-2"
+                                verse={mainVerse}
+                                showTranslation
+                                hideHeaderActions
+                            />
+                        ) : null}
                     </section>
 
                     {/* Topics (only show if loading or there are any) */}
@@ -713,13 +712,16 @@ export default function RelatedPage({
     );
 
     return (
-        <QuranReaderLayout
-            chapters={chapters}
-            selectedChapter={selectedChapterId}
-            onChapterSelect={handleChapterSelect}
-        >
-            {content}
-        </QuranReaderLayout>
+        <>
+            <Head title={`Related Resources (${chapterNumber}:${verseNumber})`} />
+            <QuranReaderLayout
+                chapters={chapters}
+                selectedChapter={selectedChapterId}
+                onChapterSelect={handleChapterSelect}
+            >
+                {content}
+            </QuranReaderLayout>
+        </>
     );
 }
 

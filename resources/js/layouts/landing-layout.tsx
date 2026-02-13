@@ -41,13 +41,13 @@ export default function LandingLayout({
 
                         <nav className="me-5 flex flex-1 items-center justify-end gap-x-4 text-sm font-medium">
                             <Link
-                                href="#features"
+                                href="/about"
                                 className="text-foreground/60 transition-colors hover:text-foreground/80"
                             >
                                 About
                             </Link>
                             <Link
-                                href="#chapters"
+                                href="/contact"
                                 className="text-foreground/60 transition-colors hover:text-foreground/80"
                             >
                                 Contact

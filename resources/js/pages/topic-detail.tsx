@@ -305,7 +305,7 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
                                             <Badge
                                                 key={child.topic_id}
                                                 variant="outline"
-                                                className="cursor-pointer hover:bg-primary/20"
+                                                className="cursor-pointer bg-amber-400/20 border-amber-500/50"
                                                 onClick={() =>
                                                     handleTopicClick(child.topic_id)
                                                 }
@@ -369,7 +369,7 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
                                                     }}
                                                     showTranslation
                                                     hideHeaderActions
-                                                    className="bg-transparent border-0 shadow-none px-3 py-2"
+                                                    className="bg-white/70 border-0 shadow-none px-3 py-2"
                                                 />
                                             </div>
                                         ))}

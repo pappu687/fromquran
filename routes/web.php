@@ -12,6 +12,18 @@ Route::get('/', function () {
     return Inertia::render('home');
 })->name('home');
 
+// Static marketing pages
+Route::get('/about', function () {
+    return Inertia::render('about');
+})->name('about');
+
+Route::get('/contact', function () {
+    return Inertia::render('contact');
+})->name('contact');
+
+Route::post('/contact', [\App\Http\Controllers\ContactController::class, 'store'])
+    ->name('contact.store');
+
 // Global search page (Solr-backed)
 Route::get('/search', function (\Illuminate\Http\Request $request, QuranDatabaseService $quranService) {
     $query = (string) $request->get('query', '');

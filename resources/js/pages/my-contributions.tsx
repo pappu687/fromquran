@@ -237,7 +237,7 @@ export default function ContributionsPage() {
                                 <Item
                                     key={contribution.id}
                                     variant="outline"
-                                    className="transition-all hover:shadow-md"
+                                    className="transition-all hover:shadow-md bg-white/70"
                                 >
                                     <ItemContent className="flex flex-col gap-3">
                                         <div className="flex items-start justify-between gap-4">

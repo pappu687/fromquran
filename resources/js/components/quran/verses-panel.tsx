@@ -425,8 +425,8 @@ export function VersesPanel({
                     {fromVerse && chapter && (
                         <div className="mt-6 flex justify-center">
                             <Button
-                                variant="default"
-                                className="min-w-32"
+                                variant="outline"
+                                className="min-w-32 border-amber-400 border-2 text-amber-900"
                                 onClick={() =>
                                     router.visit(
                                         `/${chapter.number}?start-verse=${fromVerse}`,

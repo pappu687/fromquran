@@ -255,7 +255,7 @@ export default function MyCollectionsPage() {
                                     className="group relative h-full"
                                 >
                                     <Item
-                                        className="h-full cursor-pointer overflow-hidden border-1 bg-transparent transition-all duration-300"
+                                        className="h-full cursor-pointer overflow-hidden border-1 bg-white/70 transition-all duration-300"
                                         variant="outline"
                                         onClick={() =>
                                             handleViewCollection(
