@@ -80,6 +80,13 @@ export default function Topics() {
         fetchChapters();
     }, []);
 
+    const handleChapterSelect = (chapterId: number) => {
+        const chapter = chapters.find((ch) => ch.id === chapterId);
+        if (!chapter) return;
+
+        router.visit(`/${chapter.number}`);
+    };
+
     // Group topics by first letter
     const groupedTopics = topics.reduce((acc, topic) => {
         const firstLetter = topic.name.charAt(0).toUpperCase();
@@ -207,7 +214,7 @@ export default function Topics() {
         <QuranReaderLayout
             chapters={chapters}
             selectedChapter={undefined}
-            onChapterSelect={() => {}}
+            onChapterSelect={handleChapterSelect}
         >
             {content}
         </QuranReaderLayout>

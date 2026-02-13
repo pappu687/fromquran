@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ExternalLink, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import QuranReaderLayout from '@/layouts/quran-reader-layout';
+import { VerseCard } from '@/components/quran/verse-card';
 
 interface Verse {
     id: number;
@@ -145,6 +146,13 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
 
     const handleVerseClick = (chapterNumber: number, verseNumber: number) => {
         router.visit(`/${chapterNumber}/${verseNumber}`);
+    };
+
+    const handleChapterSelect = (chapterId: number) => {
+        const chapter = chapters.find((ch) => ch.id === chapterId);
+        if (!chapter) return;
+
+        router.visit(`/${chapter.number}`);
     };
 
     // Get random color for badges
@@ -340,7 +348,7 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
                                         {verses.map((verse) => (
                                             <div
                                                 key={verse.id}
-                                                className="mb-4 cursor-pointer rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                                                className="mb-4 cursor-pointer rounded-lg border transition-colors hover:bg-muted/50"
                                                 onClick={() =>
                                                     handleVerseClick(
                                                         verse.chapter_number,
@@ -348,21 +356,21 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
                                                     )
                                                 }
                                             >
-                                                <div className="mb-2 flex items-center justify-between">
-                                                    <span className="text-sm font-semibold text-primary">
-                                                        {verse.chapter_name} (
-                                                        {verse.chapter_number}:
-                                                        {verse.verse_number})
-                                                    </span>
-                                                </div>
-                                                <p className="mb-2 text-right text-sm font-arabic text-foreground">
-                                                    {verse.text_uthmani}
-                                                </p>
-                                                {verse.translation && (
-                                                    <p className="text-sm text-muted-foreground">
-                                                        {verse.translation}
-                                                    </p>
-                                                )}
+                                                <VerseCard
+                                                    verse={{
+                                                        id: verse.id,
+                                                        chapterId: verse.chapter_id,
+                                                        chapterNumber: verse.chapter_number,
+                                                        verseNumber: verse.verse_number,
+                                                        text: verse.text_uthmani,
+                                                        translation: verse.translation,
+                                                        juzNumber: 0,
+                                                        pageNumber: 0,
+                                                    }}
+                                                    showTranslation
+                                                    hideHeaderActions
+                                                    className="bg-transparent border-0 shadow-none px-3 py-2"
+                                                />
                                             </div>
                                         ))}
 
@@ -412,7 +420,7 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
         <QuranReaderLayout
             chapters={chapters}
             selectedChapter={undefined}
-            onChapterSelect={() => {}}
+            onChapterSelect={handleChapterSelect}
         >
             {content}
         </QuranReaderLayout>

@@ -18,6 +18,7 @@ interface Chapter {
     number: number;
     name: string;
     englishName: string;
+    romanName?: string;
     englishNameTranslation: string;
     revelationType: 'Meccan' | 'Medinan';
     verses: number;
@@ -47,7 +48,7 @@ export default function QuranReaderLayout({
                 onChapterSelect={onChapterSelect}
             />
             <SidebarInset>
-                <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background">
+                <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 bg-background">
                     <div className="flex flex-1 items-center gap-2 px-3">
                         <SidebarTrigger />
                         <Separator
@@ -61,7 +62,7 @@ export default function QuranReaderLayout({
                                         {chapter ? (
                                             <div className="flex items-center gap-2">
                                                 <span>
-                                                    {chapter.englishName} ({chapter.name})
+                                                    {chapter.romanName ?? chapter.englishName} ({chapter.name})
                                                 </span>
                                                 <Button
                                                     variant="ghost"

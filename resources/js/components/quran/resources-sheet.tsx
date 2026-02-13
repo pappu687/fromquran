@@ -26,6 +26,7 @@ import { Badge } from '@/components/ui/badge';
 import { ExternalLink, Tags } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { router } from '@inertiajs/react';
+import { AddResourceModal } from './add-resource-modal';
 
 interface ResourceType {
     id: number;
@@ -92,6 +93,7 @@ export function ResourcesSheet({
     const [topics, setTopics] = useState<Topic[]>([]);
     const [loadingTopics, setLoadingTopics] = useState(false);
     const [hasMore, setHasMore] = useState(false);
+    const [isAddResourceOpen, setIsAddResourceOpen] = useState(false);
 
     useEffect(() => {
         if (open) {
@@ -228,10 +230,17 @@ export function ResourcesSheet({
                             <Skeleton className="h-12 w-full" />
                         </div>
                     ) : resources.length === 0 ? (
-                        <div className="flex h-40 items-center justify-center text-center">
+                        <div className="flex h-40 flex-col items-center justify-center text-center gap-3">
                             <p className="text-muted-foreground">
                                 No resources available yet
                             </p>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setIsAddResourceOpen(true)}
+                            >
+                                Add a resource
+                            </Button>
                         </div>
                     ) : (
                         <Accordion
@@ -413,6 +422,15 @@ export function ResourcesSheet({
                                     </AccordionContent>
                                 </AccordionItem>
                             )}
+                            <div className="mt-4 flex justify-center">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setIsAddResourceOpen(true)}
+                                >
+                                    Add a resource
+                                </Button>
+                            </div>
                         </Accordion>
                     )}
                 </div>
@@ -444,6 +462,11 @@ export function ResourcesSheet({
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+            <AddResourceModal
+                open={isAddResourceOpen}
+                onOpenChange={setIsAddResourceOpen}
+                verseId={verseId}
+            />
         </Sheet>
     );
 }

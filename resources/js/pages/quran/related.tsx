@@ -607,14 +607,27 @@ export default function RelatedPage({
                                                         </span>
                                                     </div>
                                                 </div>
-                                                <p className="mb-2 text-right text-sm font-arabic text-foreground ltr:font-sans rtl:font-arabic">
-                                                    {similar.text_uthmani}
-                                                </p>
-                                                {similar.translation && (
-                                                    <p className="text-sm text-muted-foreground">
-                                                        {similar.translation}
-                                                    </p>
-                                                )}
+
+                                                <VerseCard
+                                                    verse={{
+                                                        id: similar.id,
+                                                        chapterId:
+                                                            similar.chapter_id,
+                                                        chapterNumber:
+                                                            similar.chapter_number,
+                                                        verseNumber:
+                                                            similar.verse_number,
+                                                        text: similar.text_uthmani,
+                                                        translation:
+                                                            similar.translation,
+                                                        juzNumber: 0,
+                                                        pageNumber: 0,
+                                                    }}
+                                                    showTranslation
+                                                    hideHeaderActions
+                                                    className="bg-transparent border-0 shadow-none px-0 pt-0"
+                                                />
+
                                                 {similar.match_words_range &&
                                                     similar.match_words_range
                                                         .length > 0 && (

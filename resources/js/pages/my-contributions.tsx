@@ -23,7 +23,7 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
-    DialogDescription,
+    DialogFooter,
 } from '@/components/ui/dialog';
 import { Head, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
@@ -47,14 +47,15 @@ export default function ContributionsPage() {
     const [selectedComment, setSelectedComment] = useState<string | null>(null);
 
     const truncateWords = (str: string, numWords: number) => {
-        const words = str.split(' ');
+        const plain = str.replace(/<[^>]+>/g, '');
+        const words = plain.split(/\s+/).filter(Boolean);
         if (words.length > numWords) {
             return {
                 text: words.slice(0, numWords).join(' ') + '...',
                 isTruncated: true,
             };
         }
-        return { text: str, isTruncated: false };
+        return { text: plain, isTruncated: false };
     };
 
     useEffect(() => {
@@ -243,16 +244,42 @@ export default function ContributionsPage() {
                                             <div className="flex-1">
                                                 <div className="mb-2 flex items-center gap-2">
                                                     {contribution.verse && (
-                                                        <Badge
+                                                        <Button
                                                             variant="outline"
-                                                            className="font-mono text-xs"
+                                                            size="sm"
+                                                            className="h-7 rounded-full px-3 text-xs font-mono"
+                                                            onClick={() => {
+                                                                const key =
+                                                                    contribution
+                                                                        .verse
+                                                                        .verse_key;
+                                                                if (!key) return;
+                                                                const [chStr, vStr] =
+                                                                    key.split(':');
+                                                                const chapterNumber =
+                                                                    Number(chStr);
+                                                                const verseNumber =
+                                                                    Number(vStr);
+                                                                if (
+                                                                    Number.isFinite(
+                                                                        chapterNumber,
+                                                                    ) &&
+                                                                    Number.isFinite(
+                                                                        verseNumber,
+                                                                    )
+                                                                ) {
+                                                                    router.visit(
+                                                                        `/${chapterNumber}/${verseNumber}`,
+                                                                    );
+                                                                }
+                                                            }}
                                                         >
                                                             {
                                                                 contribution
                                                                     .verse
                                                                     .verse_key
                                                             }
-                                                        </Badge>
+                                                        </Button>
                                                     )}
                                                     <Badge variant="secondary">
                                                         {contribution
@@ -396,13 +423,26 @@ export default function ContributionsPage() {
                     open={!!selectedComment}
                     onOpenChange={(open) => !open && setSelectedComment(null)}
                 >
-                    <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
+                    <DialogContent className="max-w-[80rem]">
                         <DialogHeader>
                             <DialogTitle>Full Description</DialogTitle>
                         </DialogHeader>
-                        <DialogDescription className="whitespace-pre-wrap text-foreground">
-                            {selectedComment}
-                        </DialogDescription>
+                        <div className="no-scrollbar -mx-4 max-h-[50vh] overflow-y-auto px-4">
+                            <div
+                                className="text-sm whitespace-pre-wrap text-foreground"
+                                dangerouslySetInnerHTML={{
+                                    __html: selectedComment || '',
+                                }}
+                            />
+                        </div>
+                        <DialogFooter>
+                            <Button
+                                variant="outline"
+                                onClick={() => setSelectedComment(null)}
+                            >
+                                Close
+                            </Button>
+                        </DialogFooter>
                     </DialogContent>
                 </Dialog>
             </div>

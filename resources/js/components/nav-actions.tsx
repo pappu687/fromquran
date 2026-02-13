@@ -12,16 +12,11 @@ import {
   Search as SearchIcon,
   List,
   BookOpen,
+  Home,
 } from "lucide-react"
 
 import { Button } from '@/components/ui/button'
 import { CommandPalette } from '@/components/command-palette'
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from '@/components/ui/input-group'
-import { Kbd } from '@/components/ui/kbd'
 import {
   Popover,
   PopoverContent,
@@ -120,9 +115,22 @@ export function NavActions() {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  // Search input component
+  // Search / reader controls
   const SearchInput = () => (
       <div className="hidden sm:flex sm:items-center sm:gap-2">
+          <Tooltip>
+              <TooltipTrigger asChild>
+                  <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.visit('/')}
+                  >
+                      <Home className="h-4 w-4" />
+                  </Button>
+              </TooltipTrigger>
+              <TooltipContent>Home</TooltipContent>
+          </Tooltip>
+
           <ToggleGroup
               type="single"
               value={mode}
@@ -167,21 +175,15 @@ export function NavActions() {
               <TooltipContent>Reader Settings</TooltipContent>
           </Tooltip>
 
-          <InputGroup className="max-w-[200px] lg:max-w-xs">
-              <InputGroupInput
-                  placeholder="Search..."
-                  readOnly
-                  onClick={() => setCommandPaletteOpen(true)}
-                  className="cursor-pointer pr-16 pl-9"
-              />
-              <InputGroupAddon align="start">
-                  <SearchIcon className="h-4 w-4" />
-              </InputGroupAddon>
-              <InputGroupAddon align="inline-end">
-                  <Kbd>⌘</Kbd>
-                  <Kbd>K</Kbd>
-              </InputGroupAddon>
-          </InputGroup>
+          <Button
+              variant="ghost"
+              size="sm"
+              className="ml-1"
+              onClick={() => router.visit('/search')}
+          >
+              <SearchIcon className="mr-1 h-4 w-4" />
+              <span className="text-xs font-medium">Search</span>
+          </Button>
       </div>
   );
 
@@ -195,7 +197,7 @@ export function NavActions() {
                     variant="ghost"
                     size="icon"
                     className="h-7 w-7 sm:hidden"
-                    onClick={() => setCommandPaletteOpen(true)}
+                    onClick={() => router.visit('/search')}
                 >
                     <SearchIcon className="h-4 w-4" />
                 </Button>

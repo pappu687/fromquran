@@ -39,7 +39,14 @@ import { cn, isSameUrl, resolveUrl } from '@/lib/utils';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, Menu, Search as SearchIcon } from 'lucide-react';
+import {
+    BookOpen,
+    Folder,
+    Home,
+    LayoutGrid,
+    Menu,
+    Search as SearchIcon,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
@@ -165,8 +172,13 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                     <Link
                         href="/"
                         prefetch
-                        className="flex items-center space-x-2"
+                        className="mr-2 flex items-center justify-center rounded-md border border-transparent p-1 text-muted-foreground transition-colors hover:border-border hover:bg-accent hover:text-foreground"
                     >
+                        <Home className="h-5 w-5" />
+                        <span className="sr-only">Home</span>
+                    </Link>
+
+                    <Link href="/" prefetch className="flex items-center space-x-2">
                         <AppLogo />
                     </Link>
 

@@ -59,7 +59,7 @@ class QuranController extends Controller
      * Get verses for a specific chapter
      */
     public function verses(Request $request, int $chapterId): JsonResponse
-    {
+    {        
         $page = (int) $request->get('page', 1);
         $limit = (int) $request->get('limit', config('quran.default_page_size', 10));
         $edition = $request->get('edition', config('quran.default_edition', 'en.sahih'));

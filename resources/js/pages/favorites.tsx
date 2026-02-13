@@ -17,11 +17,15 @@ interface Bookmark {
         verse_number: number;
         text_uthmani: string;
         text_imlaei_simple?: string;
+        translation?: string;
+        juz_number?: number;
+        page_number?: number;
     };
     chapter: {
         id: number;
         chapter_number: number;
         name_simple: string;
+        name_roman?: string;
         name_arabic: string;
     };
 }
@@ -73,6 +77,8 @@ export default function FavoritesPage() {
                 (b: Bookmark) => b.verse && b.chapter,
             );
             setBookmarks(validBookmarks);
+            // Load translations for these bookmarked verses
+            loadTranslations(validBookmarks);
         } catch (error) {
             console.error('Failed to load favorites:', error);
             setErrors({
@@ -80,6 +86,80 @@ export default function FavoritesPage() {
             });
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    // Load translations for bookmarked verses using Quran API (Solr-backed)
+    const loadTranslations = async (loadedBookmarks: Bookmark[]) => {
+        try {
+            const byChapter: Record<number, Bookmark[]> = {};
+            loadedBookmarks.forEach((b) => {
+                const chapterNumber = b.chapter.chapter_number;
+                if (!byChapter[chapterNumber]) {
+                    byChapter[chapterNumber] = [];
+                }
+                byChapter[chapterNumber].push(b);
+            });
+
+            const translationMap: Record<string, string> = {};
+
+            await Promise.all(
+                Object.entries(byChapter).map(
+                    async ([chapterNumStr, bookmarksInChapter]) => {
+                        const chapterNumber = Number(chapterNumStr);
+                        const verseNumbers = bookmarksInChapter.map(
+                            (b) => b.verse.verse_number,
+                        );
+                        const minVerse = Math.min(...verseNumbers);
+                        const maxVerse = Math.max(...verseNumbers);
+
+                        const params = new URLSearchParams({
+                            from: String(minVerse),
+                            to: String(maxVerse),
+                            limit: String(maxVerse - minVerse + 1),
+                            edition: 'en.sahih',
+                        });
+
+                        const resp = await fetch(
+                            `/api/quran/chapters/${chapterNumber}/verses?${params.toString()}`,
+                        );
+                        if (!resp.ok) return;
+                        const payload = await resp.json();
+                        const items = payload.data || [];
+                        items.forEach((item: any) => {
+                            const key = `${chapterNumber}:${item.verseNumber}`;
+                            if (item.translation) {
+                                translationMap[key] = item.translation;
+                            }
+                        });
+                    },
+                ),
+            );
+
+            if (Object.keys(translationMap).length === 0) {
+                return;
+            }
+
+            setBookmarks((prev) =>
+                prev.map((b) => {
+                    const key = `${b.chapter.chapter_number}:${b.verse.verse_number}`;
+                    const translation = translationMap[key];
+                    return translation
+                        ? {
+                              ...b,
+                              verse: {
+                                  ...b.verse,
+                                  translation,
+                              },
+                          }
+                        : b;
+                }),
+            );
+        } catch (error) {
+            console.error(
+                'Failed to load translations for favorite verses',
+                error,
+            );
         }
     };
 
@@ -177,31 +257,48 @@ export default function FavoritesPage() {
                                 <CardContent className="p-3">
                                     <div className="flex items-start gap-4">
                                         <div className="flex-1">
-                                            <div className="mb-2 flex items-center gap-2">
-                                                <span className="text-sm font-medium">
-                                                    {
-                                                        bookmark.chapter
-                                                            ?.name_simple
-                                                    }
-                                                </span>
-                                                <span className="text-xs text-muted-foreground">
-                                                    {
-                                                        bookmark.chapter
-                                                            ?.name_arabic
-                                                    }
-                                                </span>
+                                            <div className="mb-3 flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="mr-2 flex h-8 w-8 items-center justify-center rounded-[40%] bg-gray-400/20 text-sm font-semibold">
+                                                        {bookmark.verse?.verse_number}
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-sm font-medium">
+                                                            {bookmark.chapter?.name_roman ??
+                                                                bookmark
+                                                                    .chapter
+                                                                    ?.name_simple}
+                                                        </div>
+                                                        <div
+                                                            className="text-xs text-muted-foreground"
+                                                            dir="rtl"
+                                                        >
+                                                            {
+                                                                bookmark
+                                                                    .chapter
+                                                                    ?.name_arabic
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
 
                                             <p
-                                                className="font-arabic mb-3 text-right text-2xl leading-relaxed"
+                                                className="mb-3 text-right font-arabic text-3xl leading-relaxed"
                                                 dir="rtl"
                                             >
                                                 {bookmark.verse?.text_uthmani}
                                             </p>
 
+                                            {bookmark.verse?.translation && (
+                                                <p className="leading-relaxed text-blue-950/60 font-medium">
+                                                    {bookmark.verse.translation}
+                                                </p>
+                                            )}
+
                                             {bookmark.verse
                                                 ?.text_imlaei_simple && (
-                                                <p className="mb-3 text-sm text-muted-foreground">
+                                                <p className="mt-2 text-sm text-muted-foreground">
                                                     {
                                                         bookmark.verse
                                                             .text_imlaei_simple

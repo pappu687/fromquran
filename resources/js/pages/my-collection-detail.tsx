@@ -68,10 +68,12 @@ interface Verse {
     verse_number: number;
     text_uthmani: string;
     text_imlaei_simple?: string;
+    translation?: string;
     chapter: {
         id: number;
         chapter_number: number;
         name_simple: string;
+        name_roman?: string;
         name_arabic: string;
     };
     pivot: {
@@ -124,32 +126,45 @@ function SortableVerseItem({ verse, onDelete }: SortableVerseItemProps) {
             style={style}
             className={cn(
                 'group relative rounded-lg border bg-card p-4 transition-all',
-                isDragging && 'shadow-lg ring-2 ring-primary'
+                isDragging && 'shadow-lg ring-2 ring-primary',
             )}
         >
             <div className="flex items-start gap-3">
                 <button
-                    className="cursor-grab active:cursor-grabbing mt-1 text-muted-foreground hover:text-foreground"
+                    className="mt-1 cursor-grab text-muted-foreground hover:text-foreground active:cursor-grabbing"
                     {...attributes}
                     {...listeners}
                 >
                     <GripVertical className="h-5 w-5" />
                 </button>
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
+                <div className="min-w-0 flex-1">
+                    <button
+                        type="button"
+                        onClick={() =>
+                            router.visit(
+                                `/${verse.chapter.chapter_number}/${verse.verse_number}`,
+                            )
+                        }
+                        className="mb-2 inline-flex items-center gap-2 rounded px-1 py-0.5 text-left transition-colors hover:bg-muted"
+                    >
                         <Badge variant="outline" className="font-mono text-xs">
                             {verse.verse_key}
                         </Badge>
                         <span className="text-sm text-muted-foreground">
-                            {verse.chapter.name_simple}
+                            {verse.chapter.name_roman ?? verse.chapter.name_simple}
                         </span>
-                    </div>
+                    </button>
                     <p
-                        className="text-right font-arabic text-2xl leading-relaxed mb-2"
+                        className="mb-2 text-right font-arabic text-3xl leading-relaxed"
                         dir="rtl"
                     >
                         {verse.text_uthmani}
                     </p>
+                    {verse.translation && (
+                        <p className="leading-relaxed text-blue-950/60 font-medium">
+                            {verse.translation}
+                        </p>
+                    )}
                     {verse.text_imlaei_simple && (
                         <p className="text-sm text-muted-foreground">
                             {verse.text_imlaei_simple}
@@ -160,7 +175,7 @@ function SortableVerseItem({ verse, onDelete }: SortableVerseItemProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => onDelete(verse.id)}
-                    className="text-destructive hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="opacity-0 text-destructive transition-opacity group-hover:opacity-100 hover:text-destructive"
                 >
                     <Trash2 className="h-4 w-4" />
                 </Button>
@@ -188,11 +203,12 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, {
             coordinateGetter: sortableKeyboardCoordinates,
-        })
+        }),
     );
 
     useEffect(() => {
         loadCollection();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [slug]);
 
     const loadCollection = async () => {
@@ -226,7 +242,10 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
 
             const data = await response.json();
             setCollection(data);
-            setVerses(data.verses || []);
+            const loadedVerses: Verse[] = data.verses || [];
+            setVerses(loadedVerses);
+            // load translations for these verses
+            loadTranslations(loadedVerses);
         } catch (error) {
             console.error('Failed to load collection:', error);
             setErrors({
@@ -234,6 +253,74 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
             });
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    // load translations for verses in this collection using Quran API (Solr-backed)
+    const loadTranslations = async (loadedVerses: Verse[]) => {
+        try {
+            const byChapter: Record<number, Verse[]> = {};
+            loadedVerses.forEach((v) => {
+                const chapterNumber = v.chapter.chapter_number;
+                if (!byChapter[chapterNumber]) {
+                    byChapter[chapterNumber] = [];
+                }
+                byChapter[chapterNumber].push(v);
+            });
+
+            const translationMap: Record<string, string> = {};
+
+            await Promise.all(
+                Object.entries(byChapter).map(
+                    async ([chapterNumStr, versesInChapter]) => {
+                        const chapterNumber = Number(chapterNumStr);
+                        const verseNumbers = versesInChapter.map(
+                            (v) => v.verse_number,
+                        );
+                        const minVerse = Math.min(...verseNumbers);
+                        const maxVerse = Math.max(...verseNumbers);
+
+                        const params = new URLSearchParams({
+                            from: String(minVerse),
+                            to: String(maxVerse),
+                            limit: String(maxVerse - minVerse + 1),
+                            edition: 'en.sahih',
+                        });
+
+                        const resp = await fetch(
+                            `/api/quran/chapters/${chapterNumber}/verses?${params.toString()}`,
+                        );
+                        if (!resp.ok) return;
+                        const payload = await resp.json();
+                        const items = payload.data || [];
+                        items.forEach((item: any) => {
+                            const key = `${chapterNumber}:${item.verseNumber}`;
+                            if (item.translation) {
+                                translationMap[key] = item.translation;
+                            }
+                        });
+                    },
+                ),
+            );
+
+            if (Object.keys(translationMap).length === 0) {
+                return;
+            }
+
+            setVerses((prev) =>
+                prev.map((v) => {
+                    const key = `${v.chapter.chapter_number}:${v.verse_number}`;
+                    return {
+                        ...v,
+                        translation: translationMap[key] ?? v.translation,
+                    };
+                }),
+            );
+        } catch (error) {
+            console.error(
+                'Failed to load translations for collection verses',
+                error,
+            );
         }
     };
 
@@ -250,7 +337,6 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
         const newVerses = arrayMove(verses, oldIndex, newIndex);
         setVerses(newVerses);
 
-        // Update order on server
         const verseOrders = newVerses.map((verse: Verse, index: number) => ({
             verse_id: verse.id,
             display_order: index + 1,
@@ -280,13 +366,16 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
             setTimeout(() => setSuccessMessage(null), 2000);
         } catch (error) {
             console.error('Failed to reorder verses:', error);
-            // Revert on error
             loadCollection();
         }
     };
 
     const handleDeleteVerse = async (verseId: number) => {
-        if (!confirm('Are you sure you want to remove this verse from the collection?')) {
+        if (
+            !window.confirm(
+                'Are you sure you want to remove this verse from the collection?',
+            )
+        ) {
             return;
         }
 
@@ -373,7 +462,6 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
 
             setCollection(data);
             setIsEditDialogOpen(false);
-
             setSuccessMessage('Collection updated successfully');
             setTimeout(() => setSuccessMessage(null), 3000);
         } catch (error) {
@@ -416,12 +504,14 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
 
                     <div className="flex items-start justify-between">
                         <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
+                            <div className="mb-2 flex items-center gap-3">
                                 <div
                                     className="h-8 w-1.5 rounded-full"
                                     style={{ backgroundColor: collection.color }}
                                 />
-                                <h1 className="text-3xl font-bold">{collection.name}</h1>
+                                <h1 className="text-3xl font-bold">
+                                    {collection.name}
+                                </h1>
                                 <Badge
                                     variant="secondary"
                                     className="flex items-center gap-1"
@@ -439,8 +529,9 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
                                     {collection.description}
                                 </p>
                             )}
-                            <p className="text-sm text-muted-foreground mt-2">
-                                {verses.length} {verses.length === 1 ? 'verse' : 'verses'}
+                            <p className="mt-2 text-sm text-muted-foreground">
+                                {verses.length}{' '}
+                                {verses.length === 1 ? 'verse' : 'verses'}
                             </p>
                         </div>
                         <Button onClick={handleEdit}>
@@ -502,7 +593,10 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
                 )}
 
                 {/* Edit Dialog */}
-                <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <Dialog
+                    open={isEditDialogOpen}
+                    onOpenChange={setIsEditDialogOpen}
+                >
                     <DialogContent className="sm:max-w-[500px]">
                         <DialogHeader>
                             <DialogTitle>Edit Collection</DialogTitle>
@@ -523,7 +617,10 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
                                     id="edit-name"
                                     value={editForm.name}
                                     onChange={(e) =>
-                                        setEditForm({ ...editForm, name: e.target.value })
+                                        setEditForm({
+                                            ...editForm,
+                                            name: e.target.value,
+                                        })
                                     }
                                     disabled={isSubmitting}
                                 />
@@ -535,7 +632,9 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="edit-description">Description</Label>
+                                <Label htmlFor="edit-description">
+                                    Description
+                                </Label>
                                 <Textarea
                                     id="edit-description"
                                     value={editForm.description}
@@ -564,7 +663,7 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
                                                 'h-8 w-8 rounded-full transition-all hover:scale-110',
                                                 color.bg,
                                                 editForm.color === color.value &&
-                                                    'ring-2 ring-ring ring-offset-2'
+                                                    'ring-2 ring-ring ring-offset-2',
                                             )}
                                             onClick={() =>
                                                 setEditForm({
@@ -627,3 +726,4 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
         </AppLayout>
     );
 }
+
