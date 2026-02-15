@@ -103,7 +103,7 @@
   --chart-5: hsl(27 87% 67%);
 }
 
-.dark {
+/* .dark {
   --background: hsl(222.2 84% 4.9%);
   --foreground: hsl(210 40% 98%);
   --card: hsl(222.2 84% 4.9%);
@@ -128,7 +128,7 @@
   --chart-3: hsl(30 80% 55%);
   --chart-4: hsl(280 65% 60%);
   --chart-5: hsl(340 75% 55%);
-}
+} */
 
 @layer base {
     * {
@@ -184,4 +184,13 @@
   body {
     @apply bg-background text-foreground;
     }
+}
+
+.ar.qpc-hafs {
+  text-align: end;
+  line-height: 2.5rem;
+  font-size: 1.8rem;
+  font-family: 'Uthmanic Hafs', 'Arabic Typesetting', 'Traditional Arabic', serif;
+  margin-bottom: 1rem;
+  margin-top: 1rem;
 }

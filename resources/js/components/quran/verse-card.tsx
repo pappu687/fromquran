@@ -16,6 +16,7 @@ import {
     Bookmark,
     BookmarkCheck,
     BookmarkPlus,
+    BookOpen,
     Ellipsis,
     Eye,
     Play,
@@ -27,6 +28,7 @@ import { useAudioPlayer } from '@/store/use-audio-player';
 import { AddResourceModal } from './add-resource-modal';
 import { CollectionsModal } from './collections-modal';
 import { ResourcesSheet } from './resources-sheet';
+import { TafsirModal } from './tafsir-modal';
 
 interface Verse {
     id: number;
@@ -70,6 +72,7 @@ export function VerseCard({
     const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
     const [isResourcesSheetOpen, setIsResourcesSheetOpen] = useState(false);
     const [isCollectionsModalOpen, setIsCollectionsModalOpen] = useState(false);
+    const [isTafsirModalOpen, setIsTafsirModalOpen] = useState(false);
     const { playVerse, currentVerse, audioData, isPlaying } = useAudioPlayer();
 
     const handleBookmark = () => {
@@ -154,6 +157,22 @@ export function VerseCard({
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>View Resources</TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() =>
+                                            setIsTafsirModalOpen(true)
+                                        }
+                                        className="h-8 w-8 p-0"
+                                    >
+                                        <BookOpen className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>View Tafsir</TooltipContent>
                             </Tooltip>
 
                             <DropdownMenu>
@@ -242,6 +261,16 @@ export function VerseCard({
                 verseId={verse.id}
                 verseNumber={verse.verseNumber}
                 chapterNumber={verse.chapterNumber}
+            />
+
+            {/* Tafsir Modal */}
+            <TafsirModal
+                open={isTafsirModalOpen}
+                onOpenChange={setIsTafsirModalOpen}
+                chapterId={verse.chapterId}
+                verseNumber={verse.verseNumber}
+                chapterNumber={verse.chapterNumber}
+                totalVerses={totalVerses}
             />
         </Card>
     );

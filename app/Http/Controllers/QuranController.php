@@ -286,4 +286,46 @@ class QuranController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get all available tafseer books
+     */
+    public function tafseerBooks(): JsonResponse
+    {
+        try {
+            $books = $this->quranService->getTafseerBooks();
+            return response()->json($books);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch tafseer books',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get tafsir for a specific verse
+     */
+    public function tafsir(Request $request, int $chapterId, int $verseNumber): JsonResponse
+    {
+        $tafsirSlug = $request->get('tafsir', 'en-ibn-katheer');
+
+        try {
+            $ayahKey = $chapterId . ':' . $verseNumber;
+            $tafsir = $this->quranService->getTafsirByAyahKey($ayahKey, $tafsirSlug);
+
+            if (!$tafsir) {
+                return response()->json([
+                    'error' => 'No tafsir found for this verse'
+                ], 404);
+            }
+
+            return response()->json($tafsir);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch tafsir',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

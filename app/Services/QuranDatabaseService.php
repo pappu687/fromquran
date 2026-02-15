@@ -3,6 +3,7 @@ namespace App\Services;
 
 use App\Models\Chapter;
 use App\Models\ResourceContent;
+use App\Models\TafseerBook;
 use App\Models\Translation;
 use App\Models\Verse;
 use Illuminate\Support\Facades\Cache;
@@ -373,5 +374,136 @@ class QuranDatabaseService {
                 Cache::forget( $pattern );
             }
         }
+    }
+
+    /**
+     * Get all available tafseer books
+     */
+    public function getTafseerBooks(): array {
+        return Cache::remember( 'quran.db.tafseer_books', $this->cacheTtl * 24, function () {
+            return TafseerBook::orderBy( 'display_order' )
+                ->get()
+                ->map( function ( $book ) {
+                    return array(
+                        'id'          => $book->id,
+                        'name'        => $book->name,
+                        'slug'        => $book->slug,
+                        'description' => $book->description,
+                     );
+                } )
+                ->toArray();
+        } );
+    }
+
+    /**
+     * Get tafsir for a specific verse from a specific tafseer book
+     */
+    public function getTafsirForVerse( int $chapterId, int $verseNumber, int $tafsirId ): ?array {
+        $cacheKey = "quran.solr.tafsir.{$chapterId}.{$verseNumber}.{$tafsirId}";
+
+        return Cache::remember( $cacheKey, $this->cacheTtl, function () use ( $chapterId, $verseNumber, $tafsirId ) {
+            $ayahKey = $chapterId . ':' . $verseNumber;
+
+            // Query Solr for tafsir matching this verse and tafseer book
+            $select = $this->solrClient->createSelect();
+            $select->setQuery( '*:*' );
+            $select->createFilterQuery( 'type' )
+                ->setQuery( 'type_s:tafsir' );
+            $select->createFilterQuery( 'tafsir' )
+                ->setQuery( 'tafsir_id_i:' . $tafsirId );
+            $select->createFilterQuery( 'ayah' )
+                ->setQuery( sprintf( 'ayah_key_s:"%s" OR (from_ayah_s:[* TO "%s"] AND to_ayah_s:["%s" TO *])', $ayahKey, $ayahKey, $ayahKey ) );
+
+            $resultSet = $this->solrClient->select( $select );
+
+            if ( $resultSet->getNumFound() === 0 ) {
+                return null;
+            }
+
+            // Get the first matching tafsir
+            foreach ( $resultSet as $doc ) {
+                return array(
+                    'tafsirId'       => $doc[ 'tafsir_id_i' ] ?? null,
+                    'bookName'       => $doc[ 'tafsir_book_name_s' ] ?? null,
+                    'bookSlug'       => $doc[ 'tafsir_book_slug_s' ] ?? null,
+                    'ayahKey'        => $doc[ 'ayah_key_s' ] ?? null,
+                    'text'           => $doc[ 'text_t' ] ?? null,
+                    'fromAyah'       => $doc[ 'from_ayah_s' ] ?? null,
+                    'toAyah'         => $doc[ 'to_ayah_s' ] ?? null,
+                    'ayahKeys'       => $doc[ 'ayah_keys_ss' ] ?? array(),
+                    'chapterId'      => $doc[ 'chapter_id_i' ] ?? null,
+                    'verseNumber'    => $doc[ 'verse_number_i' ] ?? null,
+                );
+            }
+
+            return null;
+        } );
+    }
+
+    /**
+     * Get tafsir for a specific verse by ayah key and tafseer book slug
+     */
+    public function getTafsirByAyahKey( string $ayahKey, string $tafsirSlug ): ?array {
+        $cacheKey = "quran.solr.tafsir.{$ayahKey}.{$tafsirSlug}";
+
+        return Cache::remember( $cacheKey, $this->cacheTtl, function () use ( $ayahKey, $tafsirSlug ) {
+            // Query Solr for tafsir matching this verse and tafseer book
+            $select = $this->solrClient->createSelect();
+            $select->setQuery( '*:*' );
+            $select->createFilterQuery( 'type' )
+                ->setQuery( 'type_s:tafsir' );
+            $select->createFilterQuery( 'slug' )
+                ->setQuery( sprintf( 'tafsir_book_slug_s:"%s"', $tafsirSlug ) );
+            $select->createFilterQuery( 'ayah' )
+                ->setQuery( sprintf( 'ayah_key_s:"%s" OR (from_ayah_s:[* TO "%s"] AND to_ayah_s:["%s" TO *])', $ayahKey, $ayahKey, $ayahKey ) );
+
+            $resultSet = $this->solrClient->select( $select );
+
+            if ( $resultSet->getNumFound() === 0 ) {
+                return null;
+            }
+
+            // Collect all matching documents and prefer ones with text content
+            $bestMatch = null;
+            $hasExactMatch = false;
+
+            foreach ( $resultSet as $doc ) {
+                $text = $doc[ 'text_t' ] ?? null;
+                $docAyahKey = $doc[ 'ayah_key_s' ] ?? null;
+
+                // If we haven't found an exact match yet
+                if ( !$hasExactMatch ) {
+                    // Exact ayah_key match is always best
+                    if ( $docAyahKey === $ayahKey && !empty( $text ) ) {
+                        $bestMatch = $doc;
+                        $hasExactMatch = true;
+                    }
+                    // Otherwise, prefer documents with text content
+                    elseif ( !$bestMatch && !empty( $text ) ) {
+                        $bestMatch = $doc;
+                    }
+                }
+            }
+
+            // If we found an exact match with text, use it; otherwise use the best match
+            $doc = $bestMatch;
+
+            if ( !$doc ) {
+                return null;
+            }
+
+            return array(
+                'tafsirId'       => $doc[ 'tafsir_id_i' ] ?? null,
+                'bookName'       => $doc[ 'tafsir_book_name_s' ] ?? null,
+                'bookSlug'       => $doc[ 'tafsir_book_slug_s' ] ?? null,
+                'ayahKey'        => $doc[ 'ayah_key_s' ] ?? null,
+                'text'           => $doc[ 'text_t' ] ?? null,
+                'fromAyah'       => $doc[ 'from_ayah_s' ] ?? null,
+                'toAyah'         => $doc[ 'to_ayah_s' ] ?? null,
+                'ayahKeys'       => $doc[ 'ayah_keys_ss' ] ?? array(),
+                'chapterId'      => $doc[ 'chapter_id_i' ] ?? null,
+                'verseNumber'    => $doc[ 'verse_number_i' ] ?? null,
+            );
+        } );
     }
 }
