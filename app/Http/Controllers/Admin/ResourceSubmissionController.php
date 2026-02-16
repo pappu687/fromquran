@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\UserVerseResource;
+use App\Models\ResourceType;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -48,6 +49,9 @@ class ResourceSubmissionController extends Controller
 
         $submissions = $query->paginate(20)->withQueryString();
 
+        // Get resource type labels for the filter
+        $resourceTypeLabels = ResourceType::orderBy('name')->pluck('name', 'id')->toArray();
+
         // Get statistics
         $stats = [
             'total' => UserVerseResource::count(),
@@ -59,6 +63,7 @@ class ResourceSubmissionController extends Controller
         return Inertia::render('admin/resource-submissions', [
             'submissions' => $submissions,
             'stats' => $stats,
+            'resourceTypeLabels' => $resourceTypeLabels,
             'filters' => [
                 'status' => $request->status ?? 'pending',
                 'search' => $request->search ?? '',

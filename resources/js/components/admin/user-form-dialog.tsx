@@ -62,6 +62,8 @@ export function UserFormDialog({
                 setName(user.name);
                 setEmail(user.email);
                 setSelectedRoles(user.roles?.map((r) => r.id) || []);
+                setPassword('');
+                setPasswordConfirmation('');
             } else {
                 // Reset form for new user
                 setName('');

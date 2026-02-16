@@ -112,4 +112,18 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Throttling
+    |--------------------------------------------------------------------------
+    |
+    | Here you may configure the rate limiting for various authentication
+    | features. You can specify the number of attempts per minute.
+    |
+    */
+
+    'throttling' => [
+        'login' => env('AUTH_THROTTLE_LOGIN', 10),
+    ],
+
 ];
