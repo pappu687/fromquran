@@ -27,6 +27,10 @@ import { ExternalLink, Tags } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { router } from '@inertiajs/react';
 import { AddResourceModal } from './add-resource-modal';
+import { LoginModal } from '../auth/login-modal';
+import { ReportErrorModal } from './report-error-modal';
+import { type SharedData } from '@/types';
+import { usePage } from '@inertiajs/react';
 
 interface ResourceType {
     id: number;
@@ -94,6 +98,18 @@ export function ResourcesSheet({
     const [loadingTopics, setLoadingTopics] = useState(false);
     const [hasMore, setHasMore] = useState(false);
     const [isAddResourceOpen, setIsAddResourceOpen] = useState(false);
+    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+
+    const { auth } = usePage<SharedData>().props;
+
+    const handleReportErrorClick = () => {
+        if (auth.user) {
+            setIsReportModalOpen(true);
+        } else {
+            setIsLoginModalOpen(true);
+        }
+    };
 
     useEffect(() => {
         if (open) {
@@ -200,14 +216,16 @@ export function ResourcesSheet({
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent className="sm:max-w-lg">
                 <SheetHeader>
-                    <SheetTitle>Related Resources for ({chapterNumber} : {verseNumber})</SheetTitle>                    
+                    <SheetTitle>
+                        Related Resources for ({chapterNumber} : {verseNumber})
+                    </SheetTitle>
                 </SheetHeader>
 
                 {chapterNumber && hasMore && (
                     <div className="px-4 pb-2">
                         <Button
                             variant="outline"
-                            size="sm"                            
+                            size="sm"
                             onClick={() =>
                                 router.visit(
                                     `/related/${chapterNumber}/${verseNumber}`,
@@ -227,17 +245,26 @@ export function ResourcesSheet({
                             <Skeleton className="h-12 w-full" />
                         </div>
                     ) : resources.length === 0 ? (
-                        <div className="flex h-40 flex-col items-center justify-center text-center gap-3">
+                        <div className="flex h-40 flex-col items-center justify-center gap-3 text-center">
                             <p className="text-muted-foreground">
                                 No resources available yet
                             </p>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setIsAddResourceOpen(true)}
-                            >
-                                Add a resource
-                            </Button>
+                            <div className="flex w-full justify-between gap-3 px-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setIsAddResourceOpen(true)}
+                                >
+                                    Add a resource
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleReportErrorClick}
+                                >
+                                    Report Error
+                                </Button>
+                            </div>
                         </div>
                     ) : (
                         <Accordion
@@ -333,7 +360,7 @@ export function ResourcesSheet({
                                                 <Badge
                                                     key={topic.topic_id}
                                                     variant="secondary"
-                                                    className="cursor-pointer bg-amber-400/20 border-amber-500/50"
+                                                    className="cursor-pointer border-amber-500/50 bg-amber-400/20"
                                                     onClick={() => {
                                                         router.visit(
                                                             `/topic/${topic.topic_id}`,
@@ -344,8 +371,9 @@ export function ResourcesSheet({
                                                     <Tags className="mr-1 h-3 w-3" />
                                                     {topic.name}
                                                     {topic.arabic_name && (
-                                                        <span className="ml-1 font-arabic text-xs">
-                                                            ({topic.arabic_name})
+                                                        <span className="font-arabic ml-1 text-xs">
+                                                            ({topic.arabic_name}
+                                                            )
                                                         </span>
                                                     )}
                                                 </Badge>
@@ -377,34 +405,52 @@ export function ResourcesSheet({
                                                 >
                                                     <div className="mb-2 flex items-center justify-between">
                                                         <span className="text-sm font-semibold text-primary">
-                                                            {similar.chapter_name} (
-                                                            {similar.chapter_number}:
-                                                            {similar.verse_number})
+                                                            {
+                                                                similar.chapter_name
+                                                            }{' '}
+                                                            (
+                                                            {
+                                                                similar.chapter_number
+                                                            }
+                                                            :
+                                                            {
+                                                                similar.verse_number
+                                                            }
+                                                            )
                                                         </span>
                                                         <div className="flex gap-2 text-xs text-muted-foreground">
                                                             <span>
-                                                                Score: {similar.score}
+                                                                Score:{' '}
+                                                                {similar.score}
                                                             </span>
                                                             <span>
                                                                 Coverage:{' '}
-                                                                {similar.coverage}%
+                                                                {
+                                                                    similar.coverage
+                                                                }
+                                                                %
                                                             </span>
                                                             <span>
                                                                 Words:{' '}
-                                                                {similar.matched_words_count}
+                                                                {
+                                                                    similar.matched_words_count
+                                                                }
                                                             </span>
                                                         </div>
                                                     </div>
-                                                    <p className="mb-2 text-right text-sm font-arabic text-foreground ltr:font-sans rtl:font-arabic">
+                                                    <p className="font-arabic rtl:font-arabic mb-2 text-right text-sm text-foreground ltr:font-sans">
                                                         {similar.text_uthmani}
                                                     </p>
                                                     {similar.translation && (
                                                         <p className="text-sm text-muted-foreground">
-                                                            {similar.translation}
+                                                            {
+                                                                similar.translation
+                                                            }
                                                         </p>
                                                     )}
                                                     {similar.match_words_range &&
-                                                        similar.match_words_range
+                                                        similar
+                                                            .match_words_range
                                                             .length > 0 && (
                                                             <p className="mt-2 text-xs text-muted-foreground">
                                                                 Match:{' '}
@@ -419,13 +465,20 @@ export function ResourcesSheet({
                                     </AccordionContent>
                                 </AccordionItem>
                             )}
-                            <div className="mt-4 flex justify-center">
+                            <div className="mt-4 flex w-full justify-between px-2 pb-4">
                                 <Button
                                     variant="outline"
                                     size="sm"
                                     onClick={() => setIsAddResourceOpen(true)}
                                 >
                                     Add a resource
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleReportErrorClick}
+                                >
+                                    Report Error
                                 </Button>
                             </div>
                         </Accordion>
@@ -464,6 +517,19 @@ export function ResourcesSheet({
                 onOpenChange={setIsAddResourceOpen}
                 verseId={verseId}
             />
+            <LoginModal
+                open={isLoginModalOpen}
+                onOpenChange={setIsLoginModalOpen}
+            />
+            {chapterNumber && (
+                <ReportErrorModal
+                    open={isReportModalOpen}
+                    onOpenChange={setIsReportModalOpen}
+                    verseId={verseId}
+                    chapterId={chapterNumber}
+                    verseNumber={verseNumber}
+                />
+            )}
         </Sheet>
     );
 }

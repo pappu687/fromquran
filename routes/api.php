@@ -46,6 +46,11 @@ Route::middleware(['web', 'auth'])->prefix('bookmarks')->group(function () {
     Route::delete('/{bookmark}', [BookmarkController::class, 'destroy']);
 });
 
+// Verse Report Routes (require authentication)
+Route::middleware(['web', 'auth'])->prefix('verse-reports')->group(function () {
+    Route::post('/', [\App\Http\Controllers\Api\VerseReportController::class, 'store']);
+});
+
 // Verse Resources (public - approved resources only)
 Route::get('/verses/resources', [VerseResourceController::class, 'index']);
 Route::get('/verses/{verseId}/resources', [VerseResourceController::class, 'show']);
