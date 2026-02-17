@@ -22,12 +22,35 @@ import {
 import { cn } from '@/lib/utils';
 import { BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { VerseCard } from '@/components/quran/verse-card';
 
 interface TafseerBook {
     id: number;
     name: string;
     slug: string;
     description: string;
+}
+
+interface Chapter {
+    id: number;
+    number: number;
+    name: string;
+    englishName: string;
+    englishNameTranslation: string;
+    revelationType: 'Meccan' | 'Medinan';
+    verses: number;
+}
+
+interface MainVerse {
+    id: number;
+    chapterId: number;
+    chapterNumber?: number;
+    verseNumber: number;
+    text: string;
+    translation?: string;
+    audioUrl?: string;
+    juzNumber: number;
+    pageNumber: number;
 }
 
 interface TafsirData {
@@ -71,12 +94,30 @@ export function TafsirModal({
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [isNavigating, setIsNavigating] = useState(false);
 
+    const [chapters, setChapters] = useState<Chapter[]>([]);
+    const [mainVerse, setMainVerse] = useState<MainVerse | null>(null);
+    const [loadingMainVerse, setLoadingMainVerse] = useState(false);
+
     // Fetch tafseer books when modal opens
     useEffect(() => {
         if (open && tafseerBooks.length === 0) {
             fetchTafseerBooks();
         }
     }, [open]);
+
+    // Fetch chapters when modal opens
+    useEffect(() => {
+        if (open && chapters.length === 0) {
+            fetchChapters();
+        }
+    }, [open]);
+
+    // Fetch main verse when chapters are loaded
+    useEffect(() => {
+        if (open && chapters.length > 0) {
+            fetchMainVerse();
+        }
+    }, [chapters, currentVerse, open]);
 
     // Fetch tafsir when selected book or verse changes
     useEffect(() => {
@@ -101,6 +142,58 @@ export function TafsirModal({
             setError('Network error. Please try again.');
         } finally {
             setIsLoadingBooks(false);
+        }
+    };
+
+    const fetchChapters = async () => {
+        try {
+            const response = await fetch('/api/quran/chapters');
+            if (!response.ok) {
+                throw new Error('Failed to load chapters');
+            }
+            const data = await response.json();
+            setChapters(data);
+        } catch (err) {
+            console.error('Failed to fetch chapters:', err);
+        }
+    };
+
+    const fetchMainVerse = async () => {
+        if (!chapters.length) return;
+
+        const chapter = chapters.find((ch) => ch.id === currentVerse.chapterId);
+        if (!chapter) return;
+
+        setLoadingMainVerse(true);
+        try {
+            const params = new URLSearchParams({
+                page: '1',
+                limit: '1',
+                edition: 'en.sahih',
+                from: String(currentVerse.verseNumber),
+                to: String(currentVerse.verseNumber),
+            });
+
+            const response = await fetch(
+                `/api/quran/chapters/${chapter.id}/verses?${params.toString()}`,
+            );
+
+            if (!response.ok) {
+                throw new Error('Failed to load verse');
+            }
+
+            const data = await response.json();
+            const verse = data.data?.[0];
+            if (verse) {
+                setMainVerse({
+                    ...verse,
+                    chapterNumber: chapter.number,
+                });
+            }
+        } catch (err) {
+            console.error('Failed to load main verse:', err);
+        } finally {
+            setLoadingMainVerse(false);
         }
     };
 
@@ -280,6 +373,24 @@ export function TafsirModal({
 
                     {/* Tafsir Content */}
                     <div className="flex-1 overflow-y-auto border rounded-lg p-6">
+                        {/* Main Verse Card */}
+                        {loadingMainVerse ? (
+                            <div className="space-y-3 rounded-lg border bg-card p-4 mb-6">
+                                <Skeleton className="h-8 w-32" />
+                                <Skeleton className="h-10 w-full" />
+                                <Skeleton className="h-5 w-3/4" />
+                            </div>
+                        ) : mainVerse ? (
+                            <div className="mb-6">
+                                <VerseCard
+                                    className="p-3 bg-white/70 border-2"
+                                    verse={mainVerse}
+                                    showTranslation
+                                    hideHeaderActions
+                                />
+                            </div>
+                        ) : null}
+
                         {isLoadingTafsir ? (
                             // Show skeleton loader
                             <div className="space-y-4 animate-in fade-in duration-700">

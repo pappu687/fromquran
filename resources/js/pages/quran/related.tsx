@@ -377,6 +377,24 @@ export default function RelatedPage({
                         </div>
                     )}
 
+                    {/* Main verse (using shared VerseCard) */}
+                    <section className="mb-6">
+                        {loadingMainVerse ? (
+                            <div className="space-y-3 rounded-lg border bg-card p-4">
+                                <Skeleton className="h-8 w-32" />
+                                <Skeleton className="h-10 w-full" />
+                                <Skeleton className="h-5 w-3/4" />
+                            </div>
+                        ) : mainVerse ? (
+                            <VerseCard
+                                className="p-3 bg-white/70 border-2"
+                                verse={mainVerse}
+                                showTranslation
+                                hideHeaderActions
+                            />
+                        ) : null}
+                    </section>
+
                     {/* Resources */}
                     <section className="mb-8">
                         <div className="mb-4 flex items-center justify-between">
@@ -483,24 +501,6 @@ export default function RelatedPage({
                                 )}
                             </Accordion>
                         )}
-                    </section>
-
-                    {/* Main verse (using shared VerseCard) */}
-                    <section className="mb-6">
-                        {loadingMainVerse ? (
-                            <div className="space-y-3 rounded-lg border bg-card p-4">
-                                <Skeleton className="h-8 w-32" />
-                                <Skeleton className="h-10 w-full" />
-                                <Skeleton className="h-5 w-3/4" />
-                            </div>
-                        ) : mainVerse ? (
-                            <VerseCard
-                                className="p-3 bg-white/70 border-2"
-                                verse={mainVerse}
-                                showTranslation
-                                hideHeaderActions
-                            />
-                        ) : null}
                     </section>
 
                     {/* Topics (only show if loading or there are any) */}
