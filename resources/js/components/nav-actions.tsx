@@ -40,6 +40,12 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { useReadingMode } from '@/contexts/reading-mode-context'
 import { usePage, router } from '@inertiajs/react'
 import type { SharedData } from '@/types'
@@ -52,7 +58,7 @@ interface MenuItem {
   method?: 'post'
 }
 
-const menuData: MenuItem[][] = [  
+const menuData: MenuItem[][] = [
   [
   {
       label: "My Collections",
@@ -73,7 +79,7 @@ const menuData: MenuItem[][] = [
       label: "Settings",
       icon: Settings,
       href: "/settings/profile",
-    },  
+    },
   ],
   [
     {
@@ -85,8 +91,154 @@ const menuData: MenuItem[][] = [
   ]
 ]
 
+interface MobileMenuProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    mode: 'list' | 'reading';
+    onModeChange: (mode: 'list' | 'reading') => void;
+    user: any;
+    onNavigate: (href: string) => void;
+    onMenuItemClick: (item: MenuItem) => void;
+    onReaderSettingsOpen: () => void;
+}
+
+const MobileMenuContent = React.memo(({
+    open,
+    onOpenChange,
+    mode,
+    onModeChange,
+    user,
+    onNavigate,
+    onMenuItemClick,
+    onReaderSettingsOpen
+}: MobileMenuProps) => {
+    const handleAction = (action: () => void) => {
+        onOpenChange(false);
+        action();
+    };
+
+    return (
+        <Sheet open={open} onOpenChange={onOpenChange}>
+            <SheetContent side="right" className="w-[320px] sm:hidden">
+                <SheetHeader className="pb-4">
+                    <SheetTitle className="text-lg font-semibold">Menu</SheetTitle>
+                </SheetHeader>
+                <div className="flex flex-col gap-6 py-2">
+                    {/* Reader Controls */}
+                    <div className="space-y-4">
+                        <h3 className="px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            Reader
+                        </h3>
+                        <div className="space-y-2">
+                            <Button
+                                variant="ghost"
+                                className="h-11 w-full justify-start px-3 text-sm font-medium hover:bg-accent"
+                                onClick={() => handleAction(() => onNavigate('/'))}
+                            >
+                                <Home className="mr-3 h-5 w-5" />
+                                Home
+                            </Button>
+
+                            <Button
+                                variant="ghost"
+                                className="h-11 w-full justify-start px-3 text-sm font-medium hover:bg-accent"
+                                onClick={() => handleAction(onReaderSettingsOpen)}
+                            >
+                                <Settings className="mr-3 h-5 w-5" />
+                                Reader Settings
+                            </Button>
+
+                            <Button
+                                variant="ghost"
+                                className="h-11 w-full justify-start px-3 text-sm font-medium hover:bg-accent"
+                                onClick={() => handleAction(() => onNavigate('/search'))}
+                            >
+                                <SearchIcon className="mr-3 h-5 w-5" />
+                                Search
+                            </Button>
+                        </div>
+
+                        <div className="space-y-3 px-2">
+                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                View Mode
+                            </p>
+                            <ToggleGroup
+                                type="single"
+                                value={mode}
+                                onValueChange={(value) => {
+                                    if (value) onModeChange(value as 'list' | 'reading');
+                                }}
+                                className="grid w-full grid-cols-2 gap-2"
+                            >
+                                <ToggleGroupItem
+                                    value="list"
+                                    aria-label="List view"
+                                    className="h-11 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                                >
+                                    <List className="mr-2 h-4 w-4" />
+                                    List
+                                </ToggleGroupItem>
+                                <ToggleGroupItem
+                                    value="reading"
+                                    aria-label="Reading view"
+                                    className="h-11 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                                >
+                                    <BookOpen className="mr-2 h-4 w-4" />
+                                    Reading
+                                </ToggleGroupItem>
+                            </ToggleGroup>
+                        </div>
+                    </div>
+
+                    {/* User menu items (if logged in) */}
+                    {user && (
+                        <div className="space-y-4 border-t pt-6">
+                            <h3 className="px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                Account
+                            </h3>
+                            <div className="space-y-2">
+                                {menuData.flat().map((item, index) => (
+                                    <Button
+                                        key={index}
+                                        variant="ghost"
+                                        className="h-11 w-full justify-start px-3 text-sm font-medium hover:bg-accent"
+                                        onClick={() => handleAction(() => onMenuItemClick(item))}
+                                    >
+                                        <item.icon className="mr-3 h-5 w-5" />
+                                        {item.label}
+                                    </Button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Login button (if not logged in) */}
+                    {!user && (
+                        <div className="space-y-4 border-t pt-6">
+                            <h3 className="px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                Account
+                            </h3>
+                            <Button
+                                variant="ghost"
+                                className="h-11 w-full justify-start px-3 text-sm font-medium hover:bg-accent"
+                                onClick={() => handleAction(() => onNavigate('/login'))}
+                            >
+                                <LogIn className="mr-3 h-5 w-5" />
+                                Login
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            </SheetContent>
+        </Sheet>
+    );
+});
+
+MobileMenuContent.displayName = 'MobileMenuContent';
+
 export function NavActions() {
   const [isOpen, setIsOpen] = React.useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
   const [commandPaletteOpen, setCommandPaletteOpen] = React.useState(false)
   const [readerSettingsOpen, setReaderSettingsOpen] = React.useState(false);
   const { auth } = usePage<SharedData>().props
@@ -197,20 +349,21 @@ export function NavActions() {
                     variant="ghost"
                     size="icon"
                     className="h-7 w-7 sm:hidden"
-                    onClick={() => router.visit('/search')}
+                    onClick={() => setMobileMenuOpen(true)}
                 >
-                    <SearchIcon className="h-4 w-4" />
-                </Button>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => router.visit('/login')}
-                >
-                    <LogIn className="h-4 w-4" />
-                    <span className="sr-only">Login</span>
+                    <MoreHorizontal className="h-4 w-4" />
                 </Button>
             </div>
+            <MobileMenuContent
+                open={mobileMenuOpen}
+                onOpenChange={setMobileMenuOpen}
+                mode={mode}
+                onModeChange={setMode}
+                user={user}
+                onNavigate={(href) => router.visit(href)}
+                onMenuItemClick={handleMenuClick}
+                onReaderSettingsOpen={() => setReaderSettingsOpen(true)}
+            />
             <CommandPalette
                 open={commandPaletteOpen}
                 onOpenChange={setCommandPaletteOpen}
@@ -228,23 +381,23 @@ export function NavActions() {
       <>
           <div className="flex items-center gap-2 text-sm">
               <SearchInput />
+              <div className="hidden font-medium text-muted-foreground md:inline-block">
+                  Welcome, {user.name}
+              </div>
               <Button
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7 sm:hidden"
-                  onClick={() => setCommandPaletteOpen(true)}
+                  onClick={() => setMobileMenuOpen(true)}
               >
-                  <SearchIcon className="h-4 w-4" />
+                  <MoreHorizontal className="h-4 w-4" />
               </Button>
-              <div className="hidden font-medium text-muted-foreground md:inline-block">
-                  Welcome, {user.name}
-              </div>
               <Popover open={isOpen} onOpenChange={setIsOpen}>
                   <PopoverTrigger asChild>
                       <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 data-[state=open]:bg-accent"
+                          className="hidden h-7 w-7 data-[state=open]:bg-accent sm:flex"
                       >
                           <MoreHorizontal />
                       </Button>
@@ -289,6 +442,16 @@ export function NavActions() {
                   </PopoverContent>
               </Popover>
           </div>
+          <MobileMenuContent
+              open={mobileMenuOpen}
+              onOpenChange={setMobileMenuOpen}
+              mode={mode}
+              onModeChange={setMode}
+              user={user}
+              onNavigate={(href) => router.visit(href)}
+              onMenuItemClick={handleMenuClick}
+              onReaderSettingsOpen={() => setReaderSettingsOpen(true)}
+          />
           <CommandPalette
               open={commandPaletteOpen}
               onOpenChange={setCommandPaletteOpen}

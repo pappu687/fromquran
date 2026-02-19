@@ -490,11 +490,11 @@ export function ResourcesSheet({
                 open={!!selectedComment}
                 onOpenChange={(open) => !open && setSelectedComment(null)}
             >
-                <DialogContent className="max-w-[80rem]">
+                <DialogContent className="h-screen w-screen max-w-none sm:h-auto sm:w-auto sm:max-w-[80rem] p-4 sm:p-6">
                     <DialogHeader>
                         <DialogTitle>Full Description</DialogTitle>
                     </DialogHeader>
-                    <div className="no-scrollbar -mx-4 max-h-[50vh] overflow-y-auto px-4">
+                    <div className="no-scrollbar -mx-4 max-h-[calc(100vh-12rem)] sm:max-h-[50vh] overflow-y-auto px-4">
                         <div
                             className="text-sm whitespace-pre-wrap text-foreground"
                             dangerouslySetInnerHTML={{

@@ -280,7 +280,7 @@ export function TafsirModal({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="!max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+            <DialogContent className="h-screen w-screen max-w-none sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-6xl overflow-hidden flex flex-col p-4 sm:p-6">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <BookOpen className="h-5 w-5" />
