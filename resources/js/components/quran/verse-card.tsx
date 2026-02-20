@@ -98,15 +98,15 @@ export function VerseCard({
             className={cn(
                 'mb-4 border-0 shadow-none',
                 isCurrentlyPlaying && 'bg-primary/5',
-                className
+                className,
             )}
             id={`verse-${verse.chapterId}-${verse.verseNumber}`}
         >
-            <CardContent className="p-1">
+            <CardContent className="px-4 py-2 md:p-1">
                 {/* Verse Header */}
                 <div className="mb-5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-[40%] bg-gray-400/20 mr-2 text-sm font-semibold align-middle">
+                        <div className="mr-2 flex h-8 w-8 items-center justify-center rounded-[40%] bg-gray-400/20 align-middle text-sm font-semibold">
                             {verse.verseNumber}
                         </div>
                     </div>
@@ -123,10 +123,10 @@ export function VerseCard({
                                         className="h-8 w-8 p-0"
                                     >
                                         {isCurrentlyPlaying ? (
-                                            <div className="flex items-end gap-0.5 h-4 w-4 items-center justify-center">
-                                                <span className="w-0.5 h-2 bg-current animate-pulse" />
-                                                <span className="w-0.5 h-3 bg-current animate-pulse delay-75" />
-                                                <span className="w-0.5 h-2 bg-current animate-pulse delay-150" />
+                                            <div className="flex h-4 w-4 items-center items-end justify-center gap-0.5">
+                                                <span className="h-2 w-0.5 animate-pulse bg-current" />
+                                                <span className="h-3 w-0.5 animate-pulse bg-current delay-75" />
+                                                <span className="h-2 w-0.5 animate-pulse bg-current delay-150" />
                                             </div>
                                         ) : (
                                             <Play className="h-4 w-4" />
@@ -134,7 +134,9 @@ export function VerseCard({
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                    {isCurrentlyPlaying ? 'Playing' : 'Play audio'}
+                                    {isCurrentlyPlaying
+                                        ? 'Playing'
+                                        : 'Play audio'}
                                 </TooltipContent>
                             </Tooltip>
 
@@ -151,7 +153,8 @@ export function VerseCard({
                                         <Eye
                                             className={cn(
                                                 'h-4 w-4',
-                                                hasResources && 'text-orange-500',
+                                                hasResources &&
+                                                    'text-orange-500',
                                             )}
                                         />
                                     </Button>
@@ -207,7 +210,9 @@ export function VerseCard({
                                         <BookmarkPlus className="h-4 w-4" />
                                         <span>Add to collection</span>
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={handleAddResource}>
+                                    <DropdownMenuItem
+                                        onClick={handleAddResource}
+                                    >
                                         <Plus className="h-4 w-4" />
                                         <span>Add resource to this verse</span>
                                     </DropdownMenuItem>
@@ -230,7 +235,7 @@ export function VerseCard({
                 {/* Translation */}
                 {showTranslation && verse.translation && (
                     <div className="border-t pt-4">
-                        <p className="leading-relaxed text-blue-950/60 font-medium">
+                        <p className="leading-relaxed font-medium text-blue-950/60">
                             {verse.translation}
                         </p>
                     </div>

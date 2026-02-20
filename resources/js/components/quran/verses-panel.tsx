@@ -342,7 +342,7 @@ export function VersesPanel({
         >
             {/* Verses Content */}
             <div>
-                <div className="p-4">
+                <div className="px-0 py-4 md:p-4">
                     {error && (
                         <div className="mb-4 rounded-lg bg-destructive/10 p-4 text-destructive">
                             <p>Error: {error}</p>
@@ -367,7 +367,7 @@ export function VersesPanel({
                     {mode === 'list' ? (
                         verses.map((verse) => (
                             <VerseCard
-                                className="p-3 bg-transparent"
+                                className="bg-transparent px-0 py-3 md:p-3"
                                 key={verse.id}
                                 verse={{
                                     ...verse,
@@ -414,19 +414,22 @@ export function VersesPanel({
                     )}
 
                     {/* End Message */}
-                    {!fromVerse && !toVerse && !hasMore && verses.length > 0 && (
-                        <div className="py-8 text-center text-muted-foreground">
-                            <Separator className="mb-4" />
-                            <p>You've reached the end of this chapter</p>
-                        </div>
-                    )}
+                    {!fromVerse &&
+                        !toVerse &&
+                        !hasMore &&
+                        verses.length > 0 && (
+                            <div className="py-8 text-center text-muted-foreground">
+                                <Separator className="mb-4" />
+                                <p>You've reached the end of this chapter</p>
+                            </div>
+                        )}
 
                     {/* Continue button for single-verse/range view */}
                     {fromVerse && chapter && (
                         <div className="mt-6 flex justify-center">
                             <Button
                                 variant="outline"
-                                className="min-w-32 border-amber-400 border-2 text-amber-900"
+                                className="min-w-32 border-2 border-amber-400 text-amber-900"
                                 onClick={() =>
                                     router.visit(
                                         `/${chapter.number}?start-verse=${fromVerse}`,

@@ -7,6 +7,7 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    useSidebar,
 } from '@/components/ui/sidebar';
 import { BookOpen, Search } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
@@ -36,6 +37,8 @@ export function ChaptersPanel({
 }: ChaptersPanelProps) {
     const [searchTerm, setSearchTerm] = useState('');
 
+    const { isMobile, setOpenMobile } = useSidebar();
+
     const filteredChapters = chapters.filter(
         (chapter) =>
             chapter.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -47,6 +50,13 @@ export function ChaptersPanel({
                 .includes(searchTerm.toLowerCase()) ||
             chapter.romanName.toLowerCase().includes(searchTerm.toLowerCase()),
     );
+
+    const handleChapterClick = (chapterId: number) => {
+        onChapterSelect(chapterId);
+        if (isMobile) {
+            setOpenMobile(false);
+        }
+    };
 
     return (
         <>
@@ -81,12 +91,12 @@ export function ChaptersPanel({
                                     <SidebarMenuItem key={chapter.id}>
                                         <SidebarMenuButton
                                             onClick={() =>
-                                                onChapterSelect(chapter.id)
+                                                handleChapterClick(chapter.id)
                                             }
                                             isActive={
                                                 selectedChapter === chapter.id
                                             }
-                                            className={`h-auto py-3 ${
+                                            className={`h-auto cursor-pointer py-3 ${
                                                 selectedChapter === chapter.id
                                                     ? 'bg-rose-500 text-black hover:bg-rose-800'
                                                     : ''
@@ -97,7 +107,7 @@ export function ChaptersPanel({
                                                     className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[30%] text-sm font-semibold ${
                                                         selectedChapter ===
                                                         chapter.id
-                                                            ? 'bg-rose-500/30 border-2 border-rose-400/20'
+                                                            ? 'border-2 border-rose-400/20 bg-rose-500/30'
                                                             : 'bg-gray-400/20'
                                                     }`}
                                                 >
@@ -118,7 +128,7 @@ export function ChaptersPanel({
                                                     >
                                                         {chapter.name}
                                                     </div>
-                                                </div>                                                
+                                                </div>
                                             </div>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>

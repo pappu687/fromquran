@@ -41,47 +41,9 @@ export default function QuranReader({
         page.url.split('?')[1] ?? '',
     );
     const startVerseParam = searchParams.get('start-verse');
-    const startFromVerse = startVerseParam ? Number(startVerseParam) || undefined : undefined;
-
-    // Mock chapters data - replace with actual API call
-    const mockChapters: Chapter[] = [
-        {
-            id: 1,
-            number: 1,
-            name: 'الفاتحة',
-            englishName: 'Al-Fatihah',
-            englishNameTranslation: 'The Opening',
-            revelationType: 'Meccan',
-            verses: 7,
-        },
-        {
-            id: 2,
-            number: 2,
-            name: 'البقرة',
-            englishName: 'Al-Baqarah',
-            englishNameTranslation: 'The Cow',
-            revelationType: 'Medinan',
-            verses: 286,
-        },
-        {
-            id: 3,
-            number: 3,
-            name: 'آل عمران',
-            englishName: 'Aal-E-Imran',
-            englishNameTranslation: 'The Family of Imran',
-            revelationType: 'Medinan',
-            verses: 200,
-        },
-        {
-            id: 114,
-            number: 114,
-            name: 'الناس',
-            englishName: 'An-Nas',
-            englishNameTranslation: 'Mankind',
-            revelationType: 'Meccan',
-            verses: 6,
-        },
-    ];
+    const startFromVerse = startVerseParam
+        ? Number(startVerseParam) || undefined
+        : undefined;    
 
     useEffect(() => {
         // Fetch chapters from API
@@ -164,7 +126,7 @@ export default function QuranReader({
                     selectedChapter={selectedChapter?.id}
                     onChapterSelect={handleChapterSelect}
                 >
-                    <div className="flex flex-1 flex-col px-4 py-5">
+                    <div className="flex flex-1 flex-col px-0 py-5 md:px-4">
                         <div className="mx-auto h-full w-full max-w-3xl rounded-xl">
                             <VersesPanel
                                 chapter={selectedChapter}
