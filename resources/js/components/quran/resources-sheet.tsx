@@ -107,6 +107,7 @@ export function ResourcesSheet({
     chapterNumber,
 }: ResourcesSheetProps) {
     const [resources, setResources] = useState<Resource[]>([]);
+    const [totalResources, setTotalResources] = useState<number>(0);
     const [loading, setLoading] = useState(false);
     const [loadingFull, setLoadingFull] = useState(false);
     const [selectedComment, setSelectedComment] = useState<string | null>(null);
@@ -146,6 +147,7 @@ export function ResourcesSheet({
             if (response.ok) {
                 const data = await response.json();
                 setResources(data.data || []);
+                setTotalResources(data.meta?.total || data.data?.length || 0);
                 setHasMore(Boolean(data.meta?.hasMore));
             }
         } catch (error) {
@@ -275,7 +277,7 @@ export function ResourcesSheet({
                                 )
                             }
                         >
-                            View all ({resources.length})
+                            View all ({totalResources})
                         </Button>
                     </div>
                 )}
