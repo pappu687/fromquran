@@ -47,6 +47,7 @@ export function ReaderSettingsSheet({
     );
     const [showArabic, setShowArabic] = useState(settings.showArabic);
     const [mushafFont, setMushafFont] = useState(settings.mushafFont);
+    const [showRecentlyViewed, setShowRecentlyViewed] = useState(settings.showRecentlyViewed);
 
     // useLayoutEffect runs synchronously before paint, making it feel instant
     useLayoutEffect(() => {
@@ -55,6 +56,7 @@ export function ReaderSettingsSheet({
             setSelectedTranslations(settings.selectedTranslations);
             setShowArabic(settings.showArabic);
             setMushafFont(settings.mushafFont);
+            setShowRecentlyViewed(settings.showRecentlyViewed);
         }
     }, [open, settings]);
 
@@ -82,6 +84,7 @@ export function ReaderSettingsSheet({
             selectedTranslations,
             showArabic,
             mushafFont,
+            showRecentlyViewed,
         });
         onOpenChange(false);
     };
@@ -179,6 +182,26 @@ export function ReaderSettingsSheet({
                                     </label>
                                 </div>
                             ))}
+                        </div>
+                    </div>
+
+                    {/* Navigation Settings */}
+                    <div className="space-y-2">
+                        <Label>Navigation</Label>
+                        <div className="flex items-center gap-3">
+                            <Checkbox
+                                id="show-recently-viewed"
+                                checked={showRecentlyViewed}
+                                onCheckedChange={(checked) =>
+                                    setShowRecentlyViewed(checked as boolean)
+                                }
+                            />
+                            <label
+                                htmlFor="show-recently-viewed"
+                                className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                                Show recently viewed surahs in sidebar
+                            </label>
                         </div>
                     </div>
 

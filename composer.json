@@ -16,6 +16,7 @@
         "laravel/tinker": "^2.10.1",
         "laravel/wayfinder": "^0.1.9",
         "solarium/solarium": "~6.3",
+        "spatie/crawler": "^8.4",
         "spatie/laravel-permission": "^6.24"
     },
     "require-dev": {

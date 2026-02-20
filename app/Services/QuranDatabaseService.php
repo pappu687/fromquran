@@ -24,10 +24,14 @@ class QuranDatabaseService {
      */
     public function getChapters(): array {
         return Cache::remember( 'quran.db.chapters', $this->cacheTtl, function () {
+            // Fetch chapters with their first verse's juz_number
             return Chapter::orderBy( 'chapter_number' )
                 ->get()
                 ->map( function ( $chapter ) {
-                    return array(
+                // Optimized: Get the juz_number of the first verse
+                $firstVerse = $chapter->firstVerse()->select('juz_number')->first();
+
+                return array(
                         'id'                     => $chapter->id,
                         'number'                 => $chapter->chapter_number,
                         'name'                   => $chapter->name_arabic,
@@ -36,6 +40,7 @@ class QuranDatabaseService {
                         'englishNameTranslation' => $chapter->name_simple,
                         'revelationType'         => ucfirst( $chapter->revelation_place ),
                         'verses'                 => $chapter->verses_count,
+                    'startJuz'               => $firstVerse ? $firstVerse->juz_number : null,
                      );
                 } )
                 ->toArray();
@@ -102,7 +107,7 @@ class QuranDatabaseService {
 
             // Query Solr for all verses in this chapter
             $select = $this->solrClient->createSelect();
-            $select->setQuery( '*:*' );
+            $select->setQuery('verse_key_s:[* TO *]');
             $select->createFilterQuery( 'chapter' )
                 ->setQuery( 'chapter_id_i:' . $chapter->id );
             $select->addSort( 'verse_number_i', $select::SORT_ASC );

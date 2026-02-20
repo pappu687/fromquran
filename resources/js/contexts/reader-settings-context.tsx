@@ -5,6 +5,7 @@ export interface ReaderSettings {
     selectedTranslations: string[]; // default ['Sahih International']
     showArabic: boolean; // default true
     mushafFont: 'uthmanic' | 'indopak'; // default 'uthmanic'
+    showRecentlyViewed: boolean; // default false
 }
 
 interface ReaderSettingsContextType {
@@ -18,6 +19,7 @@ const DEFAULT_SETTINGS: ReaderSettings = {
     selectedTranslations: ['Sahih International'],
     showArabic: true,
     mushafFont: 'uthmanic',
+    showRecentlyViewed: false,
 };
 
 const STORAGE_KEY = 'quran-reader-settings';

@@ -23,7 +23,23 @@ import {
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Tags } from 'lucide-react';
+import { 
+    ExternalLink, 
+    Tags, 
+    BookOpen, 
+    Scale, 
+    Headphones, 
+    FileText, 
+    Video, 
+    Globe, 
+    MessageSquare, 
+    Calendar, 
+    User,
+    Info,
+    Eye,
+    ThumbsUp,
+    CheckCircle
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { router } from '@inertiajs/react';
 import { AddResourceModal } from './add-resource-modal';
@@ -42,12 +58,14 @@ interface Resource {
     id: number;
     resource_type_id: number;
     resource_url: string;
+    resource_title: string | null;
     comment: string | null;
     is_truncated?: boolean;
     resource_type: ResourceType;
     user: {
         name: string;
     };
+    created_at?: string;
 }
 
 interface SimilarVerse {
@@ -212,6 +230,31 @@ export function ResourcesSheet({
         return range.map(r => `words ${r[0]}-${r[1]}`).join(', ');
     };
 
+    const getResourceHighlight = (type: string) => {
+        const lowerType = type.toLowerCase();
+        if (lowerType.includes('fatwa')) return { color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/30', icon: Scale };
+        if (lowerType.includes('tafsir')) return { color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-900/30', icon: BookOpen };
+        if (lowerType.includes('video')) return { color: 'text-red-600 dark:text-red-400', bg: 'bg-red-100 dark:bg-red-900/30', icon: Video };
+        if (lowerType.includes('audio') || lowerType.includes('lecture')) return { color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/30', icon: Headphones };
+        if (lowerType.includes('article')) return { color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/30', icon: FileText };
+        return { color: 'text-primary', bg: 'bg-primary/10', icon: Globe };
+    };
+
+    const getDomainName = (url: string) => {
+        try {
+            const domain = new URL(url).hostname;
+            return domain.replace('www.', '');
+        } catch (e) {
+            return 'Source';
+        }
+    };
+
+    const isVerifiedSource = (url: string) => {
+        const domain = getDomainName(url).toLowerCase();
+        const verifiedDomains = ['islamqa.info', 'sunnah.com', 'quran.com', 'tafsir.net', 'kingfahdcomplex.gov.sa'];
+        return verifiedDomains.includes(domain);
+    };
+
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent className="sm:max-w-lg">
@@ -274,80 +317,116 @@ export function ResourcesSheet({
                             className="w-full"
                         >
                             {Object.entries(groupedResources).map(
-                                ([type, typeResources]) => (
-                                    <AccordionItem key={type} value={type}>
-                                        <AccordionTrigger>
-                                            {type} ({typeResources.length})
-                                        </AccordionTrigger>
-                                        <AccordionContent>
-                                            <div
-                                                className="space-y-4 overflow-y-auto pr-2"
-                                                style={{ maxHeight: '500px' }}
-                                            >
-                                                {typeResources.map(
-                                                    (resource) => (
-                                                        <div
-                                                            key={resource.id}
-                                                            className="rounded-lg border p-3"
-                                                        >
-                                                            <a
-                                                                href={
-                                                                    resource.resource_url
-                                                                }
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="group mb-2 flex items-start gap-2 text-sm font-medium text-primary hover:underline"
+                                ([type, typeResources]) => {
+                                    const highlight = getResourceHighlight(type);
+                                    const Icon = highlight.icon;
+                                    
+                                    return (
+                                        <AccordionItem key={type} value={type} className="border-b-0">
+                                            <AccordionTrigger className="hover:no-underline [&[data-state=open]]:bg-muted/50 px-2 rounded-md transition-colors">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`p-2 rounded-full ${highlight.bg}`}>
+                                                        <Icon className={`h-4 w-4 ${highlight.color}`} />
+                                                    </div>
+                                                    <span className="font-semibold">{type}</span>
+                                                    <Badge variant="secondary" className="ml-2 font-normal">
+                                                        {typeResources.length}
+                                                    </Badge>
+                                                </div>
+                                            </AccordionTrigger>
+                                            <AccordionContent className="pt-4">
+                                                <div
+                                                    className="space-y-4 overflow-y-auto pr-2"
+                                                    style={{ maxHeight: '600px' }}
+                                                >
+                                                    {typeResources.map(
+                                                        (resource) => (
+                                                            <div
+                                                                key={resource.id}
+                                                                className="group relative flex flex-col gap-3 rounded-xl border bg-card p-4 transition-all hover:shadow-md hover:border-primary/50"
                                                             >
-                                                                <ExternalLink className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                                                                <span className="break-all">
-                                                                    {
-                                                                        resource.resource_url
-                                                                    }
-                                                                </span>
-                                                            </a>
-                                                            {resource.comment && (
-                                                                <div className="mt-2 text-sm text-muted-foreground">
-                                                                    <div
-                                                                        className="whitespace-pre-wrap"
-                                                                        dangerouslySetInnerHTML={{
-                                                                            __html: resource.comment,
-                                                                        }}
-                                                                    />
-                                                                    {resource.is_truncated && (
-                                                                        <Button
-                                                                            variant="link"
-                                                                            className="ml-1 h-auto p-0 px-1 font-normal text-primary"
-                                                                            disabled={
-                                                                                loadingFull
-                                                                            }
-                                                                            onClick={() =>
-                                                                                handleSeeMore(
-                                                                                    resource.id,
-                                                                                )
-                                                                            }
+                                                                <div className="flex items-start justify-between gap-4">
+                                                                    <div className="flex-1 space-y-1">
+                                                                        <a
+                                                                            href={resource.resource_url}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            className="inline-flex items-center gap-2 text-base font-semibold text-foreground decoration-primary/30 underline-offset-4 hover:underline group-hover:text-primary transition-colors"
                                                                         >
-                                                                            {loadingFull
-                                                                                ? 'Loading...'
-                                                                                : 'See more'}
-                                                                        </Button>
-                                                                    )}
+                                                                            <span className="line-clamp-2">
+                                                                                {resource.resource_title || resource.resource_url}
+                                                                            </span>
+                                                                            <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 opacity-50 group-hover:opacity-100 transition-opacity" />
+                                                                        </a>
+                                                                        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                                                                            <span className="flex items-center gap-1 font-medium bg-muted px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider">
+                                                                                <Globe className="h-3 w-3" />
+                                                                                {getDomainName(resource.resource_url)}
+                                                                            </span>
+                                                                            {isVerifiedSource(resource.resource_url) && (
+                                                                                <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-full ring-1 ring-emerald-500/20">
+                                                                                    <CheckCircle className="h-3 w-3" />
+                                                                                    Verified
+                                                                                </span>
+                                                                            )}
+                                                                            {resource.created_at && (
+                                                                                <span className="flex items-center gap-1">
+                                                                                    <Calendar className="h-3 w-3" />
+                                                                                    {new Date(resource.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
-                                                            )}
-                                                            <p className="mt-2 text-xs text-muted-foreground">
-                                                                Submitted by{' '}
-                                                                {
-                                                                    resource
-                                                                        .user
-                                                                        .name
-                                                                }
-                                                            </p>
-                                                        </div>
-                                                    ),
-                                                )}
-                                            </div>
-                                        </AccordionContent>
-                                    </AccordionItem>
-                                ),
+
+                                                                {resource.comment && (
+                                                                    <div className="relative">
+                                                                        <div
+                                                                            className={`text-sm text-muted-foreground/90 leading-relaxed ${!selectedComment ? 'line-clamp-3' : ''}`}
+                                                                            dangerouslySetInnerHTML={{
+                                                                                __html: resource.comment,
+                                                                            }}
+                                                                        />
+                                                                        {resource.is_truncated && (
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="sm"
+                                                                                className="mt-2 h-7 bg-muted/30 px-2 text-xs font-medium text-primary hover:bg-muted"
+                                                                                disabled={loadingFull}
+                                                                                onClick={() => handleSeeMore(resource.id)}
+                                                                            >
+                                                                                {loadingFull ? 'Loading...' : 'Read Full Answer'}
+                                                                            </Button>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+
+                                                                <div className="flex items-center justify-between border-t pt-3 mt-1">
+                                                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+                                                                            {resource.user.name.charAt(0).toUpperCase()}
+                                                                        </div>
+                                                                        <span>{resource.user.name}</span>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-4">
+                                                                        <div className="flex items-center gap-1.5 transition-colors hover:text-emerald-600 cursor-pointer group/helpful">
+                                                                            <ThumbsUp className="h-3.5 w-3.5 text-muted-foreground/60 group-hover/helpful:text-emerald-600" />
+                                                                            <span className="font-medium text-xs">Helpful</span>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-1.5 opacity-60">
+                                                                            <Eye className="h-3.5 w-3.5" />
+                                                                            <span className="text-[10px] font-medium tracking-tight">842 views</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ),
+                                                    )}
+                                                </div>
+                                            </AccordionContent>
+                                        </AccordionItem>
+                                    );
+                                }
                             )}
                             {topics.length > 0 && (
                                 <AccordionItem value="Topics">

@@ -5,6 +5,7 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
+    DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import {
     Tooltip,
@@ -17,11 +18,15 @@ import {
     BookmarkCheck,
     BookmarkPlus,
     BookOpen,
-    Ellipsis,
     Eye,
     Play,
     Plus,
     Volume2,
+    MoreVertical,
+    Quote,
+    Languages,
+    Link,
+    Share2,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAudioPlayer } from '@/store/use-audio-player';
@@ -93,11 +98,43 @@ export function VerseCard({
         currentVerse?.verseNumber === verse.verseNumber &&
         isPlaying;
 
+    const handleCopyArabic = () => {
+        navigator.clipboard.writeText(verse.text);
+    };
+
+    const handleCopyTranslation = () => {
+        if (verse.translation) {
+            navigator.clipboard.writeText(verse.translation);
+        }
+    };
+
+    const handleCopyLink = () => {
+        const url = `${window.location.origin}/${verse.chapterNumber}/${verse.verseNumber}`;
+        navigator.clipboard.writeText(url);
+    };
+
+    const handleShare = () => {
+        const url = `${window.location.origin}/${verse.chapterNumber}/${verse.verseNumber}`;
+        if (navigator.share) {
+            navigator
+                .share({
+                    title: `Quran ${verse.chapterNumber}:${verse.verseNumber}`,
+                    text: verse.translation || '',
+                    url: url,
+                })
+                .catch(console.error);
+        } else {
+            handleCopyLink();
+        }
+    };
+
     return (
         <Card
             className={cn(
-                'mb-4 border-0 shadow-none',
-                isCurrentlyPlaying && 'bg-primary/5',
+                'group mb-4 border-0 shadow-none transition-all duration-300',
+                isCurrentlyPlaying && 'bg-primary/5 ring-1 ring-primary/20',
+                isResourcesSheetOpen &&
+                    'bg-orange-50/50 shadow-sm ring-1 ring-orange-500/20 dark:bg-orange-900/10',
                 className,
             )}
             id={`verse-${verse.chapterId}-${verse.verseNumber}`}
@@ -112,7 +149,7 @@ export function VerseCard({
                     </div>
 
                     {!hideHeaderActions && (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 transition-opacity duration-200">
                             {/* Play Button */}
                             <Tooltip>
                                 <TooltipTrigger asChild>
@@ -185,20 +222,55 @@ export function VerseCard({
                                         size="sm"
                                         className="h-8 w-8 p-0"
                                     >
-                                        <Ellipsis className="h-4 w-4" />
+                                        <MoreVertical className="h-4 w-4" />
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={handleBookmark}>
+                                <DropdownMenuContent
+                                    align="end"
+                                    className="w-48"
+                                >
+                                    <DropdownMenuItem
+                                        onClick={handleCopyArabic}
+                                        className="gap-2 text-xs"
+                                    >
+                                        <Quote className="h-3.5 w-3.5" />
+                                        Copy Arabic
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        onClick={handleCopyTranslation}
+                                        className="gap-2 text-xs"
+                                    >
+                                        <Languages className="h-3.5 w-3.5" />
+                                        Copy Translation
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        onClick={handleCopyLink}
+                                        className="gap-2 text-xs"
+                                    >
+                                        <Link className="h-3.5 w-3.5" />
+                                        Copy Link
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        onClick={handleShare}
+                                        className="gap-2 text-xs"
+                                    >
+                                        <Share2 className="h-3.5 w-3.5" />
+                                        Share Verse
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                        onClick={handleBookmark}
+                                        className="gap-2 text-xs"
+                                    >
                                         {isBookmarked ? (
                                             <>
-                                                <BookmarkCheck className="h-4 w-4 text-primary" />
+                                                <BookmarkCheck className="h-3.5 w-3.5 text-primary" />
                                                 <span>Remove bookmark</span>
                                             </>
                                         ) : (
                                             <>
-                                                <Bookmark className="h-4 w-4" />
-                                                <span>Bookmark this verse</span>
+                                                <Bookmark className="h-3.5 w-3.5" />
+                                                <span>Bookmark verse</span>
                                             </>
                                         )}
                                     </DropdownMenuItem>
@@ -206,15 +278,17 @@ export function VerseCard({
                                         onClick={() =>
                                             setIsCollectionsModalOpen(true)
                                         }
+                                        className="gap-2 text-xs"
                                     >
-                                        <BookmarkPlus className="h-4 w-4" />
+                                        <BookmarkPlus className="h-3.5 w-3.5" />
                                         <span>Add to collection</span>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onClick={handleAddResource}
+                                        className="gap-2 text-xs"
                                     >
-                                        <Plus className="h-4 w-4" />
-                                        <span>Add resource to this verse</span>
+                                        <Plus className="h-3.5 w-3.5" />
+                                        <span>Add resource</span>
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
@@ -224,18 +298,15 @@ export function VerseCard({
 
                 {/* Arabic Text */}
                 <div className="mb-4 text-right">
-                    <p
-                        className="font-arabic text-3xl leading-relaxed"
-                        dir="rtl"
-                    >
+                    <p className="font-arabic text-3xl leading-[2.2]" dir="rtl">
                         {verse.text}
                     </p>
                 </div>
 
                 {/* Translation */}
                 {showTranslation && verse.translation && (
-                    <div className="border-t pt-4">
-                        <p className="leading-relaxed font-medium text-blue-950/60">
+                    <div className="border-t border-muted/30 pt-4">
+                        <p className="text-[15px] leading-relaxed font-normal text-muted-foreground/80">
                             {verse.translation}
                         </p>
                     </div>

@@ -144,7 +144,7 @@ class QuranController extends Controller
     {
         $query = $request->get('query', '');
         $edition = $request->get('edition', config('quran.default_edition', 'en.sahih'));
-        $limit = (int) $request->get('limit', config('quran.search_limit', 50));
+        $limit = (int) $request->get('limit', 10);
 
         if (empty($query)) {
             return response()->json([

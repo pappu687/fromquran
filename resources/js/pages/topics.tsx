@@ -2,7 +2,8 @@ import { Head } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tags } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Tags, Search } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import QuranReaderLayout from '@/layouts/quran-reader-layout';
 
@@ -26,6 +27,7 @@ export default function Topics() {
     const [topics, setTopics] = useState<Topic[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
     // Fetch chapters for sidebar
     const [chapters, setChapters] = useState<Chapter[]>([]);
@@ -87,40 +89,47 @@ export default function Topics() {
         router.visit(`/${chapter.number}`);
     };
 
-    // Group topics by first letter
-    const groupedTopics = topics.reduce((acc, topic) => {
-        const firstLetter = topic.name.charAt(0).toUpperCase();
-        if (!acc[firstLetter]) {
-            acc[firstLetter] = [];
-        }
-        acc[firstLetter].push(topic);
-        return acc;
-    }, {} as Record<string, Topic[]>);
+    // Filter topics by search query
+    const filteredTopics = topics.filter(
+        (topic) =>
+            topic.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            topic.arabic_name?.includes(searchQuery),
+    );
 
-    // Sort the letters alphabetically
-    const sortedLetters = Object.keys(groupedTopics).sort();
+    // Group topics by first letter (sanitized)
+    const groupedTopics = filteredTopics.reduce(
+        (acc, topic) => {
+            // Remove leading non-alphabetic characters (quotes, dashes, etc)
+            const sanitized = topic.name.replace(/^[^a-zA-Z]+/, '');
+            let firstLetter = sanitized
+                ? sanitized.charAt(0).toUpperCase()
+                : '#';
+
+            // Group any remaining numbers or non-A-Z starting topics under '#'
+            if (!/^[A-Z]$/.test(firstLetter)) {
+                firstLetter = '#';
+            }
+
+            if (!acc[firstLetter]) {
+                acc[firstLetter] = [];
+            }
+            acc[firstLetter].push(topic);
+            return acc;
+        },
+        {} as Record<string, Topic[]>,
+    );
+
+    // Sort the letters alphabetically, ensuring '#' comes last or first. We'll put it first.
+    const sortedLetters = Object.keys(groupedTopics).sort((a, b) => {
+        if (a === '#') return -1;
+        if (b === '#') return 1;
+        return a.localeCompare(b);
+    });
 
     // Sort topics within each letter group
     for (const letter in groupedTopics) {
         groupedTopics[letter].sort((a, b) => a.name.localeCompare(b.name));
     }
-
-    // Get random color for badges
-    const getRandomColor = (id: number): string => {
-        const colors = [
-            'bg-red-100 text-red-800 hover:bg-red-200',
-            'bg-blue-100 text-blue-800 hover:bg-blue-200',
-            'bg-green-100 text-green-800 hover:bg-green-200',
-            'bg-yellow-100 text-yellow-800 hover:bg-yellow-200',
-            'bg-purple-100 text-purple-800 hover:bg-purple-200',
-            'bg-pink-100 text-pink-800 hover:bg-pink-200',
-            'bg-indigo-100 text-indigo-800 hover:bg-indigo-200',
-            'bg-orange-100 text-orange-800 hover:bg-orange-200',
-            'bg-teal-100 text-teal-800 hover:bg-teal-200',
-            'bg-cyan-100 text-cyan-800 hover:bg-cyan-200',
-        ];
-        return colors[id % colors.length];
-    };
 
     const content = (
         <>
@@ -128,7 +137,7 @@ export default function Topics() {
             <div className="flex h-full flex-col px-4 py-5">
                 <div className="mx-auto h-full w-full max-w-4xl rounded-xl">
                     <div className="mb-8">
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="mb-2 flex items-center gap-2">
                             <Tags className="h-6 w-6" />
                             <h1 className="text-3xl font-bold">Quran Topics</h1>
                         </div>
@@ -138,18 +147,32 @@ export default function Topics() {
                         </p>
                     </div>
 
+                    {!loading && !error && topics.length > 0 && (
+                        <div className="relative mb-8 max-w-md">
+                            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                                placeholder="Filter topics by name..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="h-11 bg-background pl-9 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            />
+                        </div>
+                    )}
+
                     {loading ? (
                         <div className="space-y-8">
                             {Array.from({ length: 5 }).map((_, i) => (
                                 <div key={i} className="space-y-2">
                                     <Skeleton className="h-6 w-12" />
                                     <div className="flex flex-wrap gap-2">
-                                        {Array.from({ length: 5 }).map((_, j) => (
-                                            <Skeleton
-                                                key={j}
-                                                className="h-8 w-24"
-                                            />
-                                        ))}
+                                        {Array.from({ length: 5 }).map(
+                                            (_, j) => (
+                                                <Skeleton
+                                                    key={j}
+                                                    className="h-8 w-24"
+                                                />
+                                            ),
+                                        )}
                                     </div>
                                 </div>
                             ))}
@@ -158,10 +181,11 @@ export default function Topics() {
                         <div className="flex items-center justify-center py-12">
                             <p className="text-destructive">{error}</p>
                         </div>
-                    ) : topics.length === 0 ? (
+                    ) : groupedTopics &&
+                      Object.keys(groupedTopics).length === 0 ? (
                         <div className="flex items-center justify-center py-12">
                             <p className="text-muted-foreground">
-                                No topics available
+                                No topics match your filter.
                             </p>
                         </div>
                     ) : (
@@ -171,14 +195,12 @@ export default function Topics() {
                                     <h2 className="mb-4 text-2xl font-bold text-primary">
                                         {letter}
                                     </h2>
-                                    <div className="flex flex-wrap gap-2">
+                                    <div className="flex flex-wrap gap-2.5">
                                         {groupedTopics[letter].map((topic) => (
                                             <Badge
                                                 key={topic.topic_id}
-                                                variant="secondary"
-                                                className={`cursor-pointer ${getRandomColor(
-                                                    topic.topic_id,
-                                                )} text-sm px-3 py-1`}
+                                                variant="outline"
+                                                className="cursor-pointer border-border/60 bg-background px-3.5 py-1.5 text-sm font-medium shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
                                                 onClick={() =>
                                                     router.visit(
                                                         `/topic/${topic.topic_id}`,
@@ -187,7 +209,7 @@ export default function Topics() {
                                             >
                                                 {topic.name}
                                                 {topic.arabic_name && (
-                                                    <span className="ml-1 font-arabic">
+                                                    <span className="font-arabic ml-1.5 text-muted-foreground">
                                                         ({topic.arabic_name})
                                                     </span>
                                                 )}

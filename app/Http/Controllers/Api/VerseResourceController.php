@@ -26,7 +26,7 @@ class VerseResourceController extends Controller
         $resources = UserVerseResource::with('user:id,name')
             ->whereIn('verse_id', $verseIdArray)
             ->where('status', 'approved')
-            ->select('id', 'verse_id', 'resource_type', 'resource_url', 'comment', 'user_id', 'created_at')
+            ->select('id', 'verse_id', 'resource_type_id', 'resource_url', 'resource_title', 'comment', 'user_id', 'created_at')
             ->orderBy('created_at', 'desc')
             ->get();
 

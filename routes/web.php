@@ -28,7 +28,7 @@ Route::post('/contact', [\App\Http\Controllers\ContactController::class, 'store'
 Route::get('/search', function (\Illuminate\Http\Request $request, QuranDatabaseService $quranService) {
     $query = (string) $request->get('query', '');
     $page = max(1, (int) $request->get('page', 1));
-    $perPage = (int) $request->get('limit', config('quran.search_limit', 20));
+    $perPage = (int) $request->get('limit', 10);
     $edition = $request->get('edition', config('quran.default_edition', 'en.sahih'));
 
     $results = [];

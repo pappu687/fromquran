@@ -101,33 +101,29 @@ export default function SearchPage({
             >
                 <div className="flex flex-1 flex-col px-4 py-5">
                     <div className="mx-auto h-full w-full max-w-3xl">
-                        {/* Header */}
-                        <header className="mb-6 flex flex-col gap-2 sm:mb-8 sm:flex-row sm:items-baseline sm:justify-between">
-                            <div>                                
-                                <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-                                    Search the Qur&apos;an
-                                </h1>                                
-                            </div>                            
-                        </header>
-
-                        {/* Search box */}
-                        <section className="mb-6">
-                            <form onSubmit={handleSubmit}>
-                                <Field className="w-full">                                    
-                                    <ButtonGroup className="w-full">
+                        {/* Header & Search box */}
+                        <section className="mt-8 mb-10 text-center">
+                            <h1 className="mb-6 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+                                Search the Qur'an
+                            </h1>
+                            <form
+                                onSubmit={handleSubmit}
+                                className="mx-auto max-w-2xl"
+                            >
+                                <Field className="w-full">
+                                    <ButtonGroup className="w-full shadow-sm">
                                         <Input
                                             id="q"
                                             value={localQuery}
                                             onChange={(e) =>
                                                 setLocalQuery(e.target.value)
                                             }
-                                            placeholder="Start typing any phrase from the Qur'an…"
-                                            className="h-11 flex-1 rounded-r-none text-sm"
+                                            placeholder="Jesus"
+                                            className="h-12 flex-1 rounded-r-none border-border bg-background px-4 text-base focus-visible:ring-1 focus-visible:ring-blue-500"
                                         />
                                         <Button
                                             type="submit"
-                                            size="sm"                                                       
-                                            className="h-11 rounded-l-none px-5 text-md font-semibold tracking-wide -ml-px"
+                                            className="h-12 rounded-l-none bg-blue-500 px-8 text-base font-medium text-white hover:bg-blue-600"
                                         >
                                             {isSubmitting
                                                 ? 'Searching…'
@@ -135,7 +131,7 @@ export default function SearchPage({
                                         </Button>
                                     </ButtonGroup>
                                 </Field>
-                                <p className="mt-2 text-xs text-muted-foreground">
+                                <p className="mt-3 text-left text-[13px] text-muted-foreground">
                                     Press Enter to search. Results are ranked
                                     using the Solr index.
                                 </p>
@@ -143,114 +139,166 @@ export default function SearchPage({
                         </section>
 
                         {/* Results */}
-                        <main className="flex flex-1 flex-col gap-4">
-                        
-                        {query && !hasResults && (
-                            <div className="mt-6 text-sm text-muted-foreground">
-                                <p>
-                                    No verses found for{' '}
-                                    <span className="font-semibold text-emerald-300">
-                                        “{query}”
-                                    </span>
-                                    . Try different wording or a shorter phrase.
-                                </p>
-                            </div>
-                        )}
-
-                        {hasResults && (
-                            <section className="mt-4 space-y-4">
-                                <div className="flex items-baseline justify-between text-xs text-muted-foreground">
+                        <main className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+                            {query && !hasResults && (
+                                <div className="mt-8 text-center text-sm text-muted-foreground">
                                     <p>
-                                        Showing{' '}
+                                        No verses found for{' '}
                                         <span className="font-semibold text-foreground">
-                                            {results.length}
-                                        </span>{' '}
-                                        of{' '}
-                                        <span className="font-semibold text-foreground">
-                                            {total}
-                                        </span>{' '}
-                                        matches for{' '}
-                                        <span className="font-semibold text-primary">
                                             “{query}”
                                         </span>
-                                        .
-                                    </p>
-                                    <p>
-                                        Page {currentPage} of {totalPages}
+                                        . Try different wording or a shorter
+                                        phrase.
                                     </p>
                                 </div>
+                            )}
 
-                                <div className="mt-2 space-y-3">
-                                    {results.map((verse) => (
-                                        <div
-                                            key={`${verse.chapterId}-${verse.verseNumber}-${verse.id ?? 'n'}`}
-                                            className="rounded-xl border bg-card p-3 shadow-sm"
-                                        >
-                                            <div className="mb-3 flex items-center justify-between text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="rounded-full bg-muted px-2 py-0.5 text-foreground">
-                                                        {verse.chapterName ??
-                                                            `Surah ${verse.chapterId}`}
-                                                    </span>                                                    
+                            {hasResults && (
+                                <section className="space-y-6">
+                                    <div className="flex items-center justify-between text-[13px] text-muted-foreground">
+                                        <p>
+                                            Showing{' '}
+                                            <span className="font-medium text-foreground">
+                                                {results.length}
+                                            </span>{' '}
+                                            of{' '}
+                                            <span className="font-medium text-foreground">
+                                                {total}
+                                            </span>{' '}
+                                            matches for{' '}
+                                            <span className="font-medium text-blue-500">
+                                                "{query}"
+                                            </span>
+                                            .
+                                        </p>
+                                        <p>
+                                            Page {currentPage} of {totalPages}
+                                        </p>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        {results.map((verse) => (
+                                            <div
+                                                key={`${verse.chapterId}-${verse.verseNumber}-${verse.id ?? 'n'}`}
+                                                className="overflow-hidden rounded-[16px] border border-border/50 bg-background"
+                                            >
+                                                <div className="flex items-center justify-between px-5 pt-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="flex items-center justify-center gap-2 rounded bg-muted/50 px-2 py-1 text-[10px] font-bold tracking-widest text-[#7D8893] uppercase">
+                                                            {verse.chapterName ??
+                                                                `Surah ${verse.chapterId}`}
+                                                        </span>
+                                                        <div className="flex h-5 items-center justify-center rounded-sm bg-muted/40 px-1.5 text-[11px] font-bold text-foreground/80 ring-1 ring-foreground/10 ring-inset">
+                                                            {verse.verseNumber}
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <Link
-                                                    href={`/${verse.chapterId}/${verse.verseNumber}`}
-                                                    className="inline-flex items-center justify-center rounded-full bg-transparent p-0 text-primary hover:bg-transparent"
-                                                >
-                                                    <BookOpen className="h-4 w-4" />
-                                                    <span className="sr-only">
-                                                        Open in reader
-                                                    </span>
-                                                </Link>
+
+                                                <VerseCard
+                                                    verse={{
+                                                        id: verse.id ?? 0,
+                                                        chapterId:
+                                                            verse.chapterId,
+                                                        chapterNumber:
+                                                            verse.chapterNumber ??
+                                                            verse.chapterId,
+                                                        verseNumber:
+                                                            verse.verseNumber,
+                                                        text: verse.text,
+                                                        translation:
+                                                            verse.translation ??
+                                                            undefined,
+                                                        juzNumber:
+                                                            verse.juzNumber ??
+                                                            0,
+                                                        pageNumber:
+                                                            verse.pageNumber ??
+                                                            0,
+                                                    }}
+                                                    showTranslation
+                                                    hideHeaderActions={false}
+                                                    className={cn(
+                                                        'bg-transparent',
+                                                        'border-0 shadow-none',
+                                                        'p-5 pt-1',
+                                                    )}
+                                                />
                                             </div>
+                                        ))}
+                                    </div>
 
-                                            <VerseCard
-                                                verse={{
-                                                    id: verse.id ?? 0,
-                                                    chapterId: verse.chapterId,
-                                                    chapterNumber:
-                                                        verse.chapterNumber ??
-                                                        verse.chapterId,
-                                                    verseNumber:
-                                                        verse.verseNumber,
-                                                    text: verse.text,
-                                                    translation:
-                                                        verse.translation ??
-                                                        undefined,
-                                                    juzNumber:
-                                                        verse.juzNumber ?? 0,
-                                                    pageNumber:
-                                                        verse.pageNumber ?? 0,
-                                                }}
-                                                showTranslation
-                                                hideHeaderActions={false}
-                                                className={cn(
-                                                    'bg-transparent',
-                                                    'border-0 shadow-none',
-                                                    'px-0 pt-0',
-                                                )}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Pagination controls */}
-                                {totalPages > 1 && (
-                                    <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
-                                        <div className="flex gap-2">
+                                    {/* Pagination controls */}
+                                    {totalPages > 1 && (
+                                        <div className="mt-8 flex items-center justify-between border-t border-border/50 pt-6 text-sm text-muted-foreground">
                                             <Button
-                                                variant="outline"
+                                                variant="ghost"
                                                 size="sm"
                                                 disabled={currentPage === 1}
                                                 onClick={() =>
                                                     changePage(currentPage - 1)
                                                 }
-                                                className="text-xs"
+                                                className="w-24 justify-start text-[13px] font-medium hover:bg-transparent hover:text-foreground"
                                             >
-                                                Previous
+                                                « Previous
                                             </Button>
+
+                                            <div className="hidden h-9 items-center gap-1 rounded-md border border-border/50 bg-background px-1 shadow-sm sm:flex">
+                                                {(() => {
+                                                    const maxPagesToShow = 10;
+                                                    let startPage = Math.max(
+                                                        1,
+                                                        currentPage -
+                                                            Math.floor(
+                                                                maxPagesToShow /
+                                                                    2,
+                                                            ),
+                                                    );
+                                                    let endPage =
+                                                        startPage +
+                                                        maxPagesToShow -
+                                                        1;
+
+                                                    if (endPage > totalPages) {
+                                                        endPage = totalPages;
+                                                        startPage = Math.max(
+                                                            1,
+                                                            endPage -
+                                                                maxPagesToShow +
+                                                                1,
+                                                        );
+                                                    }
+
+                                                    return Array.from(
+                                                        {
+                                                            length:
+                                                                endPage -
+                                                                startPage +
+                                                                1,
+                                                        },
+                                                        (_, i) => startPage + i,
+                                                    ).map((page) => (
+                                                        <button
+                                                            key={`page-${page}`}
+                                                            type="button"
+                                                            onClick={() =>
+                                                                changePage(page)
+                                                            }
+                                                            className={cn(
+                                                                'inline-flex h-7 min-w-[28px] items-center justify-center rounded-[4px] px-2 text-[13px] transition-colors',
+                                                                page ===
+                                                                    currentPage
+                                                                    ? 'bg-blue-50 font-semibold text-blue-600'
+                                                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                                                            )}
+                                                        >
+                                                            {page}
+                                                        </button>
+                                                    ));
+                                                })()}
+                                            </div>
+
                                             <Button
-                                                variant="outline"
+                                                variant="ghost"
                                                 size="sm"
                                                 disabled={
                                                     currentPage === totalPages
@@ -258,37 +306,14 @@ export default function SearchPage({
                                                 onClick={() =>
                                                     changePage(currentPage + 1)
                                                 }
-                                                className="text-xs"
+                                                className="w-24 justify-end text-[13px] font-medium hover:bg-transparent hover:text-foreground"
                                             >
-                                                Next
+                                                Next »
                                             </Button>
                                         </div>
-                                        <div className="hidden gap-1 sm:flex">
-                                            {Array.from(
-                                                { length: totalPages },
-                                                (_, i) => i + 1,
-                                            ).map((page) => (
-                                                <button
-                                                    key={page}
-                                                    type="button"
-                                                    onClick={() =>
-                                                        changePage(page)
-                                                    }
-                                                    className={cn(
-                                                        'inline-flex h-7 w-7 items-center justify-center rounded-full text-[11px]',
-                                                        page === currentPage
-                                                            ? 'bg-primary text-primary-foreground font-semibold'
-                                                            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                                                    )}
-                                                >
-                                                    {page}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </section>
-                        )}
+                                    )}
+                                </section>
+                            )}
                         </main>
                     </div>
                 </div>

@@ -26,7 +26,8 @@ return new class extends Migration
                 'scholarly_commentary',
                 'other'
             ]);
-            $table->string('resource_url');
+            $table->string('resource_url')->nullable();
+            $table->text('resource_title')->nullable();
             $table->text('comment')->nullable();
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
             $table->timestamps();

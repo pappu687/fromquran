@@ -9,9 +9,10 @@ import {
     SidebarMenuItem,
     useSidebar,
 } from '@/components/ui/sidebar';
-import { BookOpen, Search } from 'lucide-react';
+import { BookOpen, Search, History, Star, Clock } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useReaderSettings } from '@/contexts/reader-settings-context';
 
 interface Chapter {
     id: number;
@@ -22,6 +23,7 @@ interface Chapter {
     englishNameTranslation: string;
     revelationType: 'Meccan' | 'Medinan';
     verses: number;
+    startJuz?: number;
 }
 
 interface ChaptersPanelProps {
@@ -35,7 +37,30 @@ export function ChaptersPanel({
     selectedChapter,
     onChapterSelect,
 }: ChaptersPanelProps) {
+    const { settings } = useReaderSettings();
     const [searchTerm, setSearchTerm] = useState('');
+    const [recentlyViewed, setRecentlyViewed] = useState<number[]>([]);
+
+    // Load recently viewed from localStorage
+    useEffect(() => {
+        const saved = localStorage.getItem('quran_recently_viewed');
+        if (saved) {
+            try {
+                setRecentlyViewed(JSON.parse(saved));
+            } catch (e) {
+                console.error('Failed to parse recently viewed', e);
+            }
+        }
+    }, []);
+
+    const saveRecentlyViewed = (id: number) => {
+        const updated = [
+            id,
+            ...recentlyViewed.filter((cid) => cid !== id),
+        ].slice(0, 5);
+        setRecentlyViewed(updated);
+        localStorage.setItem('quran_recently_viewed', JSON.stringify(updated));
+    };
 
     const { isMobile, setOpenMobile } = useSidebar();
 
@@ -53,10 +78,18 @@ export function ChaptersPanel({
 
     const handleChapterClick = (chapterId: number) => {
         onChapterSelect(chapterId);
+        saveRecentlyViewed(chapterId);
         if (isMobile) {
             setOpenMobile(false);
         }
     };
+
+    const recentChapters = chapters
+        .filter((c) => recentlyViewed.includes(c.id))
+        .sort(
+            (a, b) =>
+                recentlyViewed.indexOf(a.id) - recentlyViewed.indexOf(b.id),
+        );
 
     return (
         <>
@@ -84,6 +117,57 @@ export function ChaptersPanel({
                     }}
                     defer
                 >
+                    {settings.showRecentlyViewed &&
+                        recentChapters.length > 0 &&
+                        !searchTerm && (
+                            <SidebarGroup>
+                                <div className="flex items-center gap-2 px-4 py-2 text-[10px] font-bold tracking-wider text-rose-500/70 uppercase">
+                                    <History className="h-3 w-3" />
+                                    Recently Viewed
+                                </div>
+                                <SidebarGroupContent>
+                                    <SidebarMenu>
+                                        {recentChapters.map((chapter) => (
+                                            <SidebarMenuItem
+                                                key={`recent-${chapter.id}`}
+                                            >
+                                                <SidebarMenuButton
+                                                    onClick={() =>
+                                                        handleChapterClick(
+                                                            chapter.id,
+                                                        )
+                                                    }
+                                                    isActive={
+                                                        selectedChapter ===
+                                                        chapter.id
+                                                    }
+                                                    className={`h-auto cursor-pointer py-2 ${
+                                                        selectedChapter ===
+                                                        chapter.id
+                                                            ? 'bg-rose-500/10 text-rose-600'
+                                                            : 'hover:bg-rose-500/5'
+                                                    }`}
+                                                >
+                                                    <div className="flex w-full items-center gap-3">
+                                                        <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md bg-rose-500/10 text-[10px] font-bold text-rose-600">
+                                                            {chapter.number}
+                                                        </div>
+                                                        <div className="flex-1 text-left">
+                                                            <div className="truncate text-xs leading-none font-semibold">
+                                                                {
+                                                                    chapter.romanName
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </SidebarMenuButton>
+                                            </SidebarMenuItem>
+                                        ))}
+                                    </SidebarMenu>
+                                </SidebarGroupContent>
+                            </SidebarGroup>
+                        )}
+
                     <SidebarGroup>
                         <SidebarGroupContent>
                             <SidebarMenu>
@@ -113,20 +197,52 @@ export function ChaptersPanel({
                                                 >
                                                     {chapter.number}
                                                 </div>
-                                                <div className="flex-1 text-left">
-                                                    <div className="text-sm font-medium">
-                                                        {chapter.romanName}
+                                                <div className="min-w-0 flex-1 text-left">
+                                                    <div className="flex items-center justify-between gap-1">
+                                                        <div className="truncate text-sm font-semibold">
+                                                            {chapter.romanName}
+                                                        </div>
+                                                        <div className="flex items-center gap-1">
+                                                            {chapter.startJuz && (
+                                                                <div
+                                                                    className={`rounded-full border px-1.5 py-0.5 text-[10px] ${
+                                                                        selectedChapter ===
+                                                                        chapter.id
+                                                                            ? 'border-black/20 bg-black/10 text-black'
+                                                                            : 'border-muted-foreground/20 bg-muted text-muted-foreground'
+                                                                    }`}
+                                                                >
+                                                                    Juz{' '}
+                                                                    {
+                                                                        chapter.startJuz
+                                                                    }
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
-                                                    <div
-                                                        className={`text-xs ${
-                                                            selectedChapter ===
-                                                            chapter.id
-                                                                ? 'text-black/80'
-                                                                : 'text-muted-foreground'
-                                                        }`}
-                                                        dir="rtl"
-                                                    >
-                                                        {chapter.name}
+                                                    <div className="mt-0.5 flex items-center justify-between">
+                                                        <div
+                                                            className={`text-xs ${
+                                                                selectedChapter ===
+                                                                chapter.id
+                                                                    ? 'text-black/80'
+                                                                    : 'text-muted-foreground'
+                                                            }`}
+                                                            dir="rtl"
+                                                        >
+                                                            {chapter.name}
+                                                        </div>
+                                                        <div
+                                                            className={`text-[10px] font-medium ${
+                                                                selectedChapter ===
+                                                                chapter.id
+                                                                    ? 'text-black/60'
+                                                                    : 'text-muted-foreground/60'
+                                                            }`}
+                                                        >
+                                                            {chapter.verses}{' '}
+                                                            verses
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
