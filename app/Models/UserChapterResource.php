@@ -13,6 +13,8 @@ class UserChapterResource extends Model
         'chapter_id',
         'resource_type_id',
         'resource_url',
+        'resource_title',
+        'thumbnail_url',
         'comment',
         'status',
     ];

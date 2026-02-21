@@ -34,6 +34,7 @@ interface ChapterResource {
     id: number;
     resource_type_id: number;
     resource_url: string;
+    resource_title?: string;
     comment: string | null;
     resource_type: ResourceType;
     user: {
@@ -113,36 +114,46 @@ export function ChapterInfoSheet({
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="w-full sm:max-w-2xl overflow-y-auto p-0">
-                <div className="flex flex-col h-full">
+            <SheetContent className="w-full overflow-y-auto p-0 sm:max-w-2xl">
+                <div className="flex h-full flex-col">
                     <SheetHeader className="p-6 pb-2">
                         <SheetTitle className="text-2xl">
-                            {chapterName || (info ? info.surah_name : `Surah ${chapterNumber}`)}
-                        </SheetTitle>                    
+                            {chapterName ||
+                                (info
+                                    ? info.surah_name
+                                    : `Surah ${chapterNumber}`)}
+                        </SheetTitle>
                     </SheetHeader>
 
-                    <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-                        <div className="px-6 border-b">
-                            <TabsList className="w-full justify-start h-auto p-0 bg-transparent gap-6">
-                                <TabsTrigger 
-                                    value="intro" 
-                                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-0 py-2 transition-none"
+                    <Tabs
+                        value={activeTab}
+                        onValueChange={setActiveTab}
+                        className="flex flex-1 flex-col"
+                    >
+                        <div className="border-b px-6">
+                            <TabsList className="h-auto w-full justify-start gap-6 bg-transparent p-0">
+                                <TabsTrigger
+                                    value="intro"
+                                    className="rounded-none border-b-2 border-transparent px-0 py-2 transition-none data-[state=active]:border-primary data-[state=active]:bg-transparent"
                                 >
-                                    <Info className="h-4 w-4 mr-2" />
+                                    <Info className="mr-2 h-4 w-4" />
                                     Intro
                                 </TabsTrigger>
-                                <TabsTrigger 
+                                <TabsTrigger
                                     value="resources"
-                                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-0 py-2 transition-none"
+                                    className="rounded-none border-b-2 border-transparent px-0 py-2 transition-none data-[state=active]:border-primary data-[state=active]:bg-transparent"
                                 >
-                                    <LinkIcon className="h-4 w-4 mr-2" />
+                                    <LinkIcon className="mr-2 h-4 w-4" />
                                     Resources ({resources.length})
                                 </TabsTrigger>
                             </TabsList>
                         </div>
 
                         <div className="flex-1 overflow-y-auto px-6 py-6">
-                            <TabsContent value="intro" className="mt-0 outline-none">
+                            <TabsContent
+                                value="intro"
+                                className="mt-0 outline-none"
+                            >
                                 {loadingInfo ? (
                                     <div className="space-y-4">
                                         <Skeleton className="h-4 w-full" />
@@ -152,14 +163,19 @@ export function ChapterInfoSheet({
                                         <Skeleton className="h-4 w-[95%]" />
                                     </div>
                                 ) : info ? (
-                                    <div className="prose prose-sm dark:prose-invert max-w-none surah-info">                                
+                                    <div className="prose prose-sm dark:prose-invert surah-info max-w-none">
                                         {info.text ? (
-                                            <div 
+                                            <div
                                                 className="chapter-info-content text-sm leading-relaxed"
-                                                dangerouslySetInnerHTML={{ __html: info.text }} 
+                                                dangerouslySetInnerHTML={{
+                                                    __html: info.text,
+                                                }}
                                             />
                                         ) : (
-                                            <p className="text-muted-foreground italic">No detailed information available for this Surah.</p>
+                                            <p className="text-muted-foreground italic">
+                                                No detailed information
+                                                available for this Surah.
+                                            </p>
                                         )}
                                     </div>
                                 ) : (
@@ -171,16 +187,21 @@ export function ChapterInfoSheet({
                                 )}
                             </TabsContent>
 
-                            <TabsContent value="resources" className="mt-0 outline-none">
+                            <TabsContent
+                                value="resources"
+                                className="mt-0 outline-none"
+                            >
                                 <div className="mb-4 flex items-center justify-between">
-                                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                                    <h3 className="text-sm font-medium tracking-wider text-muted-foreground uppercase">
                                         Resources for this Surah
                                     </h3>
-                                    <Button 
-                                        size="sm" 
-                                        variant="outline" 
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
                                         className="gap-1"
-                                        onClick={() => setIsResourceModalOpen(true)}
+                                        onClick={() =>
+                                            setIsResourceModalOpen(true)
+                                        }
                                     >
                                         <Plus className="h-4 w-4" />
                                         Add a resource
@@ -194,51 +215,71 @@ export function ChapterInfoSheet({
                                     </div>
                                 ) : resources.length === 0 ? (
                                     <div className="flex h-40 flex-col items-center justify-center text-center">
-                                        <LinkIcon className="h-8 w-8 text-muted-foreground mb-2 opacity-20" />
+                                        <LinkIcon className="mb-2 h-8 w-8 text-muted-foreground opacity-20" />
                                         <p className="text-muted-foreground">
-                                            No resources available for this Surah yet.
+                                            No resources available for this
+                                            Surah yet.
                                         </p>
                                     </div>
                                 ) : (
-                                    <Accordion type="single" collapsible className="w-full">
+                                    <Accordion
+                                        type="single"
+                                        collapsible
+                                        className="w-full"
+                                        defaultValue={
+                                            Object.keys(groupedResources)[0]
+                                        }
+                                    >
                                         {Object.entries(groupedResources).map(
                                             ([type, typeResources]) => (
-                                                <AccordionItem key={type} value={type} className="border-b-0 mb-2">
-                                                    <AccordionTrigger className="hover:no-underline py-3 px-4 rounded-lg bg-muted/50">
-                                                        <span className="font-medium text-sm">
-                                                            {type} ({typeResources.length})
+                                                <AccordionItem
+                                                    key={type}
+                                                    value={type}
+                                                    className="mb-2 border-b-0"
+                                                >
+                                                    <AccordionTrigger className="rounded-lg bg-muted/50 px-4 py-3 hover:no-underline">
+                                                        <span className="text-sm font-medium">
+                                                            {type} (
+                                                            {
+                                                                typeResources.length
+                                                            }
+                                                            )
                                                         </span>
                                                     </AccordionTrigger>
-                                                    <AccordionContent className="pt-4 px-1">
+                                                    <AccordionContent className="px-1 pt-4">
                                                         <div className="space-y-4">
-                                                            {typeResources.map((resource) => (
-                                                                <div
-                                                                    key={resource.id}
-                                                                    className="rounded-lg border p-4 bg-card"
-                                                                >
-                                                                    <a
-                                                                        href={resource.resource_url}
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
-                                                                        className="group mb-2 flex items-start gap-2 text-sm font-medium text-primary hover:underline"
+                                                            {typeResources.map(
+                                                                (resource) => (
+                                                                    <div
+                                                                        key={
+                                                                            resource.id
+                                                                        }
+                                                                        className="rounded-lg border bg-card p-4"
                                                                     >
-                                                                        <ExternalLink className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                                                                        <span className="break-all italic">
-                                                                            {resource.resource_url}
-                                                                        </span>
-                                                                    </a>
-                                                                    {resource.comment && (
-                                                                        <p className="mt-2 text-sm text-foreground/80 leading-relaxed">
-                                                                            {resource.comment}
-                                                                        </p>
-                                                                    )}
-                                                                    <div className="mt-3 flex items-center text-xs text-muted-foreground">
-                                                                        <span className="bg-muted px-2 py-0.5 rounded">
-                                                                            Submitted by {resource.user.name}
-                                                                        </span>
+                                                                        <a
+                                                                            href={
+                                                                                resource.resource_url
+                                                                            }
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            className="group mb-2 flex items-start gap-2 text-sm font-medium text-primary hover:underline"
+                                                                        >
+                                                                            <ExternalLink className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                                                                            <span className="break-all italic">
+                                                                                {resource.resource_title ||
+                                                                                    resource.resource_url}
+                                                                            </span>
+                                                                        </a>
+                                                                        {resource.comment && (
+                                                                            <p className="mt-2 text-sm leading-relaxed text-foreground/80">
+                                                                                {
+                                                                                    resource.comment
+                                                                                }
+                                                                            </p>
+                                                                        )}
                                                                     </div>
-                                                                </div>
-                                                            ))}
+                                                                ),
+                                                            )}
                                                         </div>
                                                     </AccordionContent>
                                                 </AccordionItem>
@@ -250,8 +291,8 @@ export function ChapterInfoSheet({
                         </div>
                     </Tabs>
                 </div>
-                
-                <AddResourceModal 
+
+                <AddResourceModal
                     open={isResourceModalOpen}
                     onOpenChange={setIsResourceModalOpen}
                     chapterId={chapterNumber}

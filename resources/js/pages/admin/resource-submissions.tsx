@@ -33,6 +33,7 @@ interface Submission {
     verse: Verse;
     resource_type_id: number;
     resource_url: string;
+    resource_title: string | null;
     comment: string | null;
     status: 'pending' | 'approved' | 'rejected';
     created_at: string;
@@ -453,21 +454,27 @@ export default function ResourceSubmissions({
                                                     </span>
                                                 </td>
                                                 <td className="p-3">
-                                                    <a
-                                                        href={
-                                                            submission.resource_url
-                                                        }
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="inline-flex max-w-xs items-center gap-1 truncate text-sm text-primary hover:underline"
-                                                    >
-                                                        <ExternalLink className="h-3 w-3" />
-                                                        <span className="truncate">
-                                                            {
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className="text-sm font-medium">
+                                                            {submission.resource_title ||
+                                                                '-'}
+                                                        </span>
+                                                        <a
+                                                            href={
                                                                 submission.resource_url
                                                             }
-                                                        </span>
-                                                    </a>
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="inline-flex max-w-xs items-center gap-1 truncate text-xs text-primary hover:underline"
+                                                        >
+                                                            <ExternalLink className="h-3 w-3" />
+                                                            <span className="truncate">
+                                                                {
+                                                                    submission.resource_url
+                                                                }
+                                                            </span>
+                                                        </a>
+                                                    </div>
                                                 </td>
                                                 <td className="p-3">
                                                     <span className="block max-w-xs truncate text-sm text-muted-foreground">

@@ -122,6 +122,31 @@ class QuranController extends Controller
     }
 
     /**
+     * Get all verses for a specific chapter without pagination (for dropdowns)
+     */
+    public function allVersesForChapter(Request $request): JsonResponse
+    {
+        $chapterId = (int) $request->get('chapter_id');
+        if (!$chapterId) {
+            return response()->json(['error' => 'chapter_id is required'], 400);
+        }
+
+        try {
+            // Using Verse model to fetch basic data for dropdown
+            $verses = \App\Models\Verse::where('chapter_id', $chapterId)
+                ->orderBy('verse_number')
+                ->get(['id', 'verse_number', 'verse_key']);
+
+            return response()->json($verses);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch chapter verses',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Get available editions (languages/translators)
      */
     public function editions(): JsonResponse

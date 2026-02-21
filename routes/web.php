@@ -247,6 +247,13 @@ Route::middleware(['auth', 'role:Admin|Moderator|Reviewer'])->prefix('admin')->g
     Route::get('/resource-submissions', [\App\Http\Controllers\Admin\ResourceSubmissionController::class, 'index'])
         ->name('admin.resource-submissions');
 
+    Route::get('/add-resource', [\App\Http\Controllers\Admin\AddResourceController::class, 'index'])
+        ->name('admin.add-resource');
+    Route::post('/add-resource/search', [\App\Http\Controllers\Admin\AddResourceController::class, 'search'])
+        ->name('admin.add-resource.search');
+    Route::post('/add-resource/store', [\App\Http\Controllers\Admin\AddResourceController::class, 'store'])
+        ->name('admin.add-resource.store');
+
     // Only Admins & Moderators can approve/reject/delete submissions
     Route::post('/resource-submissions/{submission}/approve', [\App\Http\Controllers\Admin\ResourceSubmissionController::class, 'approve'])
         ->middleware('role:Admin|Moderator')

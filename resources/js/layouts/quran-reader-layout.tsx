@@ -62,13 +62,19 @@ export default function QuranReaderLayout({
                                         {chapter ? (
                                             <div className="flex items-center gap-2">
                                                 <span>
-                                                    {chapter.romanName ?? chapter.englishName} ({chapter.name})
+                                                    {chapter.romanName ??
+                                                        chapter.englishName}{' '}
+                                                    ({chapter.name})
                                                 </span>
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
                                                     className="h-7 w-7 p-0"
-                                                    onClick={() => setIsChapterInfoOpen(true)}
+                                                    onClick={() =>
+                                                        setIsChapterInfoOpen(
+                                                            true,
+                                                        )
+                                                    }
                                                     title="About this Surah"
                                                 >
                                                     <Eye className="h-4 w-4 text-muted-foreground hover:text-primary" />
@@ -93,7 +99,7 @@ export default function QuranReaderLayout({
                         open={isChapterInfoOpen}
                         onOpenChange={setIsChapterInfoOpen}
                         chapterNumber={chapter.number}
-                        chapterName={chapter.englishName}
+                        chapterName={chapter.romanName ?? chapter.englishName}
                     />
                 )}
             </SidebarInset>

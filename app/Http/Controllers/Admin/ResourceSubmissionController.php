@@ -35,6 +35,7 @@ class ResourceSubmissionController extends Controller
                         ->orWhere('email', 'like', "%{$search}%");
                 })
                 ->orWhere('resource_url', 'like', "%{$search}%")
+                ->orWhere('resource_title', 'like', "%{$search}%")
                 ->orWhereHas('resourceType', function ($typeQuery) use ($search) {
                     $typeQuery->where('name', 'like', "%{$search}%")
                         ->orWhere('slug', 'like', "%{$search}%");

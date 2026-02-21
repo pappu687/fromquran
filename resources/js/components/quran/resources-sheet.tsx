@@ -403,24 +403,7 @@ export function ResourcesSheet({
                                                                     </div>
                                                                 )}
 
-                                                                <div className="flex items-center justify-between border-t pt-3 mt-1">
-                                                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
-                                                                            {resource.user.name.charAt(0).toUpperCase()}
-                                                                        </div>
-                                                                        <span>{resource.user.name}</span>
-                                                                    </div>
-                                                                    <div className="flex items-center gap-4">
-                                                                        <div className="flex items-center gap-1.5 transition-colors hover:text-emerald-600 cursor-pointer group/helpful">
-                                                                            <ThumbsUp className="h-3.5 w-3.5 text-muted-foreground/60 group-hover/helpful:text-emerald-600" />
-                                                                            <span className="font-medium text-xs">Helpful</span>
-                                                                        </div>
-                                                                        <div className="flex items-center gap-1.5 opacity-60">
-                                                                            <Eye className="h-3.5 w-3.5" />
-                                                                            <span className="text-[10px] font-medium tracking-tight">842 views</span>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
+
                                                             </div>
                                                         ),
                                                     )}

@@ -1,13 +1,5 @@
 import { Button } from '@/components/ui/button';
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
 import {
     Dialog,
     DialogContent,
@@ -54,8 +46,6 @@ export function AddResourceModal({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoadingTypes, setIsLoadingTypes] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
-    const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-    const [successMessage, setSuccessMessage] = useState('');
 
     // Fetch resource types when modal opens
     useEffect(() => {
@@ -88,7 +78,9 @@ export function AddResourceModal({
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
         try {
-            const endpoint = chapterId ? '/user-chapter-resources' : '/user-resources';
+            const endpoint = chapterId
+                ? '/user-chapter-resources'
+                : '/user-resources';
             const payload = {
                 resource_type_id: resourceTypeId,
                 resource_url: resourceUrl,
@@ -132,12 +124,11 @@ export function AddResourceModal({
             // Close the modal first
             onOpenChange(false);
 
-            // Set success message and show alert dialog
-            setSuccessMessage(
+            // Show success toast
+            toast.success(
                 data.message ||
                     'Resource submitted successfully and is pending approval.',
             );
-            setShowSuccessDialog(true);
         } catch (error) {
             setErrors({ general: 'Network error. Please try again.' });
             setIsSubmitting(false);
@@ -275,22 +266,6 @@ export function AddResourceModal({
                 </DialogContent>
             </Dialog>
 
-            {/* Success Alert Dialog */}
-            <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Success</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {successMessage}
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogAction onClick={() => setShowSuccessDialog(false)}>
-                            OK
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
         </>
     );
 }

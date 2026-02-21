@@ -8,6 +8,7 @@ import { createRoot } from 'react-dom/client';
 import { initializeTheme } from './hooks/use-appearance';
 import { ReadingModeProvider } from './contexts/reading-mode-context';
 import { ReaderSettingsProvider } from './contexts/reader-settings-context';
+import { Toaster } from '@/components/ui/sonner';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -26,6 +27,7 @@ createInertiaApp({
                 <ReaderSettingsProvider>
                     <ReadingModeProvider>
                         <App {...props} />
+                        <Toaster />
                     </ReadingModeProvider>
                 </ReaderSettingsProvider>
             </StrictMode>,

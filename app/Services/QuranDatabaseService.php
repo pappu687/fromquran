@@ -53,6 +53,7 @@ class QuranDatabaseService {
     public function getChapterInfo( int $chapterNumber ): ?array {
         return Cache::remember( "quran.db.chapter_info.{$chapterNumber}", $this->cacheTtl, function () use ( $chapterNumber ) {
             $info = \App\Models\ChapterInfo::where( 'surah_number', $chapterNumber )->first();
+            $chapter = \App\Models\Chapter::find($chapterNumber);
 
             if ( ! $info ) {
                 return null;
@@ -60,7 +61,7 @@ class QuranDatabaseService {
 
             return array(
                 'surah_number' => $info->surah_number,
-                'surah_name'   => $info->surah_name,
+                'surah_name'   => $chapter ? $chapter->name_roman : $info->surah_name,
                 'text'         => $info->text,
                 'short_text'   => $info->short_text,
              );

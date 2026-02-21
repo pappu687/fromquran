@@ -15,6 +15,7 @@ class UserVerseResource extends Model
         'resource_type_id',
         'resource_url',
         'resource_title',
+        'thumbnail_url',
         'comment',
         'status',
     ];

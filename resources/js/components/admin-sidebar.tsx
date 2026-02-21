@@ -60,6 +60,11 @@ const adminNavData = {
             icon: FileText,
         },
         {
+            title: 'Add Resource',
+            url: '/admin/add-resource',
+            icon: FileText,
+        },
+        {
             title: 'Settings',
             url: '/admin/settings',
             icon: Settings,
