@@ -52,6 +52,19 @@ class AddResourceController extends Controller
 
             if ($adapter) {
                 $results = $adapter->search($term);
+
+                // Highlight search term in results
+                $pattern = '/' . preg_quote($term, '/') . '/i';
+                $replacement = '<span style="background-color: #f97316; color: white; padding: 0 4px; border-radius: 4px; font-weight: bold;">$0</span>';
+
+                foreach ($results as &$res) {
+                    if (isset($res['title'])) {
+                        $res['title'] = preg_replace($pattern, $replacement, $res['title']);
+                    }
+                    if (isset($res['description'])) {
+                        $res['description'] = preg_replace($pattern, $replacement, $res['description']);
+                    }
+                }
             } else {
                 Log::info("No search adapter found for resource type slug: {$resourceType->slug}");
             }

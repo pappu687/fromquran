@@ -306,7 +306,7 @@ export function VerseCard({
                 {/* Translation */}
                 {showTranslation && verse.translation && (
                     <div className="border-t border-muted/30 pt-4">
-                        <p className="text-[15px] leading-relaxed font-normal text-muted-foreground/80">
+                        <p className="text-[15px] leading-relaxed text-muted-foreground/80">
                             {verse.translation}
                         </p>
                     </div>

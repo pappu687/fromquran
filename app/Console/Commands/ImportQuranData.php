@@ -246,38 +246,51 @@ class ImportQuranData extends Command
 
     private function calculateJuz($chapter, $verse): int
     {
-        // Simplified juz calculation - should be replaced with accurate data
-        $juzMap = [
-            1 => 1, 2 => 1, 3 => 1, 4 => 1, 5 => 1, 6 => 1, 7 => 1,
-            8 => 2, 9 => 2, 10 => 2, 11 => 2, 12 => 2,
-            13 => 3, 14 => 3, 15 => 3, 16 => 3,
-            17 => 4, 18 => 4, 19 => 4, 20 => 4,
-            21 => 5, 22 => 5, 23 => 5, 24 => 5,
-            25 => 6, 26 => 6, 27 => 6, 28 => 6,
-            29 => 7, 30 => 7, 31 => 7, 32 => 7, 33 => 7,
-            34 => 8, 35 => 8, 36 => 8,
-            37 => 9, 38 => 9, 39 => 9, 40 => 9, 41 => 9,
-            42 => 10, 43 => 10, 44 => 10, 45 => 10, 46 => 10,
-            47 => 11, 48 => 11, 49 => 11, 50 => 11, 51 => 11, 52 => 11,
-            53 => 12, 54 => 12, 55 => 12, 56 => 12, 57 => 12,
-            58 => 13, 59 => 13, 60 => 13, 61 => 13, 62 => 13,
-            63 => 14, 64 => 14, 65 => 14, 66 => 14, 67 => 14, 68 => 14, 69 => 14,
-            70 => 15, 71 => 15, 72 => 15, 73 => 15, 74 => 15, 75 => 15, 76 => 15, 77 => 15, 78 => 15,
+        $juzBoundaries = [
+            ['juz' => 1, 'start_chapter' => 1, 'start_verse' => 1],
+            ['juz' => 2, 'start_chapter' => 2, 'start_verse' => 142],
+            ['juz' => 3, 'start_chapter' => 2, 'start_verse' => 253],
+            ['juz' => 4, 'start_chapter' => 3, 'start_verse' => 93],
+            ['juz' => 5, 'start_chapter' => 4, 'start_verse' => 24],
+            ['juz' => 6, 'start_chapter' => 4, 'start_verse' => 148],
+            ['juz' => 7, 'start_chapter' => 5, 'start_verse' => 82],
+            ['juz' => 8, 'start_chapter' => 6, 'start_verse' => 111],
+            ['juz' => 9, 'start_chapter' => 7, 'start_verse' => 88],
+            ['juz' => 10, 'start_chapter' => 8, 'start_verse' => 41],
+            ['juz' => 11, 'start_chapter' => 9, 'start_verse' => 93],
+            ['juz' => 12, 'start_chapter' => 11, 'start_verse' => 6],
+            ['juz' => 13, 'start_chapter' => 12, 'start_verse' => 53],
+            ['juz' => 14, 'start_chapter' => 15, 'start_verse' => 1],
+            ['juz' => 15, 'start_chapter' => 17, 'start_verse' => 1],
+            ['juz' => 16, 'start_chapter' => 18, 'start_verse' => 75],
+            ['juz' => 17, 'start_chapter' => 21, 'start_verse' => 1],
+            ['juz' => 18, 'start_chapter' => 23, 'start_verse' => 1],
+            ['juz' => 19, 'start_chapter' => 25, 'start_verse' => 21],
+            ['juz' => 20, 'start_chapter' => 27, 'start_verse' => 56],
+            ['juz' => 21, 'start_chapter' => 29, 'start_verse' => 46],
+            ['juz' => 22, 'start_chapter' => 33, 'start_verse' => 31],
+            ['juz' => 23, 'start_chapter' => 36, 'start_verse' => 28],
+            ['juz' => 24, 'start_chapter' => 39, 'start_verse' => 32],
+            ['juz' => 25, 'start_chapter' => 41, 'start_verse' => 47],
+            ['juz' => 26, 'start_chapter' => 46, 'start_verse' => 1],
+            ['juz' => 27, 'start_chapter' => 51, 'start_verse' => 31],
+            ['juz' => 28, 'start_chapter' => 58, 'start_verse' => 1],
+            ['juz' => 29, 'start_chapter' => 67, 'start_verse' => 1],
+            ['juz' => 30, 'start_chapter' => 78, 'start_verse' => 1],
         ];
 
-        if ($chapter <= 78) {
-            return $juzMap[$chapter] ?? 15;
-        } else if ($chapter <= 87) {
-            return 16;
-        } else if ($chapter <= 96) {
-            return 17;
-        } else if ($chapter <= 106) {
-            return 18;
-        } else if ($chapter <= 112) {
-            return 19;
-        } else {
-            return 20;
+        // Search backwards to find the first boundary that is less than or equal to current position
+        for ($i = count($juzBoundaries) - 1; $i >= 0; $i--) {
+            $boundary = $juzBoundaries[$i];
+            if ($chapter > $boundary['start_chapter']) {
+                return $boundary['juz'];
+            }
+            if ($chapter == $boundary['start_chapter'] && $verse >= $boundary['start_verse']) {
+                return $boundary['juz'];
+            }
         }
+
+        return 1;
     }
 
     private function calculateHizb($chapter, $verse): int

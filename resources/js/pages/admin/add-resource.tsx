@@ -72,14 +72,16 @@ export default function AddResource({ resourceTypes, chapters }: Props) {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
-        // Find youtube_tafseer and select it by default
-        const ytType = resourceTypes.find((t) => t.slug === 'youtube_tafseer');
-        if (ytType) {
-            setSelectedResourceTypeId(ytType.id.toString());
-        } else if (resourceTypes.length > 0) {
-            setSelectedResourceTypeId(resourceTypes[0].id.toString());
+        if (!selectedResourceTypeId) {
+            // Find youtube_tafseer and select it by default
+            const ytType = resourceTypes.find((t) => t.slug === 'youtube_tafseer');
+            if (ytType) {
+                setSelectedResourceTypeId(ytType.id.toString());
+            } else if (resourceTypes.length > 0) {
+                setSelectedResourceTypeId(resourceTypes[0].id.toString());
+            }
         }
-    }, [resourceTypes]);
+    }, [resourceTypes, selectedResourceTypeId]);
 
     useEffect(() => {
         if (selectedChapterId && selectedChapterId !== 'all') {
@@ -390,12 +392,18 @@ export default function AddResource({ resourceTypes, chapters }: Props) {
                                                         )}
                                                     </td>
                                                     <td className="p-3">
-                                                        <div className="line-clamp-2 font-semibold">
-                                                            {result.title}
-                                                        </div>
-                                                        <div className="mt-1 line-clamp-3 text-xs text-muted-foreground">
-                                                            {result.description}
-                                                        </div>
+                                                        <div
+                                                            className="line-clamp-2 font-semibold"
+                                                            dangerouslySetInnerHTML={{
+                                                                __html: result.title,
+                                                            }}
+                                                        />
+                                                        <div
+                                                            className="mt-1 line-clamp-3 text-xs text-muted-foreground"
+                                                            dangerouslySetInnerHTML={{
+                                                                __html: result.description,
+                                                            }}
+                                                        />
                                                     </td>
                                                     <td className="p-3">
                                                         <a

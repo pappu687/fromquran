@@ -18,8 +18,8 @@ interface ResourceType {
 }
 
 interface Resource {
-    id: number;
-    resource_type_id: number;
+    id: string | number;
+    resource_type_id?: number;
     resource_url: string;
     resource_title: string | null;
     comment: string | null;
@@ -105,7 +105,11 @@ export default function RelatedPage({
     const [resources, setResources] = useState<Resource[]>([]);
     const [loadingResources, setLoadingResources] = useState(false);
     const [loadingFull, setLoadingFull] = useState(false);
-    const [selectedComment, setSelectedComment] = useState<string | null>(null);
+    const [selectedResource, setSelectedResource] = useState<{
+        title: string | null;
+        url: string | null;
+        comment: string;
+    } | null>(null);
     const [similarVerses, setSimilarVerses] = useState<SimilarVerse[]>([]);
     const [loadingSimilar, setLoadingSimilar] = useState(false);
     const [topics, setTopics] = useState<Topic[]>([]);
@@ -241,7 +245,7 @@ export default function RelatedPage({
         }
     };
 
-    const handleSeeMore = async (resourceId: number) => {
+    const handleSeeMore = async (resourceId: string | number) => {
         setLoadingFull(true);
         try {
             const response = await fetch(`/api/resources/${resourceId}`);
@@ -249,7 +253,11 @@ export default function RelatedPage({
                 throw new Error('Failed to fetch full resource');
             }
             const data = await response.json();
-            setSelectedComment(data.data.comment);
+            setSelectedResource({
+                title: data.data.title || 'Full Description',
+                url: data.data.url || null,
+                comment: data.data.comment,
+            });
         } catch (err) {
             console.error('Failed to fetch full resource:', err);
         } finally {
@@ -513,7 +521,7 @@ export default function RelatedPage({
                                                             {resource.comment && (
                                                                 <div className="relative">
                                                                     <div
-                                                                        className={`text-sm text-muted-foreground/90 leading-relaxed ${!selectedComment ? 'line-clamp-3' : ''}`}
+                                                                        className={`text-sm leading-relaxed text-muted-foreground/90 ${!selectedResource ? 'line-clamp-3' : ''}`}
                                                                         dangerouslySetInnerHTML={{
                                                                             __html: resource.comment,
                                                                         }}
@@ -736,25 +744,38 @@ export default function RelatedPage({
 
             {/* Full comment dialog */}
             <Dialog
-                open={!!selectedComment}
-                onOpenChange={(open) => !open && setSelectedComment(null)}
+                open={!!selectedResource}
+                onOpenChange={(open) => !open && setSelectedResource(null)}
             >
                 <DialogContent className="max-w-[80rem]">
-                    <DialogHeader>
-                        <DialogTitle>Full Description</DialogTitle>
+                    <DialogHeader className="flex flex-row items-center justify-between gap-4 pr-8">
+                        <DialogTitle className="flex-1 leading-tight">{selectedResource?.title || 'Full Description'}</DialogTitle>
+                        {selectedResource?.url && (
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-8 gap-1.5 text-xs font-semibold shrink-0"
+                                asChild
+                            >
+                                <a href={selectedResource.url} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="h-3.5 w-3.5" />
+                                    Source
+                                </a>
+                            </Button>
+                        )}
                     </DialogHeader>
                     <div className="no-scrollbar -mx-4 max-h-[50vh] overflow-y-auto px-4">
                         <div
                             className="text-sm whitespace-pre-wrap text-foreground"
                             dangerouslySetInnerHTML={{
-                                __html: selectedComment || '',
+                                __html: selectedResource?.comment || '',
                             }}
                         />
                     </div>
                     <DialogFooter>
                         <Button
                             variant="outline"
-                            onClick={() => setSelectedComment(null)}
+                            onClick={() => setSelectedResource(null)}
                         >
                             Close
                         </Button>

@@ -55,8 +55,8 @@ interface ResourceType {
 }
 
 interface Resource {
-    id: number;
-    resource_type_id: number;
+    id: string | number;
+    resource_type_id?: number;
     resource_url: string;
     resource_title: string | null;
     comment: string | null;
@@ -110,7 +110,11 @@ export function ResourcesSheet({
     const [totalResources, setTotalResources] = useState<number>(0);
     const [loading, setLoading] = useState(false);
     const [loadingFull, setLoadingFull] = useState(false);
-    const [selectedComment, setSelectedComment] = useState<string | null>(null);
+    const [selectedResource, setSelectedResource] = useState<{
+        title: string | null;
+        url: string | null;
+        comment: string;
+    } | null>(null);
     const [similarVerses, setSimilarVerses] = useState<SimilarVerse[]>([]);
     const [loadingSimilar, setLoadingSimilar] = useState(false);
     const [topics, setTopics] = useState<Topic[]>([]);
@@ -119,6 +123,11 @@ export function ResourcesSheet({
     const [isAddResourceOpen, setIsAddResourceOpen] = useState(false);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+    const [verseContext, setVerseContext] = useState<{
+        text: string;
+        translation: string;
+        verse_key: string;
+    } | null>(null);
 
     const { auth } = usePage<SharedData>().props;
 
@@ -147,6 +156,7 @@ export function ResourcesSheet({
             if (response.ok) {
                 const data = await response.json();
                 setResources(data.data || []);
+                setVerseContext(data.verse_context || null);
                 setTotalResources(data.meta?.total || data.data?.length || 0);
                 setHasMore(Boolean(data.meta?.hasMore));
             }
@@ -187,13 +197,17 @@ export function ResourcesSheet({
         }
     };
 
-    const handleSeeMore = async (resourceId: number) => {
+    const handleSeeMore = async (resourceId: string | number) => {
         setLoadingFull(true);
         try {
             const response = await fetch(`/api/resources/${resourceId}`);
             if (response.ok) {
                 const data = await response.json();
-                setSelectedComment(data.data.comment);
+                setSelectedResource({
+                    title: data.data.title || 'Full Description',
+                    url: data.data.url || null,
+                    comment: data.data.comment,
+                });
             }
         } catch (error) {
             console.error('Failed to fetch full resource:', error);
@@ -282,6 +296,20 @@ export function ResourcesSheet({
                     </div>
                 )}
 
+                {verseContext && (
+                    <div className="mx-4 mt-2 mb-6 rounded-xl border bg-muted/30 p-4">
+                        <p
+                            className="font-arabic mb-3 text-right text-2xl leading-relaxed"
+                            dir="rtl"
+                        >
+                            {verseContext.text}
+                        </p>
+                        <p className="text-sm leading-relaxed font-medium text-muted-foreground/90">
+                            {verseContext.translation}
+                        </p>
+                    </div>
+                )}
+
                 <div className="px-4">
                     {loading ? (
                         <div className="space-y-4">
@@ -320,18 +348,32 @@ export function ResourcesSheet({
                         >
                             {Object.entries(groupedResources).map(
                                 ([type, typeResources]) => {
-                                    const highlight = getResourceHighlight(type);
+                                    const highlight =
+                                        getResourceHighlight(type);
                                     const Icon = highlight.icon;
-                                    
+
                                     return (
-                                        <AccordionItem key={type} value={type} className="border-b-0">
-                                            <AccordionTrigger className="hover:no-underline [&[data-state=open]]:bg-muted/50 px-2 rounded-md transition-colors">
+                                        <AccordionItem
+                                            key={type}
+                                            value={type}
+                                            className="border-b-0"
+                                        >
+                                            <AccordionTrigger className="rounded-md px-2 transition-colors hover:no-underline [&[data-state=open]]:bg-muted/50">
                                                 <div className="flex items-center gap-3">
-                                                    <div className={`p-2 rounded-full ${highlight.bg}`}>
-                                                        <Icon className={`h-4 w-4 ${highlight.color}`} />
+                                                    <div
+                                                        className={`rounded-full p-2 ${highlight.bg}`}
+                                                    >
+                                                        <Icon
+                                                            className={`h-4 w-4 ${highlight.color}`}
+                                                        />
                                                     </div>
-                                                    <span className="font-semibold">{type}</span>
-                                                    <Badge variant="secondary" className="ml-2 font-normal">
+                                                    <span className="font-semibold">
+                                                        {type}
+                                                    </span>
+                                                    <Badge
+                                                        variant="secondary"
+                                                        className="ml-2 font-normal"
+                                                    >
                                                         {typeResources.length}
                                                     </Badge>
                                                 </div>
@@ -339,34 +381,45 @@ export function ResourcesSheet({
                                             <AccordionContent className="pt-4">
                                                 <div
                                                     className="space-y-4 overflow-y-auto pr-2"
-                                                    style={{ maxHeight: '600px' }}
+                                                    style={{
+                                                        maxHeight: '600px',
+                                                    }}
                                                 >
                                                     {typeResources.map(
                                                         (resource) => (
                                                             <div
-                                                                key={resource.id}
-                                                                className="group relative flex flex-col gap-3 rounded-xl border bg-card p-4 transition-all hover:shadow-md hover:border-primary/50"
+                                                                key={
+                                                                    resource.id
+                                                                }
+                                                                className="group relative flex flex-col gap-3 rounded-xl border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md"
                                                             >
                                                                 <div className="flex items-start justify-between gap-4">
                                                                     <div className="flex-1 space-y-1">
                                                                         <a
-                                                                            href={resource.resource_url}
+                                                                            href={
+                                                                                resource.resource_url
+                                                                            }
                                                                             target="_blank"
                                                                             rel="noopener noreferrer"
-                                                                            className="inline-flex items-center gap-2 text-base font-semibold text-foreground decoration-primary/30 underline-offset-4 hover:underline group-hover:text-primary transition-colors"
+                                                                            className="inline-flex items-center gap-2 text-base font-semibold text-foreground decoration-primary/30 underline-offset-4 transition-colors group-hover:text-primary hover:underline"
                                                                         >
                                                                             <span className="line-clamp-2">
-                                                                                {resource.resource_title || resource.resource_url}
+                                                                                {resource.resource_title ||
+                                                                                    resource.resource_url}
                                                                             </span>
-                                                                            <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 opacity-50 group-hover:opacity-100 transition-opacity" />
+                                                                            <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 opacity-50 transition-opacity group-hover:opacity-100" />
                                                                         </a>
-                                                                        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-                                                                            <span className="flex items-center gap-1 font-medium bg-muted px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider">
+                                                                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                                                            <span className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium tracking-wider uppercase">
                                                                                 <Globe className="h-3 w-3" />
-                                                                                {getDomainName(resource.resource_url)}
+                                                                                {getDomainName(
+                                                                                    resource.resource_url,
+                                                                                )}
                                                                             </span>
-                                                                            {isVerifiedSource(resource.resource_url) && (
-                                                                                <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-full ring-1 ring-emerald-500/20">
+                                                                            {isVerifiedSource(
+                                                                                resource.resource_url,
+                                                                            ) && (
+                                                                                <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600 ring-1 ring-emerald-500/20 dark:bg-emerald-950/30">
                                                                                     <CheckCircle className="h-3 w-3" />
                                                                                     Verified
                                                                                 </span>
@@ -374,7 +427,15 @@ export function ResourcesSheet({
                                                                             {resource.created_at && (
                                                                                 <span className="flex items-center gap-1">
                                                                                     <Calendar className="h-3 w-3" />
-                                                                                    {new Date(resource.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+                                                                                    {new Date(
+                                                                                        resource.created_at,
+                                                                                    ).toLocaleDateString(
+                                                                                        undefined,
+                                                                                        {
+                                                                                            month: 'short',
+                                                                                            year: 'numeric',
+                                                                                        },
+                                                                                    )}
                                                                                 </span>
                                                                             )}
                                                                         </div>
@@ -384,7 +445,7 @@ export function ResourcesSheet({
                                                                 {resource.comment && (
                                                                     <div className="relative">
                                                                         <div
-                                                                            className={`text-sm text-muted-foreground/90 leading-relaxed ${!selectedComment ? 'line-clamp-3' : ''}`}
+                                                                            className={`text-sm leading-relaxed text-muted-foreground/90 ${!selectedResource ? 'line-clamp-3' : ''}`}
                                                                             dangerouslySetInnerHTML={{
                                                                                 __html: resource.comment,
                                                                             }}
@@ -394,16 +455,22 @@ export function ResourcesSheet({
                                                                                 variant="ghost"
                                                                                 size="sm"
                                                                                 className="mt-2 h-7 bg-muted/30 px-2 text-xs font-medium text-primary hover:bg-muted"
-                                                                                disabled={loadingFull}
-                                                                                onClick={() => handleSeeMore(resource.id)}
+                                                                                disabled={
+                                                                                    loadingFull
+                                                                                }
+                                                                                onClick={() =>
+                                                                                    handleSeeMore(
+                                                                                        resource.id,
+                                                                                    )
+                                                                                }
                                                                             >
-                                                                                {loadingFull ? 'Loading...' : 'Read Full Answer'}
+                                                                                {loadingFull
+                                                                                    ? 'Loading...'
+                                                                                    : 'Read Full Answer'}
                                                                             </Button>
                                                                         )}
                                                                     </div>
                                                                 )}
-
-
                                                             </div>
                                                         ),
                                                     )}
@@ -411,7 +478,7 @@ export function ResourcesSheet({
                                             </AccordionContent>
                                         </AccordionItem>
                                     );
-                                }
+                                },
                             )}
                             {topics.length > 0 && (
                                 <AccordionItem value="Topics">
@@ -551,25 +618,44 @@ export function ResourcesSheet({
             </SheetContent>
 
             <Dialog
-                open={!!selectedComment}
-                onOpenChange={(open) => !open && setSelectedComment(null)}
+                open={!!selectedResource}
+                onOpenChange={(open) => !open && setSelectedResource(null)}
             >
-                <DialogContent className="h-screen w-screen max-w-none sm:h-auto sm:w-auto sm:max-w-[80rem] p-4 sm:p-6">
-                    <DialogHeader>
-                        <DialogTitle>Full Description</DialogTitle>
+                <DialogContent className="h-screen w-screen max-w-none p-4 sm:h-auto sm:w-auto sm:max-w-[80rem] sm:p-6">
+                    <DialogHeader className="flex flex-row items-center justify-between pr-8">
+                        <DialogTitle className="flex-1">
+                            {selectedResource?.title || 'Full Description'}
+                        </DialogTitle>
+                        {selectedResource?.url && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 shrink-0 gap-1.5 text-xs font-semibold"
+                                asChild
+                            >
+                                <a
+                                    href={selectedResource.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    <ExternalLink className="h-3.5 w-3.5" />
+                                    Source
+                                </a>
+                            </Button>
+                        )}
                     </DialogHeader>
-                    <div className="no-scrollbar -mx-4 max-h-[calc(100vh-12rem)] sm:max-h-[50vh] overflow-y-auto px-4">
+                    <div className="no-scrollbar -mx-4 max-h-[calc(100vh-12rem)] overflow-y-auto px-4 sm:max-h-[50vh]">
                         <div
                             className="text-sm whitespace-pre-wrap text-foreground"
                             dangerouslySetInnerHTML={{
-                                __html: selectedComment || '',
+                                __html: selectedResource?.comment || '',
                             }}
                         />
                     </div>
                     <DialogFooter>
                         <Button
                             variant="outline"
-                            onClick={() => setSelectedComment(null)}
+                            onClick={() => setSelectedResource(null)}
                         >
                             Close
                         </Button>
