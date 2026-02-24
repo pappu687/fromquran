@@ -1,8 +1,7 @@
 import { VersesPanel } from '@/components/quran/verses-panel';
 import QuranReaderLayout from '@/layouts/quran-reader-layout';
-import { usePage, Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import { SharedData } from '@/types';
 
 interface Chapter {
     id: number;
@@ -26,9 +25,6 @@ export default function QuranReader({
     fromVerse,
     toVerse,
 }: QuranReaderProps) {
-    const page = usePage<SharedData>();
-    const { auth } = page.props;
-    const user = auth?.user;
     const [chapters, setChapters] = useState<Chapter[]>([]);
     const [selectedChapter, setSelectedChapter] = useState<
         Chapter | undefined
@@ -37,13 +33,13 @@ export default function QuranReader({
     const [error, setError] = useState<string | null>(null);
 
     // Optional start-verse query param to continue reading from a specific verse
-    const searchParams = new URLSearchParams(
-        page.url.split('?')[1] ?? '',
-    );
+    const page = usePage();
+    const url = page.url;
+    const searchParams = new URLSearchParams(url.split('?')[1] ?? '');
     const startVerseParam = searchParams.get('start-verse');
     const startFromVerse = startVerseParam
         ? Number(startVerseParam) || undefined
-        : undefined;    
+        : undefined;
 
     useEffect(() => {
         // Fetch chapters from API
@@ -80,10 +76,10 @@ export default function QuranReader({
         const chapter = chapters.find((ch) => ch.id === chapterId);
         if (!chapter) return;
 
-        // Update the local state immediately for instant feedback
+        // Update local state immediately for instant feedback
         setSelectedChapter(chapter);
 
-        // Use Inertia router to update the URL without full page refresh
+        // Use Inertia router to update URL without full page refresh
         router.visit(`/${chapter.number}`, {
             method: 'get',
             preserveState: true, // Keep React state for smooth navigation
@@ -133,7 +129,6 @@ export default function QuranReader({
                                 apiUrl="/api/quran"
                                 pageSize={10}
                                 showTranslation={true}
-                                user={user}
                                 fromVerse={fromVerse ?? undefined}
                                 toVerse={toVerse ?? undefined}
                                 startFromVerse={startFromVerse}
@@ -145,4 +140,3 @@ export default function QuranReader({
         </>
     );
 }
-

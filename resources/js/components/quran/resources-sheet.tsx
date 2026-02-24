@@ -4,49 +4,40 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from '@/components/ui/accordion';
-import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
-} from '@/components/ui/sheet';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogDescription,
-    DialogFooter,
-    DialogClose,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+} from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import { 
-    ExternalLink, 
-    Tags, 
-    BookOpen, 
-    Scale, 
-    Headphones, 
-    FileText, 
-    Video, 
-    Globe, 
-    MessageSquare, 
-    Calendar, 
-    User,
-    Info,
-    Eye,
-    ThumbsUp,
-    CheckCircle
+import { useAuth } from '@/contexts/auth-context';
+import { router } from '@inertiajs/react';
+import {
+    BookOpen,
+    Calendar,
+    CheckCircle,
+    ExternalLink,
+    FileText,
+    Globe,
+    Headphones,
+    Scale,
+    Tags,
+    Video,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { router } from '@inertiajs/react';
-import { AddResourceModal } from './add-resource-modal';
 import { LoginModal } from '../auth/login-modal';
+import { AddResourceModal } from './add-resource-modal';
 import { ReportErrorModal } from './report-error-modal';
-import { type SharedData } from '@/types';
-import { usePage } from '@inertiajs/react';
 
 interface ResourceType {
     id: number;
@@ -116,36 +107,21 @@ export function ResourcesSheet({
         comment: string;
     } | null>(null);
     const [similarVerses, setSimilarVerses] = useState<SimilarVerse[]>([]);
-    const [loadingSimilar, setLoadingSimilar] = useState(false);
     const [topics, setTopics] = useState<Topic[]>([]);
-    const [loadingTopics, setLoadingTopics] = useState(false);
     const [hasMore, setHasMore] = useState(false);
     const [isAddResourceOpen, setIsAddResourceOpen] = useState(false);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-    const [verseContext, setVerseContext] = useState<{
-        text: string;
-        translation: string;
-        verse_key: string;
-    } | null>(null);
 
-    const { auth } = usePage<SharedData>().props;
+    const { user } = useAuth();
 
     const handleReportErrorClick = () => {
-        if (auth.user) {
+        if (user) {
             setIsReportModalOpen(true);
         } else {
             setIsLoginModalOpen(true);
         }
     };
-
-    useEffect(() => {
-        if (open) {
-            fetchResources();
-            fetchSimilarVerses();
-            fetchTopics();
-        }
-    }, [open, verseId]);
 
     const fetchResources = async () => {
         setLoading(true);
@@ -156,7 +132,6 @@ export function ResourcesSheet({
             if (response.ok) {
                 const data = await response.json();
                 setResources(data.data || []);
-                setVerseContext(data.verse_context || null);
                 setTotalResources(data.meta?.total || data.data?.length || 0);
                 setHasMore(Boolean(data.meta?.hasMore));
             }
@@ -168,7 +143,6 @@ export function ResourcesSheet({
     };
 
     const fetchSimilarVerses = async () => {
-        setLoadingSimilar(true);
         try {
             const response = await fetch(`/api/verses/${verseId}/similar`);
             if (response.ok) {
@@ -177,13 +151,10 @@ export function ResourcesSheet({
             }
         } catch (error) {
             console.error('Failed to fetch similar verses:', error);
-        } finally {
-            setLoadingSimilar(false);
         }
     };
 
     const fetchTopics = async () => {
-        setLoadingTopics(true);
         try {
             const response = await fetch(`/api/verses/${verseId}/topics`);
             if (response.ok) {
@@ -192,9 +163,98 @@ export function ResourcesSheet({
             }
         } catch (error) {
             console.error('Failed to fetch topics:', error);
-        } finally {
-            setLoadingTopics(false);
         }
+    };
+
+    useEffect(() => {
+        if (open) {
+            fetchResources();
+            fetchSimilarVerses();
+            fetchTopics();
+        }
+    }, [open, verseId]);
+
+    // Group resources by type
+    const groupedResources = resources.reduce(
+        (acc, resource) => {
+            const type = resource.resource_type.name;
+            if (!acc[type]) {
+                acc[type] = [];
+            }
+            acc[type].push(resource);
+            return acc;
+        },
+        {} as Record<string, Resource[]>,
+    );
+
+    // Handle verse click - navigate to the verse
+    const handleVerseClick = (chapterNumber: number, verseNumber: number) => {
+        router.visit(`/${chapterNumber}/${verseNumber}`, {
+            method: 'get',
+        });
+        onOpenChange(false);
+    };
+
+    // Format match words range for display
+    const formatMatchRange = (range: number[][]): string => {
+        if (!range || range.length === 0) return '';
+        return range.map((r) => `words ${r[0]}-${r[1]}`).join(', ');
+    };
+
+    const getResourceHighlight = (type: string) => {
+        const lowerType = type.toLowerCase();
+        if (lowerType.includes('fatwa'))
+            return {
+                color: 'text-amber-600 dark:text-amber-400',
+                bg: 'bg-amber-100 dark:bg-amber-900/30',
+                icon: Scale,
+            };
+        if (lowerType.includes('tafsir'))
+            return {
+                color: 'text-emerald-600 dark:text-emerald-400',
+                bg: 'bg-emerald-100 dark:bg-emerald-900/30',
+                icon: BookOpen,
+            };
+        if (lowerType.includes('video'))
+            return {
+                color: 'text-red-600 dark:text-red-400',
+                bg: 'bg-red-100 dark:bg-red-900/30',
+                icon: Video,
+            };
+        if (lowerType.includes('audio') || lowerType.includes('lecture'))
+            return {
+                color: 'text-blue-600 dark:text-blue-400',
+                bg: 'bg-blue-100 dark:bg-blue-900/30',
+                icon: Headphones,
+            };
+        if (lowerType.includes('article'))
+            return {
+                color: 'text-purple-600 dark:text-purple-400',
+                bg: 'bg-purple-100 dark:bg-purple-900/30',
+                icon: FileText,
+            };
+        return { color: 'text-primary', bg: 'bg-primary/10', icon: Globe };
+    };
+
+    const getDomainName = (url: string) => {
+        try {
+            const domain = new URL(url).hostname;
+            return domain.replace('www.', '');
+        } catch (e) {
+            return 'Source';
+        }
+    };
+
+    const isVerifiedSource = (url: string) => {
+        const domain = getDomainName(url).toLowerCase();
+        const verifiedDomains = [
+            'islamqa.info',
+            'sunnah.com',
+            'quran.com',
+            'tafsir.net',
+            'kingfahdcomplex.gov.sa',
+        ];
+        return verifiedDomains.includes(domain);
     };
 
     const handleSeeMore = async (resourceId: string | number) => {
@@ -214,61 +274,6 @@ export function ResourcesSheet({
         } finally {
             setLoadingFull(false);
         }
-    };
-
-    // Group resources by type
-    const groupedResources = resources.reduce(
-        (acc, resource) => {
-            const type = resource.resource_type.name;
-            if (!acc[type]) {
-                acc[type] = [];
-            }
-            acc[type].push(resource);
-            return acc;
-        },
-        {} as Record<string, Resource[]>,
-    );
-
-    const hasGroupWithMoreThanFive =
-        Object.values(groupedResources).some((items) => items.length > 5);
-
-    // Handle verse click - navigate to the verse
-    const handleVerseClick = (chapterNumber: number, verseNumber: number) => {
-        router.visit(`/${chapterNumber}/${verseNumber}`, {
-            method: 'get',
-        });
-        onOpenChange(false);
-    };
-
-    // Format match words range for display
-    const formatMatchRange = (range: number[][]): string => {
-        if (!range || range.length === 0) return '';
-        return range.map(r => `words ${r[0]}-${r[1]}`).join(', ');
-    };
-
-    const getResourceHighlight = (type: string) => {
-        const lowerType = type.toLowerCase();
-        if (lowerType.includes('fatwa')) return { color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/30', icon: Scale };
-        if (lowerType.includes('tafsir')) return { color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-900/30', icon: BookOpen };
-        if (lowerType.includes('video')) return { color: 'text-red-600 dark:text-red-400', bg: 'bg-red-100 dark:bg-red-900/30', icon: Video };
-        if (lowerType.includes('audio') || lowerType.includes('lecture')) return { color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/30', icon: Headphones };
-        if (lowerType.includes('article')) return { color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/30', icon: FileText };
-        return { color: 'text-primary', bg: 'bg-primary/10', icon: Globe };
-    };
-
-    const getDomainName = (url: string) => {
-        try {
-            const domain = new URL(url).hostname;
-            return domain.replace('www.', '');
-        } catch (e) {
-            return 'Source';
-        }
-    };
-
-    const isVerifiedSource = (url: string) => {
-        const domain = getDomainName(url).toLowerCase();
-        const verifiedDomains = ['islamqa.info', 'sunnah.com', 'quran.com', 'tafsir.net', 'kingfahdcomplex.gov.sa'];
-        return verifiedDomains.includes(domain);
     };
 
     return (
@@ -293,20 +298,6 @@ export function ResourcesSheet({
                         >
                             View all ({totalResources})
                         </Button>
-                    </div>
-                )}
-
-                {verseContext && (
-                    <div className="mx-4 mt-2 mb-6 rounded-xl border bg-muted/30 p-4">
-                        <p
-                            className="font-arabic mb-3 text-right text-2xl leading-relaxed"
-                            dir="rtl"
-                        >
-                            {verseContext.text}
-                        </p>
-                        <p className="text-sm leading-relaxed font-medium text-muted-foreground/90">
-                            {verseContext.translation}
-                        </p>
                     </div>
                 )}
 

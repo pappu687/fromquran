@@ -1,5 +1,3 @@
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -10,13 +8,15 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { useReadingMode } from '@/contexts/reading-mode-context';
+import { useVersesPanel } from '@/hooks/use-verses-panel';
 import { cn } from '@/lib/utils';
+import { router } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
 import { VerseCard } from './verse-card';
 import { VerseReading } from './verse-reading';
-import { useReadingMode } from '@/contexts/reading-mode-context';
-import { router } from '@inertiajs/react';
 
 interface Verse {
     id: number;
@@ -47,7 +47,6 @@ interface VersesPanelProps {
     pageSize?: number;
     showTranslation?: boolean;
     className?: string;
-    user?: any; // User authentication object
     fromVerse?: number;
     toVerse?: number;
     startFromVerse?: number;
@@ -58,268 +57,40 @@ export function VersesPanel({
     apiUrl = '/api/quran',
     pageSize = 10,
     showTranslation = true,
-    user,
     className,
     fromVerse,
     toVerse,
     startFromVerse,
 }: VersesPanelProps) {
-    const [verses, setVerses] = useState<Verse[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [page, setPage] = useState(1);
-    const [hasMore, setHasMore] = useState(true);
-    const [bookmarkedVerses, setBookmarkedVerses] = useState<Set<string>>(
-        new Set(),
-    );
-    const [isAutoScroll, setIsAutoScroll] = useState(false);
-    const [selectedEdition, setSelectedEdition] = useState('en.sahih');
-    const [showSearch, setShowSearch] = useState(false);
-    const [currentChapterId, setCurrentChapterId] = useState<number | null>(
-        null,
-    );
-    const [showLoginAlert, setShowLoginAlert] = useState(false);
-    const [showErrorAlert, setShowErrorAlert] = useState(false);
-    const [errorAlertMessage, setErrorAlertMessage] = useState('');
-    const [showSuccessAlert, setShowSuccessAlert] = useState(false);
-    const [successAlertMessage, setSuccessAlertMessage] = useState('');
     const { mode } = useReadingMode();
-    const hasScrolledToStartRef = useRef(false);
 
-    const fetchVerses = async (pageNum: number, reset = false) => {
-        if (!chapter) return;
-
-        setLoading(true);
-        setError(null);
-
-        try {
-            const params = new URLSearchParams({
-                page: String(pageNum),
-                limit: String(pageSize),
-                edition: selectedEdition,
-            });
-
-            if (fromVerse && toVerse) {
-                params.set('from', String(fromVerse));
-                params.set('to', String(toVerse));
-            }
-
-            const response = await fetch(
-                `${apiUrl}/chapters/${chapter.id}/verses?${params.toString()}`,
-            );
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch verses');
-            }
-
-            const data = await response.json();
-
-            if (reset) {
-                setVerses(data.data || []);
-            } else {
-                setVerses((prev) => [...prev, ...(data.data || [])]);
-            }
-
-            setHasMore(data.data?.length === pageSize);
-            setPage(pageNum);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'An error occurred');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        if (chapter && chapter.id !== currentChapterId) {
-            setCurrentChapterId(chapter.id);
-            setVerses([]);
-            setHasMore(true);
-            hasScrolledToStartRef.current = false;
-
-            const initialPage =
-                startFromVerse && !fromVerse && !toVerse
-                    ? Math.max(1, Math.ceil(startFromVerse / pageSize))
-                    : 1;
-
-            setPage(initialPage);
-            fetchVerses(initialPage, true);
-        }
-    }, [
-        chapter?.id,
+    const {
+        verses,
+        loading,
+        error,
+        hasMore,
+        bookmarkedVerses,
+        showLoginAlert,
+        showErrorAlert,
+        errorAlertMessage,
+        showSuccessAlert,
+        successAlertMessage,
+        loadMore,
+        handleBookmarkToggle,
+        handleCopy,
+        handlePlayAudio,
+        setShowLoginAlert,
+        setShowErrorAlert,
+        setShowSuccessAlert,
+        retry,
+    } = useVersesPanel({
+        chapter,
         apiUrl,
         pageSize,
-        selectedEdition,
         fromVerse,
         toVerse,
         startFromVerse,
-    ]);
-
-    // Auto-scroll to the requested start verse (if present on the page)
-    useEffect(() => {
-        if (
-            !chapter ||
-            !startFromVerse ||
-            verses.length === 0 ||
-            hasScrolledToStartRef.current
-        ) {
-            return;
-        }
-
-        const el = document.getElementById(
-            `verse-${chapter.id}-${startFromVerse}`,
-        );
-
-        if (el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            hasScrolledToStartRef.current = true;
-        }
-    }, [chapter?.id, startFromVerse, verses]);
-
-    // Load user bookmarks if authenticated
-    useEffect(() => {
-        if (user && chapter) {
-            loadUserBookmarks();
-        }
-    }, [user, chapter, selectedEdition]);
-
-    const loadUserBookmarks = async () => {
-        if (!user || !chapter) return;
-
-        try {
-            const response = await fetch(
-                `/api/bookmarks?chapter_id=${chapter.id}&edition=${selectedEdition}`,
-            );
-
-            if (response.ok) {
-                const data = await response.json();
-                const bookmarkedIds = new Set<string>(
-                    data.data.map((b: any) => String(b.verse_id)),
-                );
-                setBookmarkedVerses(bookmarkedIds);
-            }
-        } catch (err) {
-            console.error('Failed to load bookmarks:', err);
-        }
-    };
-
-
-
-    const loadMore = () => {
-        if (!loading && hasMore) {
-            fetchVerses(page + 1);
-        }
-    };
-
-    const handleBookmarkToggle = async (verse: Verse) => {
-        if (!user) {
-            setShowLoginAlert(true);
-            return;
-        }
-
-        const verseId = verse.id.toString();
-        const isCurrentlyBookmarked = bookmarkedVerses.has(verseId);
-
-        // Get CSRF token
-        const csrfToken = document
-            .querySelector('meta[name="csrf-token"]')
-            ?.getAttribute('content');
-
-        try {
-            if (isCurrentlyBookmarked) {
-                // Remove bookmark
-                const checkResponse = await fetch(
-                    `/api/bookmarks/check?verse_id=${verseId}&edition=${selectedEdition}`,
-                    {
-                        headers: {
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': csrfToken || '',
-                        },
-                    }
-                );
-                
-                if (!checkResponse.ok) {
-                    throw new Error('Failed to check bookmark status');
-                }
-                
-                const checkData = await checkResponse.json();
-                
-                if (checkData.bookmark) {
-                    const deleteResponse = await fetch(`/api/bookmarks/${checkData.bookmark.id}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'X-CSRF-TOKEN': csrfToken || '',
-                        },
-                    });
-                    
-                    if (!deleteResponse.ok) {
-                        throw new Error('Failed to remove bookmark');
-                    }
-                    
-                    const deleteData = await deleteResponse.json();
-                    
-                    setBookmarkedVerses((prev) => {
-                        const newSet = new Set(prev);
-                        newSet.delete(verseId);
-                        return newSet;
-                    });
-                    
-                    setSuccessAlertMessage('Bookmark removed successfully');
-                    setShowSuccessAlert(true);
-                }
-            } else {
-                // Add bookmark
-                const addResponse = await fetch('/api/bookmarks', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Accept: 'application/json',
-                        'X-CSRF-TOKEN': csrfToken || '',
-                    },
-                    body: JSON.stringify({
-                        chapter_id: chapter?.id,
-                        verse_number: verse.verseNumber,
-                        verse_id: verseId,
-                        edition: selectedEdition,
-                    }),
-                });
-
-                if (!addResponse.ok) {
-                    const errorData = await addResponse.json();
-                    throw new Error(errorData.message || 'Failed to add bookmark');
-                }
-                
-                const addData = await addResponse.json();
-
-                setBookmarkedVerses((prev) => {
-                    const newSet = new Set(prev);
-                    newSet.add(verseId);
-                    return newSet;
-                });
-                
-                setSuccessAlertMessage('Added to bookmark successfully');
-                setShowSuccessAlert(true);
-            }
-        } catch (err) {
-            console.error('Failed to toggle bookmark:', err);
-            setErrorAlertMessage(err instanceof Error ? err.message : 'Failed to update bookmark. Please try again.');
-            setShowErrorAlert(true);
-        }
-    };
-
-    const handleCopy = async (verseId: number, text: string) => {
-        await navigator.clipboard.writeText(text);
-    };
-
-    const handlePlayAudio = (audioUrl: string) => {
-        const audio = new Audio(audioUrl);
-        audio.play().catch(console.error);
-    };
-
-    const toggleAutoScroll = () => {
-        setIsAutoScroll(!isAutoScroll);
-    };
+    });
 
     if (!chapter) {
         return (
@@ -349,7 +120,7 @@ export function VersesPanel({
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => fetchVerses(1, true)}
+                                onClick={retry}
                                 className="mt-2"
                             >
                                 Retry
@@ -381,7 +152,7 @@ export function VersesPanel({
                                 )}
                                 hasResources={verse.hasResources || false}
                                 onBookmarkToggle={() =>
-                                    handleBookmarkToggle(verse)
+                                    handleBookmarkToggle(verse as Verse)
                                 }
                                 onCopy={handleCopy}
                                 onPlayAudio={handlePlayAudio}

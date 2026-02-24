@@ -10,6 +10,7 @@ interface Chapter {
     number: number;
     name: string;
     englishName: string;
+    romanName: string;
     englishNameTranslation: string;
     revelationType: 'Meccan' | 'Medinan';
     verses: number;
@@ -28,7 +29,7 @@ export function QuranSidebar({
     ...props
 }: QuranSidebarProps) {
     return (
-        <Sidebar className="border-r-0" {...props}>
+        <Sidebar className="border-r-0 bg-background" {...props}>
             <ChaptersPanel
                 chapters={chapters}
                 selectedChapter={selectedChapter}

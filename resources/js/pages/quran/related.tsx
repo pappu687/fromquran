@@ -1,15 +1,38 @@
-import { useEffect, useState } from 'react';
-import { Head, router, usePage } from '@inertiajs/react';
-import { Button } from '@/components/ui/button';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Separator } from '@/components/ui/separator';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ExternalLink, Tags, ChevronLeft, ChevronRight, Globe, Calendar, BookOpen, Scale, Play, FileText, Video } from 'lucide-react';
-import QuranReaderLayout from '@/layouts/quran-reader-layout';
-import type { SharedData } from '@/types';
 import { VerseCard } from '@/components/quran/verse-card';
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from '@/components/ui/accordion';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/contexts/auth-context';
+import QuranReaderLayout from '@/layouts/quran-reader-layout';
+import { Head, router } from '@inertiajs/react';
+import {
+    BookOpen,
+    Calendar,
+    ChevronLeft,
+    ChevronRight,
+    ExternalLink,
+    FileText,
+    Globe,
+    Play,
+    Scale,
+    Tags,
+    Video,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface ResourceType {
     id: number;
@@ -99,8 +122,7 @@ export default function RelatedPage({
     previousVerse,
     nextVerse,
 }: RelatedPageProps) {
-    const { auth } = usePage<SharedData>().props;
-    const user = auth?.user;
+    const { user } = useAuth();
 
     const [resources, setResources] = useState<Resource[]>([]);
     const [loadingResources, setLoadingResources] = useState(false);
@@ -183,7 +205,11 @@ export default function RelatedPage({
     useEffect(() => {
         const fetchAll = async () => {
             setError(null);
-            await Promise.all([fetchResources(), fetchSimilarVerses(), fetchTopics()]);
+            await Promise.all([
+                fetchResources(),
+                fetchSimilarVerses(),
+                fetchTopics(),
+            ]);
         };
 
         fetchAll();
@@ -265,7 +291,10 @@ export default function RelatedPage({
         }
     };
 
-    const handleVerseNavigate = (targetChapter: number, targetVerse: number) => {
+    const handleVerseNavigate = (
+        targetChapter: number,
+        targetVerse: number,
+    ) => {
         router.visit(`/related/${targetChapter}/${targetVerse}`);
     };
 
@@ -435,7 +464,7 @@ export default function RelatedPage({
                             </div>
                         ) : mainVerse ? (
                             <VerseCard
-                                className="p-3 bg-white/70 border-2"
+                                className="border-2 bg-white/70 p-3"
                                 verse={mainVerse}
                                 showTranslation
                                 hideHeaderActions
@@ -447,7 +476,8 @@ export default function RelatedPage({
                     <section className="mb-8">
                         <div className="mb-4 flex items-center justify-between">
                             <h1 className="text-xl font-semibold">
-                                Related Resources ({chapterNumber}:{verseNumber})
+                                Related Resources ({chapterNumber}:{verseNumber}
+                                )
                             </h1>
                             <span className="text-sm text-muted-foreground">
                                 {resources.length} resource
@@ -483,78 +513,122 @@ export default function RelatedPage({
                                             <AccordionContent>
                                                 <div
                                                     className="space-y-4 overflow-y-auto pr-2"
-                                                    style={{ maxHeight: '500px' }}
+                                                    style={{
+                                                        maxHeight: '500px',
+                                                    }}
                                                 >
-                                                    {typeResources.map((resource) => (
-                                                        <div
-                                                            key={resource.id}
-                                                            className="group relative flex flex-col gap-3 rounded-xl border bg-card p-4 transition-all hover:shadow-md hover:border-primary/50"
-                                                        >
-                                                            <div className="flex items-start justify-between gap-4">
-                                                                <div className="flex-1 space-y-1">
-                                                                    <a
-                                                                        href={resource.resource_url}
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
-                                                                        className="inline-flex items-center gap-2 text-base font-semibold text-foreground decoration-primary/30 underline-offset-4 hover:underline group-hover:text-primary transition-colors"
-                                                                    >
-                                                                        <span className="line-clamp-2">
-                                                                            {resource.resource_title || resource.resource_url}
-                                                                        </span>
-                                                                        <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 opacity-50 group-hover:opacity-100 transition-opacity" />
-                                                                    </a>
-                                                                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                                                        <span className="flex items-center gap-1 font-medium bg-muted px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider">
-                                                                            <Globe className="h-3 w-3" />
-                                                                            {getDomainName(resource.resource_url)}
-                                                                        </span>
-                                                                        {resource.created_at && (
-                                                                            <span className="flex items-center gap-1 font-sans">
-                                                                                <Calendar className="h-3 w-3" />
-                                                                                {new Date(resource.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+                                                    {typeResources.map(
+                                                        (resource) => (
+                                                            <div
+                                                                key={
+                                                                    resource.id
+                                                                }
+                                                                className="group relative flex flex-col gap-3 rounded-xl border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md"
+                                                            >
+                                                                <div className="flex items-start justify-between gap-4">
+                                                                    <div className="flex-1 space-y-1">
+                                                                        <a
+                                                                            href={
+                                                                                resource.resource_url
+                                                                            }
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            className="inline-flex items-center gap-2 text-base font-semibold text-foreground decoration-primary/30 underline-offset-4 transition-colors group-hover:text-primary hover:underline"
+                                                                        >
+                                                                            <span className="line-clamp-2">
+                                                                                {resource.resource_title ||
+                                                                                    resource.resource_url}
                                                                             </span>
+                                                                            <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 opacity-50 transition-opacity group-hover:opacity-100" />
+                                                                        </a>
+                                                                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                                                            <span className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium tracking-wider uppercase">
+                                                                                <Globe className="h-3 w-3" />
+                                                                                {getDomainName(
+                                                                                    resource.resource_url,
+                                                                                )}
+                                                                            </span>
+                                                                            {resource.created_at && (
+                                                                                <span className="flex items-center gap-1 font-sans">
+                                                                                    <Calendar className="h-3 w-3" />
+                                                                                    {new Date(
+                                                                                        resource.created_at,
+                                                                                    ).toLocaleDateString(
+                                                                                        undefined,
+                                                                                        {
+                                                                                            month: 'short',
+                                                                                            year: 'numeric',
+                                                                                        },
+                                                                                    )}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                {resource.comment && (
+                                                                    <div className="relative">
+                                                                        <div
+                                                                            className={`text-sm leading-relaxed text-muted-foreground/90 ${!selectedResource ? 'line-clamp-3' : ''}`}
+                                                                            dangerouslySetInnerHTML={{
+                                                                                __html: resource.comment,
+                                                                            }}
+                                                                        />
+                                                                        {resource.is_truncated && (
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="sm"
+                                                                                className="mt-2 h-7 bg-muted/30 px-2 text-xs font-medium text-primary hover:bg-muted"
+                                                                                disabled={
+                                                                                    loadingFull
+                                                                                }
+                                                                                onClick={() =>
+                                                                                    handleSeeMore(
+                                                                                        resource.id,
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                {loadingFull
+                                                                                    ? 'Loading...'
+                                                                                    : 'Read Full Answer'}
+                                                                            </Button>
                                                                         )}
                                                                     </div>
-                                                                </div>
-                                                            </div>
+                                                                )}
 
-                                                            {resource.comment && (
-                                                                <div className="relative">
-                                                                    <div
-                                                                        className={`text-sm leading-relaxed text-muted-foreground/90 ${!selectedResource ? 'line-clamp-3' : ''}`}
-                                                                        dangerouslySetInnerHTML={{
-                                                                            __html: resource.comment,
-                                                                        }}
-                                                                    />
-                                                                    {resource.is_truncated && (
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="sm"
-                                                                            className="mt-2 h-7 bg-muted/30 px-2 text-xs font-medium text-primary hover:bg-muted"
-                                                                            disabled={loadingFull}
-                                                                            onClick={() => handleSeeMore(resource.id)}
-                                                                        >
-                                                                            {loadingFull ? 'Loading...' : 'Read Full Answer'}
-                                                                        </Button>
-                                                                    )}
-                                                                </div>
-                                                            )}
-
-                                                            <div className="flex items-center justify-between border-t pt-3 mt-1">
-                                                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
-                                                                        {resource.user?.name.charAt(0).toUpperCase()}
+                                                                <div className="mt-1 flex items-center justify-between border-t pt-3">
+                                                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+                                                                            {(
+                                                                                resource
+                                                                                    .user
+                                                                                    ?.name ||
+                                                                                'User'
+                                                                            )
+                                                                                .charAt(
+                                                                                    0,
+                                                                                )
+                                                                                .toUpperCase()}
+                                                                        </div>
+                                                                        <span>
+                                                                            {resource
+                                                                                .user
+                                                                                ?.name ||
+                                                                                'Anonymous'}
+                                                                        </span>
                                                                     </div>
-                                                                    <span>{resource.user?.name}</span>
-                                                                </div>
-                                                                <div className="flex gap-2">
-                                                                    <Badge variant="outline" className="h-5 text-[10px] font-normal border-dashed opacity-60">
-                                                                        Verified
-                                                                    </Badge>
+                                                                    <div className="flex gap-2">
+                                                                        <Badge
+                                                                            variant="outline"
+                                                                            className="h-5 border-dashed text-[10px] font-normal opacity-60"
+                                                                        >
+                                                                            Verified
+                                                                        </Badge>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                    ))}
+                                                        ),
+                                                    )}
                                                 </div>
                                             </AccordionContent>
                                         </AccordionItem>
@@ -587,7 +661,7 @@ export default function RelatedPage({
                                             <Badge
                                                 key={topic.topic_id}
                                                 variant="secondary"
-                                                className="cursor-pointer bg-amber-400/20 border-amber-500/50"
+                                                className="cursor-pointer border-amber-500/50 bg-amber-400/20"
                                                 onClick={() =>
                                                     handleTopicClick(
                                                         topic.topic_id,
@@ -597,7 +671,7 @@ export default function RelatedPage({
                                                 <Tags className="mr-1 h-3 w-3" />
                                                 {topic.name}
                                                 {topic.arabic_name && (
-                                                    <span className="ml-1 font-arabic text-xs">
+                                                    <span className="font-arabic ml-1 text-xs">
                                                         ({topic.arabic_name})
                                                     </span>
                                                 )}
@@ -647,8 +721,8 @@ export default function RelatedPage({
                                                 <div className="mb-2 flex items-center justify-between">
                                                     <span className="text-sm font-semibold text-primary">
                                                         {similar.chapter_name} (
-                                                        {similar.chapter_number}:
-                                                        {similar.verse_number})
+                                                        {similar.chapter_number}
+                                                        :{similar.verse_number})
                                                     </span>
                                                     <div className="flex gap-2 text-xs text-muted-foreground">
                                                         <span>
@@ -685,7 +759,7 @@ export default function RelatedPage({
                                                     }}
                                                     showTranslation
                                                     hideHeaderActions
-                                                    className="bg-transparent border-0 shadow-none px-0 pt-0"
+                                                    className="border-0 bg-transparent px-0 pt-0 shadow-none"
                                                 />
 
                                                 {similar.match_words_range &&
@@ -749,15 +823,21 @@ export default function RelatedPage({
             >
                 <DialogContent className="max-w-[80rem]">
                     <DialogHeader className="flex flex-row items-center justify-between gap-4 pr-8">
-                        <DialogTitle className="flex-1 leading-tight">{selectedResource?.title || 'Full Description'}</DialogTitle>
+                        <DialogTitle className="flex-1 leading-tight">
+                            {selectedResource?.title || 'Full Description'}
+                        </DialogTitle>
                         {selectedResource?.url && (
-                            <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="h-8 gap-1.5 text-xs font-semibold shrink-0"
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 shrink-0 gap-1.5 text-xs font-semibold"
                                 asChild
                             >
-                                <a href={selectedResource.url} target="_blank" rel="noopener noreferrer">
+                                <a
+                                    href={selectedResource.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
                                     <ExternalLink className="h-3.5 w-3.5" />
                                     Source
                                 </a>
@@ -787,7 +867,9 @@ export default function RelatedPage({
 
     return (
         <>
-            <Head title={`Related Resources (${chapterNumber}:${verseNumber})`} />
+            <Head
+                title={`Related Resources (${chapterNumber}:${verseNumber})`}
+            />
             <QuranReaderLayout
                 chapters={chapters}
                 selectedChapter={selectedChapterId}
@@ -798,4 +880,3 @@ export default function RelatedPage({
         </>
     );
 }
-
