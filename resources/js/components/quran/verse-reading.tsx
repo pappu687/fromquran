@@ -20,6 +20,23 @@ export function VerseReading({ verses, className }: VerseReadingProps) {
         return null;
     }
 
+    // Group verses by pageNumber
+    const versesByPage = verses.reduce(
+        (acc, verse) => {
+            const page = verse.pageNumber;
+            if (!acc[page]) {
+                acc[page] = [];
+            }
+            acc[page].push(verse);
+            return acc;
+        },
+        {} as Record<number, Verse[]>,
+    );
+
+    const pages = Object.keys(versesByPage)
+        .map(Number)
+        .sort((a, b) => a - b);
+
     return (
         <div
             className={cn(
@@ -32,19 +49,34 @@ export function VerseReading({ verses, className }: VerseReadingProps) {
             )}
         >
             <div className="p-4">
-                <div className="text-right" dir="rtl">
-                    <p className="font-arabic text-3xl leading-relaxed text-justify">
-                        {verses.map((verse, index) => (
-                            <span key={verse.id}>
-                                {verse.text}
-                                <span className="inline-flex h-8 w-8 items-center justify-center rounded-[40%] bg-gray-400/20 mr-2 text-sm font-semibold align-middle">
-                                    {verse.verseNumber}
+                {pages.map((page) => {
+                    return (
+                        <div key={page} className="mb-8">
+                            <div className="my-8 flex items-center">
+                                <div className="h-px flex-1 bg-border"></div>
+                                <span className="px-4 text-xs font-medium tracking-wider text-muted-foreground uppercase">
+                                    Page {page}
                                 </span>
-                                {index < verses.length - 1 && ' '}
-                            </span>
-                        ))}
-                    </p>
-                </div>
+                                <div className="h-px flex-1 bg-border"></div>
+                            </div>
+                            <div className="text-right" dir="rtl">
+                                <p className="font-arabic text-justify text-3xl leading-relaxed">
+                                    {versesByPage[page].map((verse, index) => (
+                                        <span key={verse.id}>
+                                            {verse.text}
+                                            <span className="mr-2 inline-flex h-8 w-8 items-center justify-center rounded-[40%] bg-gray-400/20 align-middle text-sm font-semibold">
+                                                {verse.verseNumber}
+                                            </span>
+                                            {index <
+                                                versesByPage[page].length - 1 &&
+                                                ' '}
+                                        </span>
+                                    ))}
+                                </p>
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );

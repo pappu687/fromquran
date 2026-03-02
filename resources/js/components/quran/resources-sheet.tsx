@@ -376,94 +376,161 @@ export function ResourcesSheet({
                                                         maxHeight: '600px',
                                                     }}
                                                 >
-                                                    {typeResources.map(
-                                                        (resource) => (
-                                                            <div
-                                                                key={
-                                                                    resource.id
-                                                                }
-                                                                className="group relative flex flex-col gap-3 rounded-xl border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md"
-                                                            >
-                                                                <div className="flex items-start justify-between gap-4">
-                                                                    <div className="flex-1 space-y-1">
-                                                                        <a
-                                                                            href={
-                                                                                resource.resource_url
-                                                                            }
-                                                                            target="_blank"
-                                                                            rel="noopener noreferrer"
-                                                                            className="inline-flex items-center gap-2 text-base font-semibold text-foreground decoration-primary/30 underline-offset-4 transition-colors group-hover:text-primary hover:underline"
-                                                                        >
-                                                                            <span className="line-clamp-2">
-                                                                                {resource.resource_title ||
-                                                                                    resource.resource_url}
-                                                                            </span>
-                                                                            <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 opacity-50 transition-opacity group-hover:opacity-100" />
-                                                                        </a>
-                                                                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                                                            <span className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium tracking-wider uppercase">
-                                                                                <Globe className="h-3 w-3" />
-                                                                                {getDomainName(
-                                                                                    resource.resource_url,
-                                                                                )}
-                                                                            </span>
-                                                                            {isVerifiedSource(
-                                                                                resource.resource_url,
-                                                                            ) && (
-                                                                                <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600 ring-1 ring-emerald-500/20 dark:bg-emerald-950/30">
-                                                                                    <CheckCircle className="h-3 w-3" />
-                                                                                    Verified
-                                                                                </span>
-                                                                            )}
-                                                                            {resource.created_at && (
-                                                                                <span className="flex items-center gap-1">
-                                                                                    <Calendar className="h-3 w-3" />
-                                                                                    {new Date(
-                                                                                        resource.created_at,
-                                                                                    ).toLocaleDateString(
-                                                                                        undefined,
+                                                    {type ===
+                                                    'Similar Verses' ? (
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {typeResources.map(
+                                                                (resource) => {
+                                                                    let matchedKeys: string[] =
+                                                                        [];
+                                                                    try {
+                                                                        if (
+                                                                            resource.comment
+                                                                        ) {
+                                                                            matchedKeys =
+                                                                                JSON.parse(
+                                                                                    resource.comment,
+                                                                                );
+                                                                        }
+                                                                    } catch (e) {
+                                                                        console.error(
+                                                                            'Failed to parse similar verses JSON',
+                                                                            e,
+                                                                        );
+                                                                    }
+
+                                                                    return matchedKeys.map(
+                                                                        (
+                                                                            key,
+                                                                            idx,
+                                                                        ) => {
+                                                                            const parts =
+                                                                                key.split(
+                                                                                    ':',
+                                                                                );
+                                                                            if (
+                                                                                parts.length ===
+                                                                                2
+                                                                            ) {
+                                                                                return (
+                                                                                    <Badge
+                                                                                        key={`${resource.id}-${idx}`}
+                                                                                        variant="secondary"
+                                                                                        className="cursor-pointer border-primary/20 bg-primary/10 px-3 py-1 text-sm text-primary transition-colors hover:bg-primary/20"
+                                                                                        onClick={() =>
+                                                                                            handleVerseClick(
+                                                                                                Number(
+                                                                                                    parts[0],
+                                                                                                ),
+                                                                                                Number(
+                                                                                                    parts[1],
+                                                                                                ),
+                                                                                            )
+                                                                                        }
+                                                                                    >
+                                                                                        <BookOpen className="mr-1.5 h-3.5 w-3.5" />
                                                                                         {
-                                                                                            month: 'short',
-                                                                                            year: 'numeric',
-                                                                                        },
+                                                                                            key
+                                                                                        }
+                                                                                    </Badge>
+                                                                                );
+                                                                            }
+                                                                            return null;
+                                                                        },
+                                                                    );
+                                                                },
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        typeResources.map(
+                                                            (resource) => (
+                                                                <div
+                                                                    key={
+                                                                        resource.id
+                                                                    }
+                                                                    className="group relative flex flex-col gap-3 rounded-xl border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md"
+                                                                >
+                                                                    <div className="flex items-start justify-between gap-4">
+                                                                        <div className="flex-1 space-y-1">
+                                                                            <a
+                                                                                href={
+                                                                                    resource.resource_url
+                                                                                }
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                className="inline-flex items-center gap-2 text-base font-semibold text-foreground decoration-primary/30 underline-offset-4 transition-colors group-hover:text-primary hover:underline"
+                                                                            >
+                                                                                <span className="line-clamp-2">
+                                                                                    {resource.resource_title ||
+                                                                                        resource.resource_url}
+                                                                                </span>
+                                                                                <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 opacity-50 transition-opacity group-hover:opacity-100" />
+                                                                            </a>
+                                                                            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                                                                <span className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium tracking-wider uppercase">
+                                                                                    <Globe className="h-3 w-3" />
+                                                                                    {getDomainName(
+                                                                                        resource.resource_url,
                                                                                     )}
                                                                                 </span>
-                                                                            )}
+                                                                                {isVerifiedSource(
+                                                                                    resource.resource_url,
+                                                                                ) && (
+                                                                                    <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600 ring-1 ring-emerald-500/20 dark:bg-emerald-950/30">
+                                                                                        <CheckCircle className="h-3 w-3" />
+                                                                                        Verified
+                                                                                    </span>
+                                                                                )}
+                                                                                {resource.created_at && (
+                                                                                    <span className="flex items-center gap-1">
+                                                                                        <Calendar className="h-3 w-3" />
+                                                                                        {new Date(
+                                                                                            resource.created_at,
+                                                                                        ).toLocaleDateString(
+                                                                                            undefined,
+                                                                                            {
+                                                                                                month: 'short',
+                                                                                                year: 'numeric',
+                                                                                            },
+                                                                                        )}
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
                                                                         </div>
                                                                     </div>
-                                                                </div>
 
-                                                                {resource.comment && (
-                                                                    <div className="relative">
-                                                                        <div
-                                                                            className={`text-sm leading-relaxed text-muted-foreground/90 ${!selectedResource ? 'line-clamp-3' : ''}`}
-                                                                            dangerouslySetInnerHTML={{
-                                                                                __html: resource.comment,
-                                                                            }}
-                                                                        />
-                                                                        {resource.is_truncated && (
-                                                                            <Button
-                                                                                variant="ghost"
-                                                                                size="sm"
-                                                                                className="mt-2 h-7 bg-muted/30 px-2 text-xs font-medium text-primary hover:bg-muted"
-                                                                                disabled={
-                                                                                    loadingFull
-                                                                                }
-                                                                                onClick={() =>
-                                                                                    handleSeeMore(
-                                                                                        resource.id,
-                                                                                    )
-                                                                                }
-                                                                            >
-                                                                                {loadingFull
-                                                                                    ? 'Loading...'
-                                                                                    : 'Read Full Answer'}
-                                                                            </Button>
-                                                                        )}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        ),
+                                                                    {resource.comment && (
+                                                                        <div className="relative">
+                                                                            <div
+                                                                                className={`text-sm leading-relaxed text-muted-foreground/90 ${!selectedResource ? 'line-clamp-3' : ''}`}
+                                                                                dangerouslySetInnerHTML={{
+                                                                                    __html: resource.comment,
+                                                                                }}
+                                                                            />
+                                                                            {resource.is_truncated && (
+                                                                                <Button
+                                                                                    variant="ghost"
+                                                                                    size="sm"
+                                                                                    className="mt-2 h-7 bg-muted/30 px-2 text-xs font-medium text-primary hover:bg-muted"
+                                                                                    disabled={
+                                                                                        loadingFull
+                                                                                    }
+                                                                                    onClick={() =>
+                                                                                        handleSeeMore(
+                                                                                            resource.id,
+                                                                                        )
+                                                                                    }
+                                                                                >
+                                                                                    {loadingFull
+                                                                                        ? 'Loading...'
+                                                                                        : 'Read Full Answer'}
+                                                                                </Button>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            ),
+                                                        )
                                                     )}
                                                 </div>
                                             </AccordionContent>
