@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\VerseReport;
+use App\Mail\VerseReportAdminEmail;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 
 class VerseReportController extends Controller
 {
@@ -27,6 +29,12 @@ class VerseReportController extends Controller
             'description' => $validated['description'],
             'status' => 'pending',
         ]);
+
+        // Send Email to Admin
+        $adminEmail = config('mail.from.address');
+        if ($adminEmail) {
+            Mail::to($adminEmail)->send(new VerseReportAdminEmail($report));
+        }
 
         return response()->json([
             'message' => 'Report submitted successfully. Thank you for your feedback!',

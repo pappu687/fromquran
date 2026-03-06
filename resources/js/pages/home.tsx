@@ -7,7 +7,15 @@ import {
 } from '@/components/ui/card';
 import LandingLayout from '@/layouts/landing-layout';
 import { router } from '@inertiajs/react';
-import { ArrowRight, BookOpen, Sparkles } from 'lucide-react';
+import {
+    ArrowRight,
+    BookOpen,
+    Sparkles,
+    Network,
+    Globe,
+    Link2,
+    Bookmark,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Chapter {
@@ -22,15 +30,21 @@ interface Chapter {
 }
 
 interface FeatureProps {
+    icon: React.ReactNode;
     title: string;
     description: string;
 }
 
-const FeatureCard = ({ title, description }: FeatureProps) => (
-    <Card className="border-none shadow-none transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-        <CardHeader>
-            <CardTitle className="text-xl">{title}</CardTitle>
-            <CardDescription className="text-base leading-relaxed">
+const FeatureCard = ({ icon, title, description }: FeatureProps) => (
+    <Card className="border border-border/50 bg-card shadow-sm transition-all duration-300 hover:shadow-md">
+        <CardHeader className="p-6">
+            <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-foreground">
+                {icon}
+            </div>
+            <CardTitle className="mb-2 text-base font-semibold text-foreground">
+                {title}
+            </CardTitle>
+            <CardDescription className="text-sm leading-relaxed text-muted-foreground">
                 {description}
             </CardDescription>
         </CardHeader>
@@ -102,89 +116,90 @@ export default function HomePage() {
 
     return (
         <LandingLayout title="From Quran - Explore the Quran Like Never Before">
-            {/* Hero Section */}
-            <section className="relative overflow-hidden bg-background">
+            {/* Hero & Features Section */}
+            <section className="relative overflow-hidden bg-background py-20 md:py-32">
                 <div className="bg-grid-pattern absolute inset-0 opacity-[0.02]" />
 
-                <div className="relative container mx-auto max-w-7xl px-4 py-20 md:py-32">
-                    <div className="mx-auto max-w-4xl text-center">
-                        <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm text-primary">
-                            <Sparkles className="h-4 w-4" />
-                            <span className="font-medium">
+                <div className="relative container mx-auto max-w-7xl px-4">
+                    <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-8 xl:gap-16">
+                        <div className="max-w-xl">
+                            <div className="mb-6 text-sm font-semibold tracking-wider text-muted-foreground uppercase">
                                 A New Way to Explore the Quran
-                            </span>
-                        </div>
+                            </div>
 
-                        <h1 className="font-young mb-6 text-4xl leading-tight font-bold md:text-6xl lg:text-7xl">
-                            Explore the Quran
-                            <br />
-                            <span className="text-primary">
+                            <h1 className="font-young mb-6 text-4xl leading-tight font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl">
+                                Explore the Quran
+                                <br />
                                 Like Never Before
-                            </span>
-                        </h1>
+                            </h1>
 
-                        <p className="mb-10 text-lg leading-relaxed text-muted-foreground md:text-xl">
-                            Every Islamic resource, connected. Discover tafseer,
-                            hadith, and scholarly discussions visualized through
-                            interactive knowledge graphs—all rooted in the
-                            Quran.
-                        </p>
+                            <p className="mb-8 text-lg leading-relaxed text-muted-foreground">
+                                Every Islamic resource, connected. Discover
+                                tafseer, hadith, and scholarly discussions
+                                visualized through interactive knowledge
+                                graphs—all rooted in the Quran.
+                            </p>
 
-                        <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
-                            <Button
-                                size="lg"
-                                onClick={scrollToChapters}
-                                className="gap-2 text-base shadow-sm"
-                            >                                
-                                Start Reading                                
-                            </Button>
-                            <Button
-                                size="lg"
-                                variant="outline"
-                                onClick={scrollToFeatures}
-                                className="gap-2 text-base shadow-sm"
-                            >
-                                Learn More                                
-                            </Button>
+                            <div className="mb-10 flex flex-wrap items-center gap-4">
+                                <Button
+                                    size="lg"
+                                    onClick={scrollToChapters}
+                                    className="gap-2 text-base shadow-sm"
+                                >
+                                    Start Reading
+                                    <ArrowRight className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    size="lg"
+                                    variant="ghost"
+                                    onClick={scrollToFeatures}
+                                    className="gap-2 text-base font-medium"
+                                >
+                                    Learn More
+                                </Button>
+                            </div>
+
+                            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                                <div className="flex items-center gap-2">
+                                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                    114 Chapters
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                    Authentic Resources
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-            </section>
 
-            {/* Features Section */}
-            <section
-                id="features-section"
-                className="bg-muted/30 py-16 md:py-24"
-            >
-                <div className="container mx-auto max-w-7xl px-4">
-                    <div className="mb-12 text-center">
-                        <h2 className="font-young mb-4 text-3xl font-bold md:text-4xl">
-                            Powerful Features for Deep Learning
-                        </h2>
-                        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-                            Everything you need to understand, explore, and
-                            connect with the Quran and its vast knowledge
-                            network.
-                        </p>
-                    </div>
-
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                        <FeatureCard
-                            title="Knowledge Graphs"
-                            description="Visualize connections between Quran verses, hadith, tafseer, and scholarly resources through beautiful, interactive node graphs."
-                        />
-                        <FeatureCard
-                            title="Rich Resources"
-                            description="Access tagged YouTube tafseer, podcasts, articles, and discussions—all linked to specific verses from authentic Islamic sources."
-                        />
-                        <FeatureCard
-                            title="Cross-References"
-                            description="Explore related verses, hadith, and fiqh rulings for any ayah. Understand the Quranic narrative through interconnected knowledge."
-                        />
-                        <FeatureCard
-                            title="Personal Collections"
-                            description="Save, organize, and share your favorite verses. Create collections for study, reflection, or teaching."
-                        />
+                        <div
+                            id="features-section"
+                            className="grid gap-4 sm:grid-cols-2"
+                        >
+                            <FeatureCard
+                                icon={
+                                    <Network className="h-5 w-5 opacity-70" />
+                                }
+                                title="Knowledge Graphs"
+                                description="Visualize connections between Quran verses, hadith, tafseer, and scholarly resources."
+                            />
+                            <FeatureCard
+                                icon={<Globe className="h-5 w-5 opacity-70" />}
+                                title="Rich Resources"
+                                description="Access tagged YouTube tafseer, podcasts, articles, and discussions."
+                            />
+                            <FeatureCard
+                                icon={<Link2 className="h-5 w-5 opacity-70" />}
+                                title="Cross-References"
+                                description="Explore related verses, hadith, and fiqh rulings for any ayah."
+                            />
+                            <FeatureCard
+                                icon={
+                                    <Bookmark className="h-5 w-5 opacity-70" />
+                                }
+                                title="Personal Collections"
+                                description="Save, organize, and share your favorite verses and reflections."
+                            />
+                        </div>
                     </div>
                 </div>
             </section>
