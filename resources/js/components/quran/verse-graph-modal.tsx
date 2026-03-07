@@ -61,7 +61,7 @@ export function VerseGraphModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-            <div className="relative flex w-full max-w-4xl flex-col bg-card shadow-lg sm:rounded-xl sm:border">
+            <div className="relative flex h-full w-full flex-col bg-card shadow-lg sm:h-auto sm:max-h-[90vh] sm:max-w-4xl sm:rounded-xl sm:border">
                 <div className="flex items-center justify-between border-b px-4 py-3">
                     <h2 className="text-lg font-semibold">
                         Resources Network ({verseKey})
@@ -83,8 +83,8 @@ export function VerseGraphModal({
                             </span>
                         </div>
                     ) : (
-                        <div className="flex w-full justify-center">
-                            <div className="w-full max-w-3xl overflow-hidden">
+                        <div className="flex h-full w-full flex-1 flex-col justify-center">
+                            <div className="h-full w-full flex-1 overflow-hidden">
                                 <Suspense
                                     fallback={
                                         <div className="flex h-[400px] w-full items-center justify-center text-muted-foreground">

@@ -293,7 +293,7 @@ export function ResourcesSheet({
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="sm:max-w-lg">
+            <SheetContent className="w-full sm:w-[500px] sm:max-w-lg">
                 <SheetHeader>
                     <SheetTitle>
                         Related Resources for ({chapterNumber} : {verseNumber})
