@@ -34,6 +34,8 @@ import { AddResourceModal } from './add-resource-modal';
 import { CollectionsModal } from './collections-modal';
 import { ResourcesSheet } from './resources-sheet';
 import { TafsirModal } from './tafsir-modal';
+import { VerseGraphModal } from './verse-graph-modal';
+import { Network } from 'lucide-react';
 
 interface Verse {
     id: number;
@@ -76,6 +78,10 @@ export function VerseCard({
 }: VerseCardProps) {
     const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
     const [isResourcesSheetOpen, setIsResourcesSheetOpen] = useState(false);
+    const [isGraphModalOpen, setIsGraphModalOpen] = useState(false);
+    const [activeResourceSection, setActiveResourceSection] = useState<
+        string | undefined
+    >(undefined);
     const [isCollectionsModalOpen, setIsCollectionsModalOpen] = useState(false);
     const [isTafsirModalOpen, setIsTafsirModalOpen] = useState(false);
     const { playVerse, currentVerse, audioData, isPlaying } = useAudioPlayer();
@@ -182,9 +188,10 @@ export function VerseCard({
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() =>
-                                            setIsResourcesSheetOpen(true)
-                                        }
+                                        onClick={() => {
+                                            setActiveResourceSection(undefined);
+                                            setIsResourcesSheetOpen(true);
+                                        }}
                                         className="h-8 w-8 p-0"
                                     >
                                         <Eye
@@ -197,6 +204,29 @@ export function VerseCard({
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>View Resources</TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() =>
+                                            setIsGraphModalOpen(true)
+                                        }
+                                        className="h-8 w-8 p-0"
+                                    >
+                                        <Network
+                                            className={cn(
+                                                'h-4 w-4',
+                                                hasResources && 'text-sky-500',
+                                            )}
+                                        />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    Resource Network
+                                </TooltipContent>
                             </Tooltip>
 
                             <Tooltip>
@@ -337,6 +367,19 @@ export function VerseCard({
                 verseId={verse.id}
                 verseNumber={verse.verseNumber}
                 chapterNumber={verse.chapterNumber}
+                initialActiveSection={activeResourceSection}
+            />
+
+            {/* Quick Graph Modal */}
+            <VerseGraphModal
+                open={isGraphModalOpen}
+                onOpenChange={setIsGraphModalOpen}
+                verseId={verse.id}
+                verseKey={`${verse.chapterNumber}:${verse.verseNumber}`}
+                onSectionSelect={(section) => {
+                    setActiveResourceSection(section);
+                    setIsResourcesSheetOpen(true);
+                }}
             />
 
             {/* Tafsir Modal */}

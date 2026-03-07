@@ -141,6 +141,71 @@ class VerseResourceController extends Controller
             ];
         });
 
+        // Count resources by type from all results (not just limited)
+        $allResultsQuery = $this->client->createSelect();
+        $allResultsQuery->setQuery($q);
+        $allResultsQuery->setRows($total); // Get all for counting
+        $allResults = $this->client->select($allResultsQuery);
+
+        $resourceTypeCounts = [];
+        foreach ($allResults as $doc) {
+            $typeName = $doc->resource_type_name_s ?? 'Unknown';
+            if (!isset($resourceTypeCounts[$typeName])) {
+                $resourceTypeCounts[$typeName] = 0;
+            }
+            $resourceTypeCounts[$typeName]++;
+        }
+
+        // Fetch similar verses from MySQL
+        $similarVerses = [];
+        $similarVersesCount = 0;
+        if ($verse) {
+            $similarVerses = \App\Models\SimilarAyah::with([
+                'matchedVerse:id,verse_key,verse_number,chapter_id,text_uthmani',
+                'matchedVerse.chapter:id,chapter_number,name_simple,name_roman',
+                'matchedVerse.translations' => function ($query) {
+                    $query->whereHas('language', function ($q) {
+                        $q->where('iso_code', 'en');
+                    })->orderBy('priority', 'desc');
+                },
+            ])
+                ->where('verse_key', $verse->verse_key)
+                ->orderBy('score', 'desc')
+                ->get()
+                ->map(function ($similar) {
+                    $translation = $similar->matchedVerse?->translations?->first();
+
+                    return [
+                        'id' => $similar->id,
+                        'verse_key' => $similar->matched_ayah_key,
+                        'verse_number' => $similar->matchedVerse?->verse_number,
+                        'chapter_id' => $similar->matchedVerse?->chapter_id,
+                        'chapter_number' => $similar->matchedVerse?->chapter?->chapter_number,
+                        'chapter_name' => $similar->matchedVerse?->chapter?->name_simple,
+                        'chapter_name_roman' => $similar->matchedVerse?->chapter?->name_roman,
+                        'text_uthmani' => $similar->matchedVerse?->text_uthmani,
+                        'translation' => $translation?->text,
+                        'translation_resource' => $translation?->resource_name,
+                        'matched_words_count' => $similar->matched_words_count,
+                        'coverage' => $similar->coverage,
+                        'score' => $similar->score,
+                        'match_words_range' => $similar->match_words_range,
+                    ];
+                });
+            $similarVersesCount = $similarVerses->count();
+        }
+
+        // Fetch topics from MySQL
+        $topics = [];
+        $topicsCount = 0;
+        if ($verse) {
+            $topics = \App\Models\Topic::forVerse($verse->verse_key)
+                ->select('topic_id', 'name', 'arabic_name')
+                ->orderBy('topic_id')
+                ->get();
+            $topicsCount = $topics->count();
+        }
+
         return response()->json([
             'data' => $resources,
             'verse_context' => $verseContext,
@@ -148,6 +213,19 @@ class VerseResourceController extends Controller
                 'total' => $total,
                 'limit' => $limit,
                 'hasMore' => $limit > 0 && $total > $limit,
+                'counts' => [
+                    'resource_types' => $resourceTypeCounts,
+                    'similar_verses' => $similarVersesCount,
+                    'topics' => $topicsCount,
+                ],
+            ],
+            'similar_verses' => [
+                'data' => $similarVerses,
+                'count' => $similarVersesCount,
+            ],
+            'topics' => [
+                'data' => $topics,
+                'count' => $topicsCount,
             ],
         ]);
     }

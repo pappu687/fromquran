@@ -88,6 +88,7 @@ interface ResourcesSheetProps {
     verseId: number;
     verseNumber: number;
     chapterNumber?: number;
+    initialActiveSection?: string;
 }
 
 export function ResourcesSheet({
@@ -96,6 +97,7 @@ export function ResourcesSheet({
     verseId,
     verseNumber,
     chapterNumber,
+    initialActiveSection,
 }: ResourcesSheetProps) {
     const [resources, setResources] = useState<Resource[]>([]);
     const [totalResources, setTotalResources] = useState<number>(0);
@@ -112,6 +114,12 @@ export function ResourcesSheet({
     const [isAddResourceOpen, setIsAddResourceOpen] = useState(false);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+    const [activeSection, setActiveSection] = useState<string | undefined>(
+        undefined,
+    );
+    const [resourceCounts, setResourceCounts] = useState<
+        Record<string, number>
+    >({});
 
     const { user } = useAuth();
 
@@ -123,7 +131,7 @@ export function ResourcesSheet({
         }
     };
 
-    const fetchResources = async () => {
+    const fetchAllRelated = async () => {
         setLoading(true);
         try {
             const response = await fetch(
@@ -131,48 +139,55 @@ export function ResourcesSheet({
             );
             if (response.ok) {
                 const data = await response.json();
+
+                // Set resources (resources are at data)
                 setResources(data.data || []);
-                setTotalResources(data.meta?.total || data.data?.length || 0);
+                setTotalResources(data.meta?.total || 0);
                 setHasMore(Boolean(data.meta?.hasMore));
+
+                // Store actual server-side counts of resource types
+                if (data.meta?.counts?.resource_types) {
+                    setResourceCounts(data.meta.counts.resource_types);
+                }
+
+                // Set similar verses (now included in the response)
+                setSimilarVerses(data.similar_verses?.data || []);
+
+                // Set topics (now included in the response)
+                setTopics(data.topics?.data || []);
             }
         } catch (error) {
-            console.error('Failed to fetch resources:', error);
+            console.error('Failed to fetch related data:', error);
         } finally {
             setLoading(false);
         }
     };
 
-    const fetchSimilarVerses = async () => {
-        try {
-            const response = await fetch(`/api/verses/${verseId}/similar`);
-            if (response.ok) {
-                const data = await response.json();
-                setSimilarVerses(data.data || []);
-            }
-        } catch (error) {
-            console.error('Failed to fetch similar verses:', error);
-        }
-    };
-
-    const fetchTopics = async () => {
-        try {
-            const response = await fetch(`/api/verses/${verseId}/topics`);
-            if (response.ok) {
-                const data = await response.json();
-                setTopics(data.data || []);
-            }
-        } catch (error) {
-            console.error('Failed to fetch topics:', error);
-        }
-    };
-
     useEffect(() => {
         if (open) {
-            fetchResources();
-            fetchSimilarVerses();
-            fetchTopics();
+            fetchAllRelated();
         }
     }, [open, verseId]);
+
+    // Handle initial active section sync when sheet opens or resources change
+    useEffect(() => {
+        if (open) {
+            if (initialActiveSection) {
+                setActiveSection(initialActiveSection);
+            } else if (
+                Object.keys(groupedResources).length > 0 &&
+                !activeSection
+            ) {
+                setActiveSection(Object.keys(groupedResources)[0]);
+            }
+        } else {
+            // reset when closed if desired, or keep it
+            if (!open) {
+                // Optional: reset on close
+                // setActiveSection(undefined);
+            }
+        }
+    }, [open, initialActiveSection, resources.length]);
 
     // Group resources by type
     const groupedResources = resources.reduce(
@@ -334,7 +349,12 @@ export function ResourcesSheet({
                         <Accordion
                             type="single"
                             collapsible
-                            defaultValue={Object.keys(groupedResources)[0]}
+                            value={
+                                activeSection ||
+                                Object.keys(groupedResources)[0] ||
+                                ''
+                            }
+                            onValueChange={setActiveSection}
                             className="w-full"
                         >
                             {Object.entries(groupedResources).map(
@@ -365,7 +385,8 @@ export function ResourcesSheet({
                                                         variant="secondary"
                                                         className="ml-2 font-normal"
                                                     >
-                                                        {typeResources.length}
+                                                        {resourceCounts[type] ||
+                                                            typeResources.length}
                                                     </Badge>
                                                 </div>
                                             </AccordionTrigger>
