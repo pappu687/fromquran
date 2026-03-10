@@ -243,6 +243,20 @@ Route::middleware(['auth', 'role:Admin|Moderator|Reviewer'])->prefix('admin')->g
         return Inertia::render('admin/settings');
     })->middleware('role:Admin')->name('admin.settings');
 
+    // Tools (Admin only)
+    Route::middleware('role:Admin')->prefix('tools')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\ToolController::class, 'index'])
+            ->name('admin.tools');
+        Route::post('/test-email', [\App\Http\Controllers\Admin\ToolController::class, 'testEmail'])
+            ->name('admin.tools.test-email');
+        Route::post('/backup', [\App\Http\Controllers\Admin\ToolController::class, 'createBackup'])
+            ->name('admin.tools.backup');
+        Route::post('/clear-sessions', [\App\Http\Controllers\Admin\ToolController::class, 'clearSessions'])
+            ->name('admin.tools.clear-sessions');
+        Route::post('/clear-caches', [\App\Http\Controllers\Admin\ToolController::class, 'clearCaches'])
+            ->name('admin.tools.clear-caches');
+    });
+
     // Resource Submissions
     Route::get('/resource-submissions', [\App\Http\Controllers\Admin\ResourceSubmissionController::class, 'index'])
         ->name('admin.resource-submissions');

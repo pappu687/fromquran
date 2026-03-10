@@ -8,6 +8,7 @@ import {
     BookOpen,
     Languages,
     Tags,
+    Wrench,
 } from 'lucide-react';
 
 import { NavMain } from '@/components/nav-main';
@@ -68,6 +69,11 @@ const adminNavData = {
             title: 'Settings',
             url: '/admin/settings',
             icon: Settings,
+        },
+        {
+            title: 'Tools',
+            url: '/admin/tools',
+            icon: Wrench,
         },
     ],
 };

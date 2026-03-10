@@ -5,8 +5,8 @@ return [
         'localhost' => [
             'host' => env('SOLR_HOST', '127.0.0.1'),
             'port' => env('SOLR_PORT', 8983),
-            'path' => env('SOLR_PATH', '/'),
-            'core' => env('SOLR_CORE', 'laravel'),
+            'path' => env('SOLR_PATH', '/solr/fromquran'),
+            'core' => env('SOLR_CORE', 'fromquran'),
         ],
     ],
 ];
