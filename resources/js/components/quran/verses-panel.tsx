@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useReadingMode } from '@/contexts/reading-mode-context';
+import { useReaderSettings } from '@/contexts/reader-settings-context';
 import { useVersesPanel } from '@/hooks/use-verses-panel';
 import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
@@ -69,6 +70,7 @@ export function VersesPanel({
     startFromVerse,
 }: VersesPanelProps) {
     const { mode } = useReadingMode();
+    const { settings } = useReaderSettings();
 
     const {
         verses,
@@ -138,6 +140,20 @@ export function VersesPanel({
                     {verses.length === 0 && !loading && !error && (
                         <div className="py-8 text-center text-muted-foreground">
                             <p>No verses found</p>
+                        </div>
+                    )}
+
+                    {/* Bismillah — shown before verse 1 for all chapters except chapter 9 */}
+                    {chapter.number !== 9 && verses.length > 0 && (
+                        <div className="mb-6 flex justify-center py-4">
+                            <p
+                                className="font-arabic text-center leading-loose text-foreground/90"
+                                dir="rtl"
+                                aria-label="Bismillahir Rahmanir Rahim"
+                                style={{ fontSize: `${settings.fontSize * 1.2}rem` }}
+                            >
+                                بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
+                            </p>
                         </div>
                     )}
 

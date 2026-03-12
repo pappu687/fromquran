@@ -18,7 +18,6 @@ import {
     BookmarkCheck,
     BookmarkPlus,
     BookOpen,
-    Eye,
     Play,
     Plus,
     Volume2,
@@ -27,12 +26,14 @@ import {
     Languages,
     Link,
     Share2,
+    Info, // Added Info icon
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAudioPlayer } from '@/store/use-audio-player';
 import { AddResourceModal } from './add-resource-modal';
 import { CollectionsModal } from './collections-modal';
 import { ResourcesSheet } from './resources-sheet';
+import { useReaderSettings } from '@/contexts/reader-settings-context';
 import { TafsirModal } from './tafsir-modal';
 import { VerseGraphModal } from './verse-graph-modal';
 import { Network } from 'lucide-react';
@@ -84,6 +85,7 @@ export function VerseCard({
     >(undefined);
     const [isCollectionsModalOpen, setIsCollectionsModalOpen] = useState(false);
     const [isTafsirModalOpen, setIsTafsirModalOpen] = useState(false);
+    const { settings } = useReaderSettings();
     const { playVerse, currentVerse, audioData, isPlaying } = useAudioPlayer();
 
     const handleBookmark = () => {
@@ -156,8 +158,8 @@ export function VerseCard({
 
                     {!hideHeaderActions && (
                         <div className="flex items-center gap-1 transition-opacity duration-200">
-                            {/* Play Button */}
-                            <Tooltip>
+                            {/* Play Button hidden for now */}
+                            {/* <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button
                                         variant="ghost"
@@ -181,7 +183,7 @@ export function VerseCard({
                                         ? 'Playing'
                                         : 'Play audio'}
                                 </TooltipContent>
-                            </Tooltip>
+                            </Tooltip> */}
 
                             <Tooltip>
                                 <TooltipTrigger asChild>
@@ -194,7 +196,7 @@ export function VerseCard({
                                         }}
                                         className="h-8 w-8 p-0"
                                     >
-                                        <Eye
+                                        <Info
                                             className={cn(
                                                 'h-4 w-4',
                                                 hasResources &&
@@ -261,28 +263,28 @@ export function VerseCard({
                                 >
                                     <DropdownMenuItem
                                         onClick={handleCopyArabic}
-                                        className="gap-2 text-xs"
+                                        className="gap-2 text-sm"
                                     >
                                         <Quote className="h-3.5 w-3.5" />
                                         Copy Arabic
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onClick={handleCopyTranslation}
-                                        className="gap-2 text-xs"
+                                        className="gap-2 text-sm"
                                     >
                                         <Languages className="h-3.5 w-3.5" />
                                         Copy Translation
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onClick={handleCopyLink}
-                                        className="gap-2 text-xs"
+                                        className="gap-2 text-sm"
                                     >
                                         <Link className="h-3.5 w-3.5" />
                                         Copy Link
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onClick={handleShare}
-                                        className="gap-2 text-xs"
+                                        className="gap-2 text-sm"
                                     >
                                         <Share2 className="h-3.5 w-3.5" />
                                         Share Verse
@@ -290,7 +292,7 @@ export function VerseCard({
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem
                                         onClick={handleBookmark}
-                                        className="gap-2 text-xs"
+                                        className="gap-2 text-sm"
                                     >
                                         {isBookmarked ? (
                                             <>
@@ -308,14 +310,14 @@ export function VerseCard({
                                         onClick={() =>
                                             setIsCollectionsModalOpen(true)
                                         }
-                                        className="gap-2 text-xs"
+                                        className="gap-2 text-sm"
                                     >
                                         <BookmarkPlus className="h-3.5 w-3.5" />
                                         <span>Add to collection</span>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onClick={handleAddResource}
-                                        className="gap-2 text-xs"
+                                        className="gap-2 text-sm"
                                     >
                                         <Plus className="h-3.5 w-3.5" />
                                         <span>Add resource</span>
@@ -328,7 +330,11 @@ export function VerseCard({
 
                 {/* Arabic Text */}
                 <div className="mb-4 text-right">
-                    <p className="font-arabic text-3xl leading-[2.2]" dir="rtl">
+                    <p
+                        className="font-arabic leading-[2.2]"
+                        dir="rtl"
+                        style={{ fontSize: `${settings.fontSize}rem` }}
+                    >
                         {verse.text}
                     </p>
                 </div>

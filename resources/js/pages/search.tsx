@@ -118,7 +118,7 @@ export default function SearchPage({
                                             onChange={(e) =>
                                                 setLocalQuery(e.target.value)
                                             }
-                                            placeholder="Jesus"
+                                            placeholder=""
                                             className="h-12 flex-1 rounded-r-none border-border bg-background px-4 text-base focus-visible:ring-1 focus-visible:ring-blue-500"
                                         />
                                         <Button
@@ -132,8 +132,7 @@ export default function SearchPage({
                                     </ButtonGroup>
                                 </Field>
                                 <p className="mt-3 text-left text-[13px] text-muted-foreground">
-                                    Press Enter to search. Results are ranked
-                                    using the Solr index.
+                                    Press Enter to search.
                                 </p>
                             </form>
                         </section>

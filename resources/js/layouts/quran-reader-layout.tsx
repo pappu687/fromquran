@@ -9,7 +9,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Eye } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { ChapterInfoSheet } from '@/components/quran/chapter-info-sheet';
 
@@ -77,7 +77,7 @@ export default function QuranReaderLayout({
                                                     }
                                                     title="About this Surah"
                                                 >
-                                                    <Eye className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                                                    <Info className="h-4 w-4 text-muted-foreground hover:text-primary" />
                                                 </Button>
                                             </div>
                                         ) : (

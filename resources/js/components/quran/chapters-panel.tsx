@@ -19,7 +19,7 @@ interface Chapter {
     number: number;
     name: string;
     englishName: string;
-    romanName: string;
+    romanName?: string;
     englishNameTranslation: string;
     revelationType: 'Meccan' | 'Medinan';
     verses: number;
@@ -73,7 +73,7 @@ export function ChaptersPanel({
             chapter.englishNameTranslation
                 .toLowerCase()
                 .includes(searchTerm.toLowerCase()) ||
-            chapter.romanName.toLowerCase().includes(searchTerm.toLowerCase()),
+            chapter.romanName?.toLowerCase().includes(searchTerm.toLowerCase()),
     );
 
     const handleChapterClick = (chapterId: number) => {
@@ -154,9 +154,8 @@ export function ChaptersPanel({
                                                         </div>
                                                         <div className="flex-1 text-left">
                                                             <div className="truncate text-xs leading-none font-semibold">
-                                                                {
-                                                                    chapter.romanName
-                                                                }
+                                                                {chapter.romanName ??
+                                                                    chapter.englishName}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -200,24 +199,8 @@ export function ChaptersPanel({
                                                 <div className="min-w-0 flex-1 text-left">
                                                     <div className="flex items-center justify-between gap-1">
                                                         <div className="truncate text-sm font-semibold">
-                                                            {chapter.romanName}
-                                                        </div>
-                                                        <div className="flex items-center gap-1">
-                                                            {chapter.startJuz && (
-                                                                <div
-                                                                    className={`rounded-full border px-1.5 py-0.5 text-[10px] ${
-                                                                        selectedChapter ===
-                                                                        chapter.id
-                                                                            ? 'border-black/20 bg-black/10 text-black'
-                                                                            : 'border-muted-foreground/20 bg-muted text-muted-foreground'
-                                                                    }`}
-                                                                >
-                                                                    Juz{' '}
-                                                                    {
-                                                                        chapter.startJuz
-                                                                    }
-                                                                </div>
-                                                            )}
+                                                            {chapter.romanName ??
+                                                                chapter.englishName}
                                                         </div>
                                                     </div>
                                                     <div className="mt-0.5 flex items-center justify-between">

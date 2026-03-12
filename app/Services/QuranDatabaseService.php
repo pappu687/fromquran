@@ -72,7 +72,8 @@ class QuranDatabaseService {
      * Get verses for a specific chapter from database
      */
     public function getVerses( int $chapterId, int $page = 1, int $limit = 10, string $edition = 'en.sahih' ): array {
-        $cacheKey = "q.verses.{$chapterId}.{$page}.{$limit}.{$edition}";
+        // We use a broader cache key here because we fetch all verses of the chapter at once
+        $cacheKey = "q.verses.{$chapterId}.all.{$edition}";
 
         return Cache::remember( $cacheKey, $this->cacheTtl, function () use ( $chapterId, $edition ) {
             $chapter = Chapter::where( 'id', $chapterId )
@@ -108,7 +109,8 @@ class QuranDatabaseService {
 
             // Query Solr for all verses in this chapter
             $select = $this->solrClient->createSelect();
-            $select->setQuery('verse_key_s:[* TO *]');
+            // Filter to only get verse documents (no document_type_s or type_s)
+            $select->setQuery('verse_key_s:[* TO *] AND -document_type_s:[* TO *] AND -type_s:[* TO *]');
             $select->createFilterQuery( 'chapter' )
                 ->setQuery( 'chapter_id_i:' . $chapter->id );
             $select->addSort( 'verse_number_i', $select::SORT_ASC );

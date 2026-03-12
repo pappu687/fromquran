@@ -61,32 +61,39 @@ export function ReaderSettingsSheet({
     }, [open, settings]);
 
     const handleFontSizeIncrease = () => {
-        setFontSize((prev) => Math.min(prev + FONT_SIZE_STEP, MAX_FONT_SIZE));
+        const newSize = Math.min(fontSize + FONT_SIZE_STEP, MAX_FONT_SIZE);
+        setFontSize(newSize);
+        updateSettings({ fontSize: newSize });
     };
 
     const handleFontSizeDecrease = () => {
-        setFontSize((prev) => Math.max(prev - FONT_SIZE_STEP, MIN_FONT_SIZE));
+        const newSize = Math.max(fontSize - FONT_SIZE_STEP, MIN_FONT_SIZE);
+        setFontSize(newSize);
+        updateSettings({ fontSize: newSize });
     };
 
     const handleTranslationToggle = (translationId: string) => {
-        setSelectedTranslations((prev) => {
-            if (prev.includes(translationId)) {
-                return prev.filter((id) => id !== translationId);
-            } else {
-                return [...prev, translationId];
-            }
-        });
+        const newTranslations = selectedTranslations.includes(translationId)
+            ? selectedTranslations.filter((id) => id !== translationId)
+            : [...selectedTranslations, translationId];
+        
+        setSelectedTranslations(newTranslations);
+        updateSettings({ selectedTranslations: newTranslations });
     };
 
-    const handleSave = () => {
-        updateSettings({
-            fontSize,
-            selectedTranslations,
-            showArabic,
-            mushafFont,
-            showRecentlyViewed,
-        });
-        onOpenChange(false);
+    const handleArabicToggle = (checked: boolean) => {
+        setShowArabic(checked);
+        updateSettings({ showArabic: checked });
+    };
+
+    const handleMushafFontChange = (fontId: 'uthmanic' | 'indopak') => {
+        setMushafFont(fontId);
+        updateSettings({ mushafFont: fontId });
+    };
+
+    const handleRecentlyViewedToggle = (checked: boolean) => {
+        setShowRecentlyViewed(checked);
+        updateSettings({ showRecentlyViewed: checked });
     };
 
     return (
@@ -141,9 +148,7 @@ export function ReaderSettingsSheet({
                             <Checkbox
                                 id="show-arabic"
                                 checked={showArabic}
-                                onCheckedChange={(checked) =>
-                                    setShowArabic(checked as boolean)
-                                }
+                                onCheckedChange={handleArabicToggle}
                             />
                             <label
                                 htmlFor="show-arabic"
@@ -167,7 +172,7 @@ export function ReaderSettingsSheet({
                                         id={`mushaf-${font.id}`}
                                         checked={mushafFont === font.id}
                                         onCheckedChange={() =>
-                                            setMushafFont(
+                                            handleMushafFontChange(
                                                 font.id as
                                                     | 'uthmanic'
                                                     | 'indopak',
@@ -192,9 +197,7 @@ export function ReaderSettingsSheet({
                             <Checkbox
                                 id="show-recently-viewed"
                                 checked={showRecentlyViewed}
-                                onCheckedChange={(checked) =>
-                                    setShowRecentlyViewed(checked as boolean)
-                                }
+                                onCheckedChange={handleRecentlyViewedToggle}
                             />
                             <label
                                 htmlFor="show-recently-viewed"
@@ -236,12 +239,6 @@ export function ReaderSettingsSheet({
                         </div>
                     </div>
                 </div>
-
-                <SheetFooter className="mt-6">
-                    <Button onClick={handleSave} className="w-full">
-                        Save Settings
-                    </Button>
-                </SheetFooter>
             </SheetContent>
         </Sheet>
     );

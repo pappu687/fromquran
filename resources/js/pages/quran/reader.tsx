@@ -102,12 +102,13 @@ export default function QuranReader({
         // Update local state immediately for instant feedback
         setSelectedChapter(chapter);
 
-        // Use Inertia router to update URL
+        // Full Inertia visit — do NOT use preserveState or partial `only`.
+        // If the current URL is a range like /49/7, preserveState would keep
+        // fromVerse/toVerse alive and the new chapter would also show only that
+        // single verse. A full visit ensures the server returns fresh props
+        // (/{chapterNumber} never sets fromVerse/toVerse, so they become undefined).
         router.visit(`/${chapter.number}`, {
-            method: 'get',
-            preserveState: true,
-            preserveScroll: true,
-            only: ['chapterNumber', 'chapter'], // Request these props for the new chapter
+            preserveScroll: false,
         });
     };
 

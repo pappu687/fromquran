@@ -10,7 +10,7 @@ interface Chapter {
     number: number;
     name: string;
     englishName: string;
-    romanName: string;
+    romanName?: string;
     englishNameTranslation: string;
     revelationType: 'Meccan' | 'Medinan';
     verses: number;

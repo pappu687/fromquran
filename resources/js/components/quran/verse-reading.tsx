@@ -1,3 +1,4 @@
+import { useReaderSettings } from '@/contexts/reader-settings-context';
 import { cn } from '@/lib/utils';
 
 interface Verse {
@@ -16,6 +17,7 @@ interface VerseReadingProps {
 }
 
 export function VerseReading({ verses, className }: VerseReadingProps) {
+    const { settings } = useReaderSettings();
     if (verses.length === 0) {
         return null;
     }
@@ -60,7 +62,12 @@ export function VerseReading({ verses, className }: VerseReadingProps) {
                                 <div className="h-px flex-1 bg-border"></div>
                             </div>
                             <div className="text-right" dir="rtl">
-                                <p className="font-arabic text-justify text-3xl leading-relaxed">
+                                <p
+                                    className="font-arabic text-justify leading-relaxed"
+                                    style={{
+                                        fontSize: `${settings.fontSize}rem`,
+                                    }}
+                                >
                                     {versesByPage[page].map((verse, index) => (
                                         <span key={verse.id}>
                                             {verse.text}

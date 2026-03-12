@@ -6,6 +6,7 @@ import {
     Heart,
     Home,
     List,
+    Lock,
     LogIn,
     LogOut,
     MoreHorizontal,
@@ -46,7 +47,7 @@ import {
 } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/auth-context';
 import { useReadingMode } from '@/contexts/reading-mode-context';
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 
 interface MenuItem {
     label: string;
@@ -261,6 +262,9 @@ export function NavActions() {
     const [readerSettingsOpen, setReaderSettingsOpen] = React.useState(false);
     const { user } = useAuth();
     const { mode, setMode } = useReadingMode();
+    // Only show reading mode toggle on the Quran reader page
+    const { component } = usePage();
+    const isReaderPage = component === 'quran/reader';
 
     const handleMenuClick = (item: MenuItem) => {
         setIsOpen(false);
@@ -300,36 +304,38 @@ export function NavActions() {
                 <TooltipContent>Home</TooltipContent>
             </Tooltip>
 
-            <ToggleGroup
-                type="single"
-                value={mode}
-                onValueChange={(value) => {
-                    if (value) setMode(value as 'list' | 'reading');
-                }}
-                variant="outline"
-                size="sm"
-            >
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <ToggleGroupItem value="list" aria-label="List view">
-                            <List className="h-4 w-4" />
-                        </ToggleGroupItem>
-                    </TooltipTrigger>
-                    <TooltipContent>List view</TooltipContent>
-                </Tooltip>
+            {isReaderPage && (
+                <ToggleGroup
+                    type="single"
+                    value={mode}
+                    onValueChange={(value) => {
+                        if (value) setMode(value as 'list' | 'reading');
+                    }}
+                    variant="outline"
+                    size="sm"
+                >
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <ToggleGroupItem value="list" aria-label="List view">
+                                <List className="h-4 w-4" />
+                            </ToggleGroupItem>
+                        </TooltipTrigger>
+                        <TooltipContent>List view</TooltipContent>
+                    </Tooltip>
 
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <ToggleGroupItem
-                            value="reading"
-                            aria-label="Reading view"
-                        >
-                            <BookOpen className="h-4 w-4" />
-                        </ToggleGroupItem>
-                    </TooltipTrigger>
-                    <TooltipContent>Reading view</TooltipContent>
-                </Tooltip>
-            </ToggleGroup>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <ToggleGroupItem
+                                value="reading"
+                                aria-label="Reading view"
+                            >
+                                <BookOpen className="h-4 w-4" />
+                            </ToggleGroupItem>
+                        </TooltipTrigger>
+                        <TooltipContent>Reading view</TooltipContent>
+                    </Tooltip>
+                </ToggleGroup>
+            )}
 
             <Tooltip>
                 <TooltipTrigger asChild>
@@ -343,6 +349,22 @@ export function NavActions() {
                 </TooltipTrigger>
                 <TooltipContent>Reader Settings</TooltipContent>
             </Tooltip>
+
+            {!user && (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => router.visit('/login')}
+                            aria-label="Login"
+                        >
+                            <Lock className="h-4 w-4" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Login to access all features</TooltipContent>
+                </Tooltip>
+            )}
 
             <Button
                 variant="ghost"
@@ -362,6 +384,16 @@ export function NavActions() {
             <>
                 <div className="flex items-center gap-2 text-sm">
                     <SearchInput />
+                    {/* Mobile: lock icon + kebab menu */}
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 sm:hidden"
+                        onClick={() => router.visit('/login')}
+                        aria-label="Login"
+                    >
+                        <Lock className="h-4 w-4" />
+                    </Button>
                     <Button
                         variant="ghost"
                         size="icon"

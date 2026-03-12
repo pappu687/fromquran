@@ -82,15 +82,18 @@ class QuranController extends Controller
                 $lastVerse = end($verses);
                 $maxVerseCount = $lastVerse['verseNumber'];
 
-                if ($from < 1 || $from > $maxVerseCount || $to < $from || $to > $maxVerseCount) {
+                // Basic validation for logical consistency
+                if ($from < 1 || ($to !== null && $to < $from)) {
                     return response()->json([
-                        'error' => "Invalid verse range. Surah {$chapterId} has {$maxVerseCount} verses."
+                        'error' => "Invalid verse range. 'from' must be at least 1 and 'to' must be greater than or equal to 'from'."
                     ], 422);
                 }
 
+                // Filter verses that fall within the requested range
                 $verses = array_values(array_filter($verses, function ($verse) use ($from, $to) {
-                    return $verse['verseNumber'] >= $from && $verse['verseNumber'] <= $to;
+                    return $verse['verseNumber'] >= $from && ($to === null || $verse['verseNumber'] <= $to);
                 }));
+
                 // When using an explicit range, treat all verses as a single page
                 $page = 1;
                 $limit = count($verses) ?: $limit;
