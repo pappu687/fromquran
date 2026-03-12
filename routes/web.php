@@ -138,22 +138,81 @@ Route::get('read', function () {
 });
 
 // /{chapterNumber} e.g. /2
-Route::get('{chapterNumber}', function (int $chapterNumber) {
+Route::get('{chapterNumber}', function (int $chapterNumber, QuranDatabaseService $quranService) {
+    $chapter = Chapter::where('chapter_number', $chapterNumber)->firstOrFail();
+
+    $edition = config('quran.default_edition', 'en.sahih');
+    $pageSize = config('quran.default_page_size', 10);
+
+    // Fetch initial verses for SSR
+    $versesData = $quranService->getVerses($chapter->id, 1, $pageSize, $edition);
+    if ($edition !== 'ar') {
+        $versesData = $quranService->getTranslations($versesData, $edition);
+    }
+
+    $initialVerses = [
+        'data' => array_slice($versesData, 0, $pageSize),
+        'total' => count($versesData),
+        'has_more' => count($versesData) > $pageSize,
+    ];
+
     return Inertia::render('quran/reader', [
         'chapterNumber' => $chapterNumber,
+        'initialVerses' => $initialVerses,
+        'chapter' => [
+            'id' => $chapter->id,
+            'number' => $chapter->chapter_number,
+            'name' => $chapter->name_arabic,
+            'englishName' => $chapter->name_simple,
+            'romanName' => $chapter->name_roman,
+            'englishNameTranslation' => $chapter->name_simple,
+            'revelationType' => ucfirst($chapter->revelation_place),
+            'verses' => $chapter->verses_count,
+        ],
     ]);
 })->whereNumber('chapterNumber')->name('reader.chapter');
 
 // /{chapterNumber}/{range} e.g. /2/10-15 or /2/6
-Route::get('{chapterNumber}/{range}', function (int $chapterNumber, string $range) {
+Route::get('{chapterNumber}/{range}', function (int $chapterNumber, string $range, QuranDatabaseService $quranService) {
+    $chapter = Chapter::where('chapter_number', $chapterNumber)->firstOrFail();
+
     $parts = explode('-', $range);
-    $from = $parts[0] ?? null;
-    $to = $parts[1] ?? $from;
+    $from = $parts[0] ? (int) $parts[0] : null;
+    $to = $parts[1] ? (int) $parts[1] : $from;
+
+    $edition = config('quran.default_edition', 'en.sahih');
+
+    // Fetch verses for the range
+    $versesData = $quranService->getVerses($chapter->id, 1, 1000, $edition);
+    if ($edition !== 'ar') {
+        $versesData = $quranService->getTranslations($versesData, $edition);
+    }
+
+    $filteredVerses = array_values(array_filter($versesData, function ($verse) use ($from, $to) {
+        return $verse['verseNumber'] >= $from && $verse['verseNumber'] <= $to;
+    }));
+
+    $initialVerses = [
+        'data' => $filteredVerses,
+        'total' => count($filteredVerses),
+        'has_more' => false,
+    ];
 
     return Inertia::render('quran/reader', [
         'chapterNumber' => $chapterNumber,
-        'fromVerse' => $from ? (int) $from : null,
-        'toVerse' => $to ? (int) $to : null,
+        'fromVerse' => $from,
+        'toVerse' => $to,
+        'initialVerses' => $initialVerses,
+        'chapter' => [
+            'id' => $chapter->id,
+            'number' => $chapter->chapter_number,
+            'name' => $chapter->name_arabic,
+            'englishName' => $chapter->name_simple,
+            'romanName' => $chapter->name_roman,
+            'englishNameTranslation' => $chapter->name_simple,
+            'revelationType' => ucfirst($chapter->revelation_place),
+            'verses' => $chapter->verses_count,
+        ],
     ]);
 })->whereNumber('chapterNumber')->where('range', '[0-9]+(-[0-9]+)?')->name('reader.range');
 

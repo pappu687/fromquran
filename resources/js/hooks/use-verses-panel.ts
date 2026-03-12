@@ -26,6 +26,11 @@ interface Chapter {
 
 interface UseVersesPanelOptions {
     chapter?: Chapter;
+    initialVerses?: {
+        data: any[];
+        total: number;
+        has_more: boolean;
+    };
     apiUrl?: string;
     pageSize?: number;
     fromVerse?: number;
@@ -65,6 +70,7 @@ interface UseVersesPanelReturn {
 
 export const useVersesPanel = ({
     chapter,
+    initialVerses,
     apiUrl = '/api/quran',
     pageSize = 10,
     fromVerse,
@@ -73,14 +79,14 @@ export const useVersesPanel = ({
 }: UseVersesPanelOptions): UseVersesPanelReturn => {
     const { user } = useAuth();
     const hasScrolledToStartRef = useRef(false);
-    const currentChapterIdRef = useRef<number | null>(null);
+    const currentChapterIdRef = useRef<number | null>(chapter?.id || null);
 
     // Core state
-    const [verses, setVerses] = useState<Verse[]>([]);
+    const [verses, setVerses] = useState<Verse[]>(initialVerses?.data || []);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [page, setPage] = useState(1);
-    const [hasMore, setHasMore] = useState(true);
+    const [hasMore, setHasMore] = useState(initialVerses?.has_more ?? true);
 
     // User interaction state
     const [bookmarkedVerses, setBookmarkedVerses] = useState<Set<string>>(
@@ -147,7 +153,19 @@ export const useVersesPanel = ({
 
     // Reset state when chapter changes
     useEffect(() => {
-        if (chapter && chapter.id !== currentChapterIdRef.current) {
+        if (!chapter) return;
+
+        // Skip fetching if we already have initialVerses for this chapter
+        if (
+            initialVerses &&
+            initialVerses.data.length > 0 &&
+            chapter.id === currentChapterIdRef.current &&
+            verses.length === initialVerses.data.length
+        ) {
+            return;
+        }
+
+        if (chapter.id !== currentChapterIdRef.current) {
             currentChapterIdRef.current = chapter.id;
             setVerses([]);
             setHasMore(true);
@@ -163,11 +181,13 @@ export const useVersesPanel = ({
         }
     }, [
         chapter?.id,
+        initialVerses,
         fetchVerses,
         startFromVerse,
         fromVerse,
         toVerse,
         pageSize,
+        verses.length,
     ]);
 
     // Auto-scroll to the requested start verse

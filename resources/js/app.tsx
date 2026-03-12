@@ -6,7 +6,7 @@ import { AuthProvider } from '@/contexts/auth-context';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
+import { createRoot, hydrateRoot } from 'react-dom/client';
 import { ReaderSettingsProvider } from './contexts/reader-settings-context';
 import { ReadingModeProvider } from './contexts/reading-mode-context';
 import { initializeTheme } from './hooks/use-appearance';
@@ -21,12 +21,10 @@ createInertiaApp({
             import.meta.glob('./pages/**/*.tsx'),
         ),
     setup({ el, App, props }) {
-        const root = createRoot(el);
-
         const { auth } = props.initialPage.props as { auth?: { user?: any } };
         const user = auth?.user || null;
 
-        root.render(
+        const content = (
             <StrictMode>
                 <AuthProvider user={user}>
                     <ReaderSettingsProvider>
@@ -36,8 +34,14 @@ createInertiaApp({
                         </ReadingModeProvider>
                     </ReaderSettingsProvider>
                 </AuthProvider>
-            </StrictMode>,
+            </StrictMode>
         );
+
+        if (el.innerHTML) {
+            hydrateRoot(el, content);
+        } else {
+            createRoot(el).render(content);
+        }
     },
     progress: {
         color: '#4B5563',

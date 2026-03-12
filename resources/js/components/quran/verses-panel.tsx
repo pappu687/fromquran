@@ -43,6 +43,11 @@ interface Chapter {
 
 interface VersesPanelProps {
     chapter?: Chapter;
+    initialVerses?: {
+        data: any[];
+        total: number;
+        has_more: boolean;
+    };
     apiUrl?: string;
     pageSize?: number;
     showTranslation?: boolean;
@@ -54,6 +59,7 @@ interface VersesPanelProps {
 
 export function VersesPanel({
     chapter,
+    initialVerses,
     apiUrl = '/api/quran',
     pageSize = 10,
     showTranslation = true,
@@ -85,6 +91,7 @@ export function VersesPanel({
         retry,
     } = useVersesPanel({
         chapter,
+        initialVerses,
         apiUrl,
         pageSize,
         fromVerse,
