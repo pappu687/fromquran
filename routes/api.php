@@ -34,6 +34,7 @@ Route::prefix('quran')->group(function () {
     Route::get('/tafsir/{chapterId}/{verseNumber}', [QuranController::class, 'tafsir']);
     Route::get('/chapters/{chapterId}/resources', [\App\Http\Controllers\Api\ChapterResourceController::class, 'show']);
     Route::get('/verses', [QuranController::class, 'allVersesForChapter']);
+    Route::get('/settings', [QuranController::class, 'settings']);
 });
 
 // Bookmark Routes (require authentication)

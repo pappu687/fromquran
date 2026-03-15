@@ -1,23 +1,10 @@
-import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-    CardDescription,
-} from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import {
-    ArrowLeft,
-    Globe,
-    Lock,
-    Loader2,
-    CheckCircle2,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Head, router } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import PublicLayout from '@/layouts/public-layout';
+import { Head, router, usePage } from '@inertiajs/react';
+import { ArrowLeft, Globe, Loader2, Lock } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface Verse {
     id: number;
@@ -51,8 +38,8 @@ function PublicVerseItem({ verse }: { verse: Verse }) {
     return (
         <div className="rounded-lg border bg-card p-4">
             <div className="flex items-start gap-3">
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
+                <div className="min-w-0 flex-1">
+                    <div className="mb-2 flex items-center gap-2">
                         <Badge variant="outline" className="font-mono text-xs">
                             {verse.verse_key}
                         </Badge>
@@ -61,7 +48,7 @@ function PublicVerseItem({ verse }: { verse: Verse }) {
                         </span>
                     </div>
                     <p
-                        className="text-right font-arabic text-2xl leading-relaxed mb-2"
+                        className="font-arabic mb-2 text-right text-2xl leading-relaxed"
                         dir="rtl"
                     >
                         {verse.text_uthmani}
@@ -82,6 +69,19 @@ export default function PublicCollectionDetailPage({ slug }: { slug: string }) {
     const [verses, setVerses] = useState<Verse[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [errors, setErrors] = useState<Record<string, string>>({});
+
+    const inertiaPage = usePage<{ appUrl?: string; siteName?: string }>();
+    const url = inertiaPage.url;
+    const appUrl =
+        (inertiaPage.props.appUrl as string | undefined) ??
+        'https://fromquran.com';
+    const siteName =
+        (inertiaPage.props.siteName as string | undefined) ??
+        'From Quran - Explore everything stemming from Quran.';
+    const baseUrl = appUrl.replace(/\/$/, '');
+    const path = url.startsWith('/') ? url : `/${url}`;
+    const canonicalUrl = `${baseUrl}${path}`;
+    const ogImage = `${baseUrl}/fromquran-logo.svg`;
 
     useEffect(() => {
         loadCollection();
@@ -124,10 +124,39 @@ export default function PublicCollectionDetailPage({ slug }: { slug: string }) {
         }
     };
 
+    const pageTitle = collection
+        ? `${collection.name} - Quran Collection`
+        : 'Quran Collection';
+    const pageDescription = collection?.description
+        ? collection.description
+        : 'Explore a curated public collection of Quran verses on From Quran.';
+
     if (isLoading) {
         return (
             <PublicLayout>
-                <Head title="Collection - From Quran" />
+                <Head>
+                    <title>{`${pageTitle} | From Quran`}</title>
+                    <meta name="description" content={pageDescription} />
+                    <meta
+                        property="og:title"
+                        content={`${pageTitle} | From Quran`}
+                    />
+                    <meta property="og:description" content={pageDescription} />
+                    <meta property="og:type" content="article" />
+                    <meta property="og:url" content={canonicalUrl} />
+                    <meta property="og:image" content={ogImage} />
+                    <meta property="og:site_name" content={siteName} />
+                    <meta name="twitter:card" content="summary_large_image" />
+                    <meta
+                        name="twitter:title"
+                        content={`${pageTitle} | From Quran`}
+                    />
+                    <meta
+                        name="twitter:description"
+                        content={pageDescription}
+                    />
+                    <meta name="twitter:image" content={ogImage} />
+                </Head>
                 <div className="flex items-center justify-center py-20">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
@@ -141,7 +170,26 @@ export default function PublicCollectionDetailPage({ slug }: { slug: string }) {
 
     return (
         <PublicLayout>
-            <Head title={`${collection.name} - From Quran`} />
+            <Head>
+                <title>{`${pageTitle} | From Quran`}</title>
+                <meta name="description" content={pageDescription} />
+                <meta
+                    property="og:title"
+                    content={`${pageTitle} | From Quran`}
+                />
+                <meta property="og:description" content={pageDescription} />
+                <meta property="og:type" content="article" />
+                <meta property="og:url" content={canonicalUrl} />
+                <meta property="og:image" content={ogImage} />
+                <meta property="og:site_name" content={siteName} />
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta
+                    name="twitter:title"
+                    content={`${pageTitle} | From Quran`}
+                />
+                <meta name="twitter:description" content={pageDescription} />
+                <meta name="twitter:image" content={ogImage} />
+            </Head>
             <div className="container mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="mb-8">
@@ -157,13 +205,17 @@ export default function PublicCollectionDetailPage({ slug }: { slug: string }) {
 
                     <div className="flex items-start justify-between">
                         <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
+                            <div className="mb-2 flex items-center gap-3">
                                 <div
                                     className="h-8 w-1.5 rounded-full"
-                                    style={{ backgroundColor: collection.color }}
+                                    style={{
+                                        backgroundColor: collection.color,
+                                    }}
                                 />
-                                <h1 className="text-3xl font-bold">{collection.name}</h1>
-                                
+                                <h1 className="text-3xl font-bold">
+                                    {collection.name}
+                                </h1>
+
                                 {/* Only show badge if needed, usually redundant if we know it's public, but good for confirmation */}
                                 <Badge
                                     variant="secondary"
@@ -174,7 +226,9 @@ export default function PublicCollectionDetailPage({ slug }: { slug: string }) {
                                     ) : (
                                         <Lock className="h-3 w-3" />
                                     )}
-                                    {collection.is_public ? 'Public' : 'Private'}
+                                    {collection.is_public
+                                        ? 'Public'
+                                        : 'Private'}
                                 </Badge>
                             </div>
                             {collection.description && (
@@ -182,8 +236,9 @@ export default function PublicCollectionDetailPage({ slug }: { slug: string }) {
                                     {collection.description}
                                 </p>
                             )}
-                            <p className="text-sm text-muted-foreground mt-2">
-                                {verses.length} {verses.length === 1 ? 'verse' : 'verses'}
+                            <p className="mt-2 text-sm text-muted-foreground">
+                                {verses.length}{' '}
+                                {verses.length === 1 ? 'verse' : 'verses'}
                             </p>
                         </div>
                     </div>
@@ -210,10 +265,7 @@ export default function PublicCollectionDetailPage({ slug }: { slug: string }) {
                 ) : (
                     <div className="space-y-3">
                         {verses.map((verse) => (
-                            <PublicVerseItem
-                                key={verse.id}
-                                verse={verse}
-                            />
+                            <PublicVerseItem key={verse.id} verse={verse} />
                         ))}
                     </div>
                 )}

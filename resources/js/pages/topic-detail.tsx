@@ -1,13 +1,12 @@
-import { Head } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { VerseCard } from '@/components/quran/verse-card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ExternalLink, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
-import { router } from '@inertiajs/react';
 import QuranReaderLayout from '@/layouts/quran-reader-layout';
-import { VerseCard } from '@/components/quran/verse-card';
+import { Head, router, usePage } from '@inertiajs/react';
+import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface Verse {
     id: number;
@@ -77,6 +76,29 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
     // Fetch chapters for sidebar
     const [chapters, setChapters] = useState<Chapter[]>([]);
 
+    const inertiaPage = usePage<{ appUrl?: string; siteName?: string }>();
+    const url = inertiaPage.url;
+    const appUrl =
+        (inertiaPage.props.appUrl as string | undefined) ??
+        'https://fromquran.com';
+    const siteName =
+        (inertiaPage.props.siteName as string | undefined) ??
+        'From Quran - Explore everything stemming from Quran.';
+    const baseUrl = appUrl.replace(/\/$/, '');
+    const path = url.startsWith('/') ? url : `/${url}`;
+    const canonicalUrl = `${baseUrl}${path}`;
+    const ogImage = `${baseUrl}/fromquran-logo.svg`;
+
+    const topicName = topic?.name || 'Topic';
+    const rawDescription = topic?.description
+        ? topic.description.replace(/<[^>]+>/g, '')
+        : '';
+    const fallbackDescription = `Explore ayat and resources about ${topicName} in the Quran.`;
+    const pageDescription = rawDescription.trim()
+        ? `${rawDescription.trim().slice(0, 200)}...`
+        : fallbackDescription;
+    const pageTitle = `${topicName} - Quran Topic`;
+
     const fetchTopicData = async (pageNum: number = 1) => {
         if (pageNum === 1) {
             setLoading(true);
@@ -86,7 +108,9 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
         setError(null);
 
         try {
-            const response = await fetch(`/api/topics/${topicId}?page=${pageNum}`);
+            const response = await fetch(
+                `/api/topics/${topicId}?page=${pageNum}`,
+            );
             if (!response.ok) {
                 throw new Error('Failed to fetch topic');
             }
@@ -174,7 +198,26 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
 
     const content = (
         <>
-            <Head title={topic ? `${topic.name} - Topics` : 'Topics'} />
+            <Head>
+                <title>{`${pageTitle} | From Quran`}</title>
+                <meta name="description" content={pageDescription} />
+                <meta
+                    property="og:title"
+                    content={`${pageTitle} | From Quran`}
+                />
+                <meta property="og:description" content={pageDescription} />
+                <meta property="og:type" content="article" />
+                <meta property="og:url" content={canonicalUrl} />
+                <meta property="og:image" content={ogImage} />
+                <meta property="og:site_name" content={siteName} />
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta
+                    name="twitter:title"
+                    content={`${pageTitle} | From Quran`}
+                />
+                <meta name="twitter:description" content={pageDescription} />
+                <meta name="twitter:image" content={ogImage} />
+            </Head>
             <div className="flex h-full flex-col px-4 py-5">
                 <div className="mx-auto h-full w-full max-w-3xl rounded-xl">
                     {loading ? (
@@ -216,7 +259,7 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
                                         {topic.name}
                                     </h1>
                                     {topic.arabic_name && (
-                                        <span className="text-xl font-arabic text-muted-foreground">
+                                        <span className="font-arabic text-xl text-muted-foreground">
                                             {topic.arabic_name}
                                         </span>
                                     )}
@@ -242,7 +285,7 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
 
                                 {topic.description && (
                                     <div
-                                        className="prose prose-sm max-w-none mb-4 text-foreground"
+                                        className="prose prose-sm mb-4 max-w-none text-foreground"
                                         dangerouslySetInnerHTML={{
                                             __html: topic.description,
                                         }}
@@ -284,7 +327,7 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
                                             >
                                                 {related.name}
                                                 {related.arabic_name && (
-                                                    <span className="ml-1 font-arabic">
+                                                    <span className="font-arabic ml-1">
                                                         ({related.arabic_name})
                                                     </span>
                                                 )}
@@ -305,9 +348,11 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
                                             <Badge
                                                 key={child.topic_id}
                                                 variant="outline"
-                                                className="cursor-pointer bg-amber-400/20 border-amber-500/50"
+                                                className="cursor-pointer border-amber-500/50 bg-amber-400/20"
                                                 onClick={() =>
-                                                    handleTopicClick(child.topic_id)
+                                                    handleTopicClick(
+                                                        child.topic_id,
+                                                    )
                                                 }
                                             >
                                                 {child.name}
@@ -359,17 +404,21 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
                                                 <VerseCard
                                                     verse={{
                                                         id: verse.id,
-                                                        chapterId: verse.chapter_id,
-                                                        chapterNumber: verse.chapter_number,
-                                                        verseNumber: verse.verse_number,
+                                                        chapterId:
+                                                            verse.chapter_id,
+                                                        chapterNumber:
+                                                            verse.chapter_number,
+                                                        verseNumber:
+                                                            verse.verse_number,
                                                         text: verse.text_uthmani,
-                                                        translation: verse.translation,
+                                                        translation:
+                                                            verse.translation,
                                                         juzNumber: 0,
                                                         pageNumber: 0,
                                                     }}
                                                     showTranslation
                                                     hideHeaderActions
-                                                    className="bg-white/70 border-0 shadow-none px-3 py-2"
+                                                    className="border-0 bg-white/70 px-3 py-2 shadow-none"
                                                 />
                                             </div>
                                         ))}
@@ -381,7 +430,9 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
                                                     variant="outline"
                                                     size="sm"
                                                     onClick={() =>
-                                                        handlePageChange(page - 1)
+                                                        handlePageChange(
+                                                            page - 1,
+                                                        )
                                                     }
                                                     disabled={page === 1}
                                                 >
@@ -389,16 +440,20 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
                                                     Previous
                                                 </Button>
                                                 <span className="text-sm text-muted-foreground">
-                                                    Page {page} of {pagination.last_page}
+                                                    Page {page} of{' '}
+                                                    {pagination.last_page}
                                                 </span>
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
                                                     onClick={() =>
-                                                        handlePageChange(page + 1)
+                                                        handlePageChange(
+                                                            page + 1,
+                                                        )
                                                     }
                                                     disabled={
-                                                        page === pagination.last_page
+                                                        page ===
+                                                        pagination.last_page
                                                     }
                                                 >
                                                     Next

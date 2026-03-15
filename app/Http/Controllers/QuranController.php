@@ -63,13 +63,17 @@ class QuranController extends Controller
         $page = (int) $request->get('page', 1);
         $limit = (int) $request->get('limit', config('quran.default_page_size', 10));
         $edition = $request->get('edition', config('quran.default_edition', 'en.sahih'));
+        $translations = $request->get('translations', []);
+        if (!is_array($translations)) {
+            $translations = explode(',', $translations);
+        }
 
         // Only treat as range when explicit query params are present
         $from = $request->has('from') ? (int) $request->query('from') : null;
         $to = $request->has('to') ? (int) $request->query('to') : null;
 
         try {
-            $verses = $this->quranService->getVerses($chapterId, $page, $limit, $edition);
+            $verses = $this->quranService->getVerses($chapterId, $page, $limit, $edition, $translations);
 
             if (empty($verses)) {
                 return response()->json([
@@ -98,8 +102,8 @@ class QuranController extends Controller
                 $page = 1;
                 $limit = count($verses) ?: $limit;
             } else {
-                // Add translations if edition is not the original Arabic
-                if ($edition !== 'ar') {
+                // Add translations if edition is not the original Arabic and no specific translations requested
+                if ($edition !== 'ar' && empty($translations)) {
                     $verses = $this->quranService->getTranslations($verses, $edition);
                 }
             }
@@ -114,7 +118,8 @@ class QuranController extends Controller
                 'per_page' => $limit,
                 'total' => $totalVerses,
                 'has_more' => $offset + $limit < $totalVerses,
-                'edition' => $edition
+                'edition' => $edition,
+                'translations' => $translations
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -352,6 +357,24 @@ class QuranController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Failed to fetch tafsir',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get Quran reader settings (translations list)
+     */
+    public function settings(): JsonResponse
+    {
+        try {
+            $translations = $this->quranService->getTranslationsList();
+            return response()->json([
+                'translations_list' => $translations
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch settings',
                 'message' => $e->getMessage()
             ], 500);
         }

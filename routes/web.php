@@ -3,9 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
-use App\Models\Chapter;
-use App\Models\Verse;
-use App\Services\QuranDatabaseService;
+use App\Http\Controllers\QuranReaderPageController;
+use App\Http\Controllers\SearchPageController;
 
 // Home page - Landing page
 Route::get('/', function () {
@@ -21,56 +20,15 @@ Route::get('/contact', function () {
     return Inertia::render('contact');
 })->name('contact');
 
+Route::get('/roadmap', function () {
+    return Inertia::render('roadmap');
+})->name('roadmap');
+
 Route::post('/contact', [\App\Http\Controllers\ContactController::class, 'store'])
     ->name('contact.store');
 
 // Global search page (Solr-backed)
-Route::get('/search', function (\Illuminate\Http\Request $request, QuranDatabaseService $quranService) {
-    $query = (string) $request->get('query', '');
-    $page = max(1, (int) $request->get('page', 1));
-    $perPage = (int) $request->get('limit', 10);
-    $edition = $request->get('edition', config('quran.default_edition', 'en.sahih'));
-
-    $results = [];
-    $total = 0;
-
-    if (trim($query) !== '') {
-        $allResults = $quranService->search($query, $edition);
-        $total = count($allResults);
-
-        $offset = ($page - 1) * $perPage;
-        $paged = array_slice($allResults, $offset, $perPage);
-
-        $results = $paged;
-    }
-
-    // Chapters list for QuranReaderLayout (same shape as QuranDatabaseService::getChapters)
-    $chapters = Chapter::orderBy('chapter_number')
-        ->get()
-        ->map(function ($chapter) {
-            return [
-                'id' => $chapter->id,
-                'number' => $chapter->chapter_number,
-                'name' => $chapter->name_arabic,
-                'englishName' => $chapter->name_simple,
-                'romanName' => $chapter->name_roman,
-                'englishNameTranslation' => $chapter->name_simple,
-                'revelationType' => ucfirst($chapter->revelation_place),
-                'verses' => $chapter->verses_count,
-            ];
-        })
-        ->toArray();
-
-    return Inertia::render('search', [
-        'query' => $query,
-        'edition' => $edition,
-        'results' => $results,
-        'currentPage' => $page,
-        'perPage' => $perPage,
-        'total' => $total,
-        'chapters' => $chapters,
-    ]);
-})->name('search.index');
+Route::get('/search', SearchPageController::class)->name('search.index');
 
 // Backwards-compatible /explore route → redirect to home
 Route::get('explore', function () {
@@ -100,36 +58,10 @@ Route::get('topic/{topicId}', function (int $topicId) {
 })->whereNumber('topicId')->name('topics.show');
 
 // Related resources for a specific verse
-Route::get('related/{chapterNumber}/{verseNumber}', function (int $chapterNumber, int $verseNumber) {
-    $chapter = Chapter::where('chapter_number', $chapterNumber)->firstOrFail();
-
-    $verse = Verse::where('chapter_id', $chapter->id)
-        ->where('verse_number', $verseNumber)
-        ->firstOrFail();
-
-    // Find previous and next verses based on global verse_index
-    $previous = Verse::where('verse_index', '<', $verse->verse_index)
-        ->orderByDesc('verse_index')
-        ->first();
-
-    $next = Verse::where('verse_index', '>', $verse->verse_index)
-        ->orderBy('verse_index')
-        ->first();
-
-    return Inertia::render('quran/related', [
-        'chapterNumber' => $chapterNumber,
-        'verseNumber' => $verseNumber,
-        'verseId' => $verse->id,
-        'previousVerse' => $previous ? [
-            'chapterNumber' => $previous->chapter->chapter_number,
-            'verseNumber' => $previous->verse_number,
-        ] : null,
-        'nextVerse' => $next ? [
-            'chapterNumber' => $next->chapter->chapter_number,
-            'verseNumber' => $next->verse_number,
-        ] : null,
-    ]);
-})->whereNumber('chapterNumber')->whereNumber('verseNumber')->name('related.verse');
+Route::get('related/{chapterNumber}/{verseNumber}', [QuranReaderPageController::class, 'related'])
+    ->whereNumber('chapterNumber')
+    ->whereNumber('verseNumber')
+    ->name('related.verse');
 
 // Quran Reader routes (Root Level)
 // /read - Alias for backwards compatibility
@@ -138,83 +70,15 @@ Route::get('read', function () {
 });
 
 // /{chapterNumber} e.g. /2
-Route::get('{chapterNumber}', function (int $chapterNumber, QuranDatabaseService $quranService) {
-    $chapter = Chapter::where('chapter_number', $chapterNumber)->firstOrFail();
-
-    $edition = config('quran.default_edition', 'en.sahih');
-    $pageSize = config('quran.default_page_size', 10);
-
-    // Fetch initial verses for SSR
-    $versesData = $quranService->getVerses($chapter->id, 1, $pageSize, $edition);
-    if ($edition !== 'ar') {
-        $versesData = $quranService->getTranslations($versesData, $edition);
-    }
-
-    $initialVerses = [
-        'data' => array_slice($versesData, 0, $pageSize),
-        'total' => count($versesData),
-        'has_more' => count($versesData) > $pageSize,
-    ];
-
-    return Inertia::render('quran/reader', [
-        'chapterNumber' => $chapterNumber,
-        'initialVerses' => $initialVerses,
-        'chapter' => [
-            'id' => $chapter->id,
-            'number' => $chapter->chapter_number,
-            'name' => $chapter->name_arabic,
-            'englishName' => $chapter->name_simple,
-            'romanName' => $chapter->name_roman,
-            'englishNameTranslation' => $chapter->name_simple,
-            'revelationType' => ucfirst($chapter->revelation_place),
-            'verses' => $chapter->verses_count,
-        ],
-    ]);
-})->whereNumber('chapterNumber')->name('reader.chapter');
+Route::get('{chapterNumber}', [QuranReaderPageController::class, 'chapter'])
+    ->whereNumber('chapterNumber')
+    ->name('reader.chapter');
 
 // /{chapterNumber}/{range} e.g. /2/10-15 or /2/6
-Route::get('{chapterNumber}/{range}', function (int $chapterNumber, string $range, QuranDatabaseService $quranService) {
-    $chapter = Chapter::where('chapter_number', $chapterNumber)->firstOrFail();
-
-    $parts = explode('-', $range);
-    $from = $parts[0] ? (int) $parts[0] : null;
-    $to = $parts[1] ? (int) $parts[1] : $from;
-
-    $edition = config('quran.default_edition', 'en.sahih');
-
-    // Fetch verses for the range
-    $versesData = $quranService->getVerses($chapter->id, 1, 1000, $edition);
-    if ($edition !== 'ar') {
-        $versesData = $quranService->getTranslations($versesData, $edition);
-    }
-
-    $filteredVerses = array_values(array_filter($versesData, function ($verse) use ($from, $to) {
-        return $verse['verseNumber'] >= $from && $verse['verseNumber'] <= $to;
-    }));
-
-    $initialVerses = [
-        'data' => $filteredVerses,
-        'total' => count($filteredVerses),
-        'has_more' => false,
-    ];
-
-    return Inertia::render('quran/reader', [
-        'chapterNumber' => $chapterNumber,
-        'fromVerse' => $from,
-        'toVerse' => $to,
-        'initialVerses' => $initialVerses,
-        'chapter' => [
-            'id' => $chapter->id,
-            'number' => $chapter->chapter_number,
-            'name' => $chapter->name_arabic,
-            'englishName' => $chapter->name_simple,
-            'romanName' => $chapter->name_roman,
-            'englishNameTranslation' => $chapter->name_simple,
-            'revelationType' => ucfirst($chapter->revelation_place),
-            'verses' => $chapter->verses_count,
-        ],
-    ]);
-})->whereNumber('chapterNumber')->where('range', '[0-9]+(-[0-9]+)?')->name('reader.range');
+Route::get('{chapterNumber}/{range}', [QuranReaderPageController::class, 'range'])
+    ->whereNumber('chapterNumber')
+    ->where('range', '[0-9]+(-[0-9]+)?')
+    ->name('reader.range');
 
 
 Route::middleware(['auth', 'verified'])->group(function () {

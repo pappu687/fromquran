@@ -71,11 +71,11 @@ class QuranDatabaseService {
     /**
      * Get verses for a specific chapter from database
      */
-    public function getVerses( int $chapterId, int $page = 1, int $limit = 10, string $edition = 'en.sahih' ): array {
+    public function getVerses( int $chapterId, int $page = 1, int $limit = 10, string $edition = 'en.sahih', array $translationIds = [] ): array {
         // We use a broader cache key here because we fetch all verses of the chapter at once
-        $cacheKey = "q.verses.{$chapterId}.all.{$edition}";
+        $cacheKey = "q.verses.{$chapterId}.all.{$edition}." . implode(',', $translationIds);
 
-        return Cache::remember( $cacheKey, $this->cacheTtl, function () use ( $chapterId, $edition ) {
+        return Cache::remember( $cacheKey, $this->cacheTtl, function () use ( $chapterId, $edition, $translationIds ) {
             $chapter = Chapter::where( 'id', $chapterId )
                 ->orWhere( 'chapter_number', $chapterId )
                 ->first();
@@ -84,10 +84,17 @@ class QuranDatabaseService {
                 return array(  );
             }
 
-            // Resolve language_id from edition (for translation field in Solr)
-            $languageId = null;
-
-            if ( 'ar' !== $edition ) {
+            // Resolve language_ids from translations
+            $languageIdMap = [];
+            if (!empty($translationIds)) {
+                $resources = ResourceContent::whereIn('id', $translationIds)
+                    ->where('approved', true)
+                    ->get();
+                
+                foreach ($resources as $resource) {
+                    $languageIdMap[$resource->id] = $resource->language_id;
+                }
+            } else if ( 'ar' !== $edition ) {
                 $resource = ResourceContent::where( 'resource_type', 'translation' )
                     ->where( 'approved', true )
                     ->where( function ( $query ) use ( $edition ) {
@@ -104,7 +111,9 @@ class QuranDatabaseService {
                         ->first();
                 }
 
-                $languageId = $resource?->language_id;
+                if ($resource) {
+                    $languageIdMap[$resource->id] = $resource->language_id;
+                }
             }
 
             // Query Solr for all verses in this chapter
@@ -170,12 +179,16 @@ class QuranDatabaseService {
 
                 $meta = $verseMeta->get( $verseKey );
 
-                // Translation from Solr if language is resolved
-                $translation = null;
-
-                if ( 'ar' !== $edition && $languageId ) {
-                    $fieldName   = 'translation_' . $languageId . '_t';
-                    $translation = $doc[ $fieldName ] ?? null;
+                // Translations from Solr
+                $translations = [];
+                foreach ($languageIdMap as $resourceId => $langId) {
+                    $fieldName = 'translation_' . $langId . '_t';
+                    if (isset($doc[$fieldName])) {
+                        $translations[] = [
+                            'resource_id' => $resourceId,
+                            'text' => $doc[$fieldName]
+                        ];
+                    }
                 }
 
                 $verses[  ] = array(
@@ -183,7 +196,8 @@ class QuranDatabaseService {
                     'chapterId'     => $meta->chapter_id ?? $chapter->id,
                     'verseNumber'   => $meta->verse_number ?? ( $doc[ 'verse_number_i' ] ?? null ),
                     'text'          => $doc[ 'text_uthmani_t' ] ?? null,
-                    'translation'   => $translation,
+                    'translations'  => $translations,
+                    'translation'   => !empty($translations) ? $translations[0]['text'] : null, // keep for backward compatibility
                     'juzNumber'     => $meta->juz_number ?? ( $doc[ 'juz_number_i' ] ?? null ),
                     'pageNumber'    => $meta->page_number ?? ( $doc[ 'page_number_i' ] ?? null ),
                     'hizbQuarter'   => $meta->rub_el_hizb_number ?? null,
@@ -225,6 +239,26 @@ class QuranDatabaseService {
                         'format'      => 'text',
                         'type'        => 'translation',
                         'direction'   => $resource->language->direction ?? 'ltr',
+                     );
+                } )
+                ->toArray();
+        } );
+    }
+
+    /**
+     * Get available translations list from database
+     */
+    public function getTranslationsList(): array {
+        return Cache::remember( 'quran.db.translations_list', $this->cacheTtl * 24, function () {
+            return ResourceContent::where( 'resource_type', 'translation' )
+                ->where( 'approved', true )
+                ->orderBy( 'priority' )
+                ->get()
+                ->map( function ( $resource ) {
+                    return array(
+                        'id'       => $resource->id,
+                        'name'     => $resource->name,
+                        'language' => $resource->language_name,
                      );
                 } )
                 ->toArray();

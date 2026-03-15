@@ -1,3 +1,4 @@
+import { Link } from '@inertiajs/react';
 import {
     BookOpen,
     FileUp,
@@ -94,10 +95,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                                 asChild
                                                 tooltip={item.title}
                                             >
-                                                <a href={item.url}>
+                                                <Link href={item.url}>
                                                     <item.icon />
                                                     <span>{item.title}</span>
-                                                </a>
+                                                </Link>
                                             </SidebarMenuButton>
                                         </SidebarMenuItem>
                                     ))}

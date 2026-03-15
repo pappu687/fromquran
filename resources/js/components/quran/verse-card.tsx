@@ -4,39 +4,37 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuTrigger,
     DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useReaderSettings } from '@/contexts/reader-settings-context';
 import { cn } from '@/lib/utils';
+import { useAudioPlayer } from '@/store/use-audio-player';
 import {
     Bookmark,
     BookmarkCheck,
     BookmarkPlus,
     BookOpen,
-    Play,
-    Plus,
-    Volume2,
-    MoreVertical,
-    Quote,
+    Info,
     Languages,
     Link,
+    MoreVertical,
+    Network,
+    Plus,
+    Quote,
     Share2,
-    Info, // Added Info icon
 } from 'lucide-react';
 import { useState } from 'react';
-import { useAudioPlayer } from '@/store/use-audio-player';
 import { AddResourceModal } from './add-resource-modal';
 import { CollectionsModal } from './collections-modal';
 import { ResourcesSheet } from './resources-sheet';
-import { useReaderSettings } from '@/contexts/reader-settings-context';
 import { TafsirModal } from './tafsir-modal';
 import { VerseGraphModal } from './verse-graph-modal';
-import { Network } from 'lucide-react';
 
 interface Verse {
     id: number;
@@ -45,6 +43,7 @@ interface Verse {
     verseNumber: number;
     text: string;
     translation?: string;
+    translations?: { resource_id: number; text: string }[];
     audioUrl?: string;
     juzNumber: number;
     pageNumber: number;
@@ -85,6 +84,8 @@ export function VerseCard({
     >(undefined);
     const [isCollectionsModalOpen, setIsCollectionsModalOpen] = useState(false);
     const [isTafsirModalOpen, setIsTafsirModalOpen] = useState(false);
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [shareUrl, setShareUrl] = useState<string | null>(null);
     const { settings } = useReaderSettings();
     const { playVerse, currentVerse, audioData, isPlaying } = useAudioPlayer();
 
@@ -116,24 +117,55 @@ export function VerseCard({
         }
     };
 
+    const buildVerseUrl = () => {
+        if (typeof window === 'undefined') return '';
+        return `${window.location.origin}/${verse.chapterNumber}/${verse.verseNumber}`;
+    };
+
     const handleCopyLink = () => {
-        const url = `${window.location.origin}/${verse.chapterNumber}/${verse.verseNumber}`;
+        const url = buildVerseUrl();
+        if (!url) return;
         navigator.clipboard.writeText(url);
     };
 
     const handleShare = () => {
-        const url = `${window.location.origin}/${verse.chapterNumber}/${verse.verseNumber}`;
-        if (navigator.share) {
-            navigator
-                .share({
-                    title: `Quran ${verse.chapterNumber}:${verse.verseNumber}`,
-                    text: verse.translation || '',
-                    url: url,
-                })
-                .catch(console.error);
-        } else {
-            handleCopyLink();
-        }
+        const url = buildVerseUrl();
+        if (!url) return;
+        setShareUrl(url);
+        setIsShareModalOpen(true);
+    };
+
+    const verseLabel = verse.chapterNumber
+        ? `Quran ${verse.chapterNumber}:${verse.verseNumber}`
+        : `Verse ${verse.verseNumber}`;
+
+    const openShareWindow = (href: string) => {
+        window.open(href, '_blank', 'noopener,noreferrer');
+    };
+
+    const handleShareToFacebook = () => {
+        if (!shareUrl) return;
+        const encodedUrl = encodeURIComponent(shareUrl);
+        openShareWindow(
+            `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+        );
+    };
+
+    const handleShareToTwitter = () => {
+        if (!shareUrl) return;
+        const encodedUrl = encodeURIComponent(shareUrl);
+        const encodedText = encodeURIComponent(verseLabel);
+        openShareWindow(
+            `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedText}`,
+        );
+    };
+
+    const handleShareToLinkedIn = () => {
+        if (!shareUrl) return;
+        const encodedUrl = encodeURIComponent(shareUrl);
+        openShareWindow(
+            `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
+        );
     };
 
     return (
@@ -339,12 +371,23 @@ export function VerseCard({
                     </p>
                 </div>
 
-                {/* Translation */}
-                {showTranslation && verse.translation && (
-                    <div className="border-t border-muted/30 pt-4">
-                        <p className="text-[15px] leading-relaxed text-muted-foreground/80">
-                            {verse.translation}
-                        </p>
+                {/* Translations */}
+                {showTranslation && (
+                    <div className="space-y-4 border-t border-muted/30 pt-4">
+                        {verse.translations && verse.translations.length > 0 ? (
+                            verse.translations.map((trans, index) => (
+                                <p
+                                    key={`${verse.id}-${trans.resource_id}-${index}`}
+                                    className="text-[15px] leading-relaxed text-muted-foreground/80"
+                                >
+                                    {trans.text}
+                                </p>
+                            ))
+                        ) : verse.translation ? (
+                            <p className="text-[15px] leading-relaxed text-muted-foreground/80">
+                                {verse.translation}
+                            </p>
+                        ) : null}
                     </div>
                 )}
             </CardContent>

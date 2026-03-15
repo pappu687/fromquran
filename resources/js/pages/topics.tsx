@@ -1,11 +1,10 @@
-import { Head } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { Tags, Search } from 'lucide-react';
-import { router } from '@inertiajs/react';
+import { Skeleton } from '@/components/ui/skeleton';
 import QuranReaderLayout from '@/layouts/quran-reader-layout';
+import { Head, router, usePage } from '@inertiajs/react';
+import { Search, Tags } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface Topic {
     topic_id: number;
@@ -31,6 +30,22 @@ export default function Topics() {
 
     // Fetch chapters for sidebar
     const [chapters, setChapters] = useState<Chapter[]>([]);
+
+    const page = usePage<{ appUrl?: string; siteName?: string }>();
+    const url = page.url;
+    const appUrl =
+        (page.props.appUrl as string | undefined) ?? 'https://fromquran.com';
+    const siteName =
+        (page.props.siteName as string | undefined) ??
+        'From Quran - Explore everything stemming from Quran.';
+    const baseUrl = appUrl.replace(/\/$/, '');
+    const path = url.startsWith('/') ? url : `/${url}`;
+    const canonicalUrl = `${baseUrl}${path}`;
+    const ogImage = `${baseUrl}/fromquran-logo.svg`;
+
+    const pageTitle = 'Quran Topics';
+    const pageDescription =
+        'Browse Quranic topics, themes, and tagged verses organized alphabetically.';
 
     useEffect(() => {
         const fetchTopics = async () => {
@@ -133,7 +148,26 @@ export default function Topics() {
 
     const content = (
         <>
-            <Head title="Topics - Quran Topics" />
+            <Head>
+                <title>{`${pageTitle} | From Quran`}</title>
+                <meta name="description" content={pageDescription} />
+                <meta
+                    property="og:title"
+                    content={`${pageTitle} | From Quran`}
+                />
+                <meta property="og:description" content={pageDescription} />
+                <meta property="og:type" content="website" />
+                <meta property="og:url" content={canonicalUrl} />
+                <meta property="og:image" content={ogImage} />
+                <meta property="og:site_name" content={siteName} />
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta
+                    name="twitter:title"
+                    content={`${pageTitle} | From Quran`}
+                />
+                <meta name="twitter:description" content={pageDescription} />
+                <meta name="twitter:image" content={ogImage} />
+            </Head>
             <div className="flex h-full flex-col px-4 py-5">
                 <div className="mx-auto h-full w-full max-w-4xl rounded-xl">
                     <div className="mb-8">

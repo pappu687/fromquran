@@ -19,6 +19,7 @@ interface QuranReaderProps {
     fromVerse?: number | null;
     toVerse?: number | null;
     chapter?: Chapter; // Chapter provided by SSR
+    chapters?: Chapter[]; // Chapters provided by SSR for sidebar
     initialVerses?: {
         data: any[];
         total: number;
@@ -31,28 +32,40 @@ export default function QuranReader({
     fromVerse,
     toVerse,
     chapter: initialChapter,
+    chapters: initialChapters,
     initialVerses,
 }: QuranReaderProps) {
-    const [chapters, setChapters] = useState<Chapter[]>([]);
-    const [selectedChapter, setSelectedChapter] = useState<
-        Chapter | undefined
-    >(initialChapter);
+    const [chapters, setChapters] = useState<Chapter[]>(initialChapters ?? []);
+    const [selectedChapter, setSelectedChapter] = useState<Chapter | undefined>(
+        initialChapter,
+    );
     const [loading, setLoading] = useState(!initialChapter);
     const [error, setError] = useState<string | null>(null);
 
     // Dynamic Title and Description for SEO
     // Use romanName (e.g. At-Tawbah) if available, otherwise fallback to englishName (e.g. The Repentance)
-    const displayName = selectedChapter?.romanName || selectedChapter?.englishName || '';
-    const pageTitle = displayName
-        ? `Surah ${displayName} (${selectedChapter?.number})`
-        : 'Quran Reader';
+    const displayName =
+        selectedChapter?.romanName || selectedChapter?.englishName || '';
 
-    const pageDescription = selectedChapter
-        ? `Read Surah ${displayName} (${selectedChapter.name}) with translation. This chapter has ${selectedChapter.verses} verses and was revealed in ${selectedChapter.revelationType}.`
-        : 'Read the Holy Quran with translations and research tools.';
+    let pageTitle: string;
+    let pageDescription: string;
+
+    if (selectedChapter && fromVerse != null && toVerse != null) {
+        const versePart =
+            fromVerse === toVerse ? `${fromVerse}` : `${fromVerse}-${toVerse}`;
+        pageTitle = `Quran ${selectedChapter.number}:${versePart}`;
+        pageDescription = `Read Quran ${selectedChapter.number}:${versePart} from Surah ${displayName || selectedChapter.name} with translation and related tools on From Quran.`;
+    } else if (selectedChapter) {
+        pageTitle = `Surah ${displayName} (${selectedChapter.number})`;
+        pageDescription = `Read Surah ${displayName} (${selectedChapter.name}) with translation. This chapter has ${selectedChapter.verses} verses and was revealed in ${selectedChapter.revelationType}.`;
+    } else {
+        pageTitle = 'Quran Reader';
+        pageDescription =
+            'Read the Holy Quran with translations and research tools.';
+    }
 
     // Optional start-verse query param to continue reading from a specific verse
-    const page = usePage();
+    const page = usePage<{ appUrl?: string; siteName?: string }>();
     const url = page.url;
     const searchParams = new URLSearchParams(url.split('?')[1] ?? '');
     const startVerseParam = searchParams.get('start-verse');
@@ -60,8 +73,27 @@ export default function QuranReader({
         ? Number(startVerseParam) || undefined
         : undefined;
 
+    const appUrl =
+        (page.props.appUrl as string | undefined) ?? 'https://fromquran.com';
+    const siteName =
+        (page.props.siteName as string | undefined) ??
+        'From Quran - Explore everything stemming from Quran.';
+    const baseUrl = appUrl.replace(/\/$/, '');
+    const path = url.startsWith('/') ? url : `/${url}`;
+    const canonicalUrl = `${baseUrl}${path}`;
+    const ogImage = `${baseUrl}/fromquran-logo.svg`;
+    const fullTitle = `${pageTitle} | From Quran`;
+
     useEffect(() => {
-        // Fetch chapters from API (needed for the dropdown/sidebar)
+        // If chapters were provided by the server, use them and avoid a client refetch
+        if (initialChapters && initialChapters.length) {
+            if (!initialChapter) {
+                setLoading(false);
+            }
+            return;
+        }
+
+        // Fallback: fetch chapters from API (needed for the dropdown/sidebar)
         const fetchChapters = async () => {
             try {
                 const response = await fetch('/api/quran/chapters');
@@ -79,7 +111,7 @@ export default function QuranReader({
         };
 
         fetchChapters();
-    }, [initialChapter]);
+    }, [initialChapter, initialChapters]);
 
     // Sync selected chapter with server-provided chapterNumber prop (for navigation)
     useEffect(() => {
@@ -102,13 +134,14 @@ export default function QuranReader({
         // Update local state immediately for instant feedback
         setSelectedChapter(chapter);
 
-        // Full Inertia visit — do NOT use preserveState or partial `only`.
-        // If the current URL is a range like /49/7, preserveState would keep
-        // fromVerse/toVerse alive and the new chapter would also show only that
-        // single verse. A full visit ensures the server returns fresh props
-        // (/{chapterNumber} never sets fromVerse/toVerse, so they become undefined).
+        // Inertia visit with preserved state, so the sidebar
+        // and other local UI state don't remount between chapters.
+        // Server props still update (/{chapterNumber} never sets
+        // fromVerse/toVerse, so they become undefined when navigating
+        // away from a range like /49/7).
         router.visit(`/${chapter.number}`, {
             preserveScroll: false,
+            preserveState: true,
         });
     };
 
@@ -116,7 +149,7 @@ export default function QuranReader({
         return (
             <div className="flex h-screen items-center justify-center">
                 <div className="text-center">
-                    <div className="mx-auto mb-4 h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+                    <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
                     <p className="text-muted-foreground">
                         Loading Quran Reader...
                     </p>
@@ -128,10 +161,21 @@ export default function QuranReader({
     return (
         <>
             <Head>
-                <title>{pageTitle}</title>
+                <title>{fullTitle}</title>
                 <meta name="description" content={pageDescription} />
-                <meta property="og:title" content={pageTitle} />
+                <meta property="og:title" content={fullTitle} />
                 <meta property="og:description" content={pageDescription} />
+                <meta
+                    property="og:type"
+                    content={fromVerse != null ? 'article' : 'article'}
+                />
+                <meta property="og:url" content={canonicalUrl} />
+                <meta property="og:image" content={ogImage} />
+                <meta property="og:site_name" content={siteName} />
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta name="twitter:title" content={fullTitle} />
+                <meta name="twitter:description" content={pageDescription} />
+                <meta name="twitter:image" content={ogImage} />
             </Head>
             {error && !selectedChapter ? (
                 <div className="flex h-screen items-center justify-center">

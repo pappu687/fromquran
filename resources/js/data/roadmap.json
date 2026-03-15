@@ -1,0 +1,51 @@
+[
+    {
+        "id": 1,
+        "title": "Foundation & Core Features",
+        "description": "Establish the base architecture and core reading experience.",
+        "status": "completed",
+        "items": [
+            { "id": 11, "task": "Project initialization with Laravel & React", "completed": true },
+            { "id": 12, "task": "Quran database integration", "completed": true },
+            { "id": 13, "task": "Basic Verse-by-Verse reader UI", "completed": true },
+            { "id": 14, "task": "Search functionality (Solr integration)", "completed": true }
+        ]
+    },
+    {
+        "id": 2,
+        "title": "User Experience & Personalization",
+        "description": "Improving how users interact with the Quran and save their progress.",
+        "status": "in-progress",
+        "items": [
+            { "id": 21, "task": "User Authentication & Profiles", "completed": true },
+            { "id": 22, "task": "Bookmarks and Favorites", "completed": true },
+            { "id": 23, "task": "Personal Collections", "completed": true },
+            { "id": 24, "task": "Customizable reading settings (font size, themes)", "completed": true },
+            { "id": 25, "task": "Dynamic Translation selection", "completed": true }
+        ]
+    },
+    {
+        "id": 3,
+        "title": "Community & Contributions",
+        "description": "Building tools for community engagement and content enrichment.",
+        "status": "planned",
+        "items": [
+            { "id": 31, "task": "User-submitted resources (Tafsir, Audio, Reflections)", "completed": true },
+            { "id": 32, "task": "Moderation dashboard", "completed": true },
+            { "id": 33, "task": "Community discussions on verses", "completed": false },
+            { "id": 34, "task": "Collaborative collection building", "completed": false }
+        ]
+    },
+    {
+        "id": 4,
+        "title": "Advanced Features & Expansion",
+        "description": "Future-proof features and platform growth.",
+        "status": "planned",
+        "items": [
+            { "id": 41, "task": "Mobile application (React Native)", "completed": false },
+            { "id": 42, "task": "Audio recitation synchronization", "completed": false },
+            { "id": 43, "task": "AI-powered verse insights", "completed": false },
+            { "id": 44, "task": "Multi-language UI localization", "completed": false }
+        ]
+    }
+]

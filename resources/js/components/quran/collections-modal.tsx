@@ -1,4 +1,6 @@
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -16,19 +18,17 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
 import {
     BookmarkPlus,
+    Check,
+    CheckCircle2,
     Folder,
     FolderPlus,
     Loader2,
-    Palette,
-    Check,
-    CheckCircle2,
     LogIn,
+    Palette,
 } from 'lucide-react';
 import { FormEvent, useEffect, useRef, useState } from 'react';
 
@@ -204,6 +204,12 @@ export function CollectionsModal({
             if (!response.ok) {
                 if (response.status === 422 && data.errors) {
                     setErrors(data.errors);
+                } else if (response.status === 422 && data.max_collections) {
+                    setErrors({
+                        general:
+                            data.message ||
+                            `You can create up to ${data.max_collections} collections.`,
+                    });
                 } else if (response.status === 401) {
                     router.visit('/login');
                     return;
@@ -340,95 +346,100 @@ export function CollectionsModal({
 
                     <div className="max-h-[400px] overflow-y-auto p-1">
                         {/* Range Selection */}
-                        {isAuthenticated === true && (totalVerses || 286) > 0 && (
-                            <div className="mb-6 rounded-lg border bg-muted/30 p-4">
-                                <h4 className="mb-3 text-sm font-medium">
-                                    Select Verse Range
-                                </h4>
-                                <div className="flex items-center gap-4">
-                                    <div className="flex-1 space-y-1.5">
-                                        <Label
-                                            htmlFor="from-verse"
-                                            className="text-xs"
-                                        >
-                                            From
-                                        </Label>
-                                        <Select
-                                            value={String(fromVerse)}
-                                            onValueChange={(val) =>
-                                                setFromVerse(parseInt(val))
-                                            }
-                                        >
-                                            <SelectTrigger
-                                                id="from-verse"
-                                                className="h-9"
+                        {isAuthenticated === true &&
+                            (totalVerses || 286) > 0 && (
+                                <div className="mb-6 rounded-lg border bg-muted/30 p-4">
+                                    <h4 className="mb-3 text-sm font-medium">
+                                        Select Verse Range
+                                    </h4>
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex-1 space-y-1.5">
+                                            <Label
+                                                htmlFor="from-verse"
+                                                className="text-xs"
                                             >
-                                                <SelectValue placeholder="From" />
-                                            </SelectTrigger>
-                                            <SelectContent className="max-h-[200px]">
-                                                {Array.from(
-                                                    {
-                                                        length:
-                                                            totalVerses || 286,
-                                                    },
-                                                    (_, i) => i + 1,
-                                                ).map((n) => (
-                                                    <SelectItem
-                                                        key={`from-${n}`}
-                                                        value={String(n)}
-                                                    >
-                                                        Verse {n}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="flex-1 space-y-1.5">
-                                        <Label
-                                            htmlFor="to-verse"
-                                            className="text-xs"
-                                        >
-                                            To
-                                        </Label>
-                                        <Select
-                                            value={String(toVerse)}
-                                            onValueChange={(val) =>
-                                                setToVerse(parseInt(val))
-                                            }
-                                        >
-                                            <SelectTrigger
-                                                id="to-verse"
-                                                className="h-9"
+                                                From
+                                            </Label>
+                                            <Select
+                                                value={String(fromVerse)}
+                                                onValueChange={(val) =>
+                                                    setFromVerse(parseInt(val))
+                                                }
                                             >
-                                                <SelectValue placeholder="To" />
-                                            </SelectTrigger>
-                                            <SelectContent className="max-h-[200px]">
-                                                {Array.from(
-                                                    {
-                                                        length:
-                                                            totalVerses || 286,
-                                                    },
-                                                    (_, i) => i + 1,
-                                                ).map((n) => (
-                                                    <SelectItem
-                                                        key={`to-${n}`}
-                                                        value={String(n)}
-                                                        disabled={n < fromVerse}
-                                                    >
-                                                        Verse {n}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                                <SelectTrigger
+                                                    id="from-verse"
+                                                    className="h-9"
+                                                >
+                                                    <SelectValue placeholder="From" />
+                                                </SelectTrigger>
+                                                <SelectContent className="max-h-[200px]">
+                                                    {Array.from(
+                                                        {
+                                                            length:
+                                                                totalVerses ||
+                                                                286,
+                                                        },
+                                                        (_, i) => i + 1,
+                                                    ).map((n) => (
+                                                        <SelectItem
+                                                            key={`from-${n}`}
+                                                            value={String(n)}
+                                                        >
+                                                            Verse {n}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="flex-1 space-y-1.5">
+                                            <Label
+                                                htmlFor="to-verse"
+                                                className="text-xs"
+                                            >
+                                                To
+                                            </Label>
+                                            <Select
+                                                value={String(toVerse)}
+                                                onValueChange={(val) =>
+                                                    setToVerse(parseInt(val))
+                                                }
+                                            >
+                                                <SelectTrigger
+                                                    id="to-verse"
+                                                    className="h-9"
+                                                >
+                                                    <SelectValue placeholder="To" />
+                                                </SelectTrigger>
+                                                <SelectContent className="max-h-[200px]">
+                                                    {Array.from(
+                                                        {
+                                                            length:
+                                                                totalVerses ||
+                                                                286,
+                                                        },
+                                                        (_, i) => i + 1,
+                                                    ).map((n) => (
+                                                        <SelectItem
+                                                            key={`to-${n}`}
+                                                            value={String(n)}
+                                                            disabled={
+                                                                n < fromVerse
+                                                            }
+                                                        >
+                                                            Verse {n}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
+                                    <p className="mt-2 text-[10px] text-muted-foreground">
+                                        {fromVerse === toVerse
+                                            ? `Adding verse ${fromVerse} only.`
+                                            : `Adding range from verse ${fromVerse} to ${toVerse} (${toVerse - fromVerse + 1} verses total).`}
+                                    </p>
                                 </div>
-                                <p className="mt-2 text-[10px] text-muted-foreground">
-                                    {fromVerse === toVerse
-                                        ? `Adding verse ${fromVerse} only.`
-                                        : `Adding range from verse ${fromVerse} to ${toVerse} (${toVerse - fromVerse + 1} verses total).`}
-                                </p>
-                            </div>
-                        )}
+                            )}
 
                         {successMessage && (
                             <div className="flex items-center gap-2 rounded-md bg-green-500/10 p-3 text-sm text-green-600 dark:text-green-400">

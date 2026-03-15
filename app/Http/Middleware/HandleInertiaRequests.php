@@ -41,6 +41,9 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'appUrl' => config('app.url'),
+            'siteName' => 'From Quran - Explore everything stemming from Quran.',
+            'googleAuthEnabled' => (bool) config('quran.google_auth.enabled', false),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
                 'user' => $request->user(),

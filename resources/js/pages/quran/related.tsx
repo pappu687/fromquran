@@ -18,7 +18,7 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/auth-context';
 import QuranReaderLayout from '@/layouts/quran-reader-layout';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import {
     BookOpen,
     Calendar,
@@ -141,6 +141,22 @@ export default function RelatedPage({
     const [chapters, setChapters] = useState<Chapter[]>([]);
     const [mainVerse, setMainVerse] = useState<MainVerse | null>(null);
     const [loadingMainVerse, setLoadingMainVerse] = useState(false);
+
+    const pageTitle = `Related Resources for Quran ${chapterNumber}:${verseNumber}`;
+    const pageDescription = `Explore tafsir, fatwa, videos, articles, related verses, and topics for Quran ${chapterNumber}:${verseNumber} on From Quran.`;
+
+    const page = usePage<{ appUrl?: string; siteName?: string }>();
+    const url = page.url;
+    const appUrl =
+        (page.props.appUrl as string | undefined) ?? 'https://fromquran.com';
+    const siteName =
+        (page.props.siteName as string | undefined) ??
+        'From Quran - Explore everything stemming from Quran.';
+    const baseUrl = appUrl.replace(/\/$/, '');
+    const path = url.startsWith('/') ? url : `/${url}`;
+    const canonicalUrl = `${baseUrl}${path}`;
+    const ogImage = `${baseUrl}/fromquran-logo.svg`;
+    const fullTitle = `${pageTitle} | From Quran`;
 
     useEffect(() => {
         const fetchChapters = async () => {
@@ -867,9 +883,20 @@ export default function RelatedPage({
 
     return (
         <>
-            <Head
-                title={`Related Resources (${chapterNumber}:${verseNumber})`}
-            />
+            <Head>
+                <title>{fullTitle}</title>
+                <meta name="description" content={pageDescription} />
+                <meta property="og:title" content={fullTitle} />
+                <meta property="og:description" content={pageDescription} />
+                <meta property="og:type" content="article" />
+                <meta property="og:url" content={canonicalUrl} />
+                <meta property="og:image" content={ogImage} />
+                <meta property="og:site_name" content={siteName} />
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta name="twitter:title" content={fullTitle} />
+                <meta name="twitter:description" content={pageDescription} />
+                <meta name="twitter:image" content={ogImage} />
+            </Head>
             <QuranReaderLayout
                 chapters={chapters}
                 selectedChapter={selectedChapterId}

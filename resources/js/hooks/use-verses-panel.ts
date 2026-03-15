@@ -1,4 +1,5 @@
 import { useAuth } from '@/contexts/auth-context';
+import { useReaderSettings } from '@/contexts/reader-settings-context';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface Verse {
@@ -8,6 +9,7 @@ interface Verse {
     verseNumber: number;
     text: string;
     translation?: string;
+    translations?: { resource_id: number; text: string }[];
     audioUrl?: string;
     juzNumber: number;
     pageNumber: number;
@@ -103,6 +105,8 @@ export const useVersesPanel = ({
     const [showSuccessAlert, setShowSuccessAlert] = useState(false);
     const [successAlertMessage, setSuccessAlertMessage] = useState('');
 
+    const { settings } = useReaderSettings();
+
     const fetchVerses = useCallback(
         async (pageNum: number, reset = false) => {
             if (!chapter) return;
@@ -116,6 +120,12 @@ export const useVersesPanel = ({
                     limit: String(pageSize),
                     edition: selectedEdition,
                 });
+
+                if (settings && settings.selectedTranslations && settings.selectedTranslations.length > 0) {
+                    settings.selectedTranslations.forEach((id) => {
+                        params.append('translations[]', String(id));
+                    });
+                }
 
                 if (fromVerse && toVerse) {
                     params.set('from', String(fromVerse));
@@ -148,25 +158,21 @@ export const useVersesPanel = ({
                 setLoading(false);
             }
         },
-        [chapter, apiUrl, pageSize, selectedEdition, fromVerse, toVerse],
+        [chapter, apiUrl, pageSize, selectedEdition, fromVerse, toVerse, settings.selectedTranslations],
     );
 
-    // Reset state when chapter changes
+    // Reset state when chapter or translations change
     useEffect(() => {
         if (!chapter) return;
 
-        // Skip fetching if we already have initialVerses for this chapter
+        // Reset if translations or chapter changes
+        const currentTranslationIds = settings.selectedTranslations.join(',');
         if (
-            initialVerses &&
-            initialVerses.data.length > 0 &&
-            chapter.id === currentChapterIdRef.current &&
-            verses.length === initialVerses.data.length
+            chapter.id !== currentChapterIdRef.current ||
+            (window as any)._lastTranslationIds !== currentTranslationIds
         ) {
-            return;
-        }
-
-        if (chapter.id !== currentChapterIdRef.current) {
             currentChapterIdRef.current = chapter.id;
+            (window as any)._lastTranslationIds = currentTranslationIds;
             setVerses([]);
             setHasMore(true);
             hasScrolledToStartRef.current = false;
@@ -181,13 +187,13 @@ export const useVersesPanel = ({
         }
     }, [
         chapter?.id,
+        settings.selectedTranslations,
         initialVerses,
         fetchVerses,
         startFromVerse,
         fromVerse,
         toVerse,
         pageSize,
-        verses.length,
     ]);
 
     // Auto-scroll to the requested start verse

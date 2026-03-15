@@ -87,6 +87,28 @@ return [
     | Popular Quran editions for quick selection
     |
     */
+'max_collections' => env('QURAN_MAX_COLLECTIONS', 50),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Google Authentication
+    |--------------------------------------------------------------------------
+    |
+    | Toggle Google login/register buttons and related settings.
+    |
+    */
+    'google_auth' => [
+        'enabled' => env('QURAN_GOOGLE_AUTH_ENABLED', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Popular Editions
+    |--------------------------------------------------------------------------
+    |
+    | Popular Quran editions for quick selection
+    |
+    */
     'popular_editions' => [
         'en.sahih' => [
             'name' => 'Saheeh International',

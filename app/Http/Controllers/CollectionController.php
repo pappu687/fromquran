@@ -44,6 +44,18 @@ class CollectionController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        $user = Auth::user();
+
+        // Enforce maximum number of collections per user
+        $maxCollections = (int) config('quran.max_collections', 50);
+        $currentCount = $user->collections()->count();
+        if ($currentCount >= $maxCollections) {
+            return response()->json([
+                'message' => 'You have reached the maximum number of collections.',
+                'max_collections' => $maxCollections,
+            ], 422);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
@@ -51,7 +63,7 @@ class CollectionController extends Controller
             'is_public' => 'nullable|boolean',
         ]);
 
-        $collection = Auth::user()->collections()->create([
+        $collection = $user->collections()->create([
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
             'color' => $validated['color'] ?? '#3b82f6',
