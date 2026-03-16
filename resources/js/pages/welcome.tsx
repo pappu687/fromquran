@@ -1,5 +1,5 @@
 import { useAuth } from '@/contexts/auth-context';
-import { dashboard, explore, login, register } from '@/routes';
+import { dashboard, explore, login, logout, register } from '@/routes';
 import { Head, Link } from '@inertiajs/react';
 
 export default function Welcome({
@@ -22,23 +22,33 @@ export default function Welcome({
                 <header className="mb-6 w-full max-w-[335px] text-sm not-has-[nav]:hidden lg:max-w-4xl">
                     <nav className="flex items-center justify-end gap-4">
                         {user ? (
-                            <Link
-                                href={dashboard()}
-                                className="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
-                            >
-                                Dashboard
-                            </Link>
+                            <>
+                                <Link
+                                    href={dashboard().url}
+                                    className="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
+                                >
+                                    Dashboard
+                                </Link>
+                                <Link
+                                    href={logout().url}
+                                    method="post"
+                                    as="button"
+                                    className="inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
+                                >
+                                    Log out
+                                </Link>
+                            </>
                         ) : (
                             <>
                                 <Link
-                                    href={login()}
+                                    href={login().url}
                                     className="inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
                                 >
                                     Log in
                                 </Link>
                                 {canRegister && (
                                     <Link
-                                        href={register()}
+                                        href={register().url}
                                         className="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
                                     >
                                         Register
@@ -69,7 +79,7 @@ export default function Welcome({
                                     <span>
                                         Explore the
                                         <Link
-                                            href={explore()}
+                                            href={explore().url}
                                             className="ml-1 inline-flex items-center space-x-1 font-medium text-[#f53003] underline underline-offset-4 dark:text-[#FF4433]"
                                         >
                                             <span>Quran Reader</span>

@@ -77,7 +77,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
 
                                         <FieldDescription className="text-center">
                                             Remember your password?{' '}
-                                            <TextLink href={login()}>
+                                            <TextLink href={login().url}>
                                                 Log in
                                             </TextLink>
                                         </FieldDescription>

@@ -160,7 +160,7 @@ export default function Register() {
                                         <FieldDescription className="text-center">
                                             Already have an account?{' '}
                                             <TextLink
-                                                href={login()}
+                                                href={login().url}
                                                 tabIndex={6}
                                             >
                                                 Log in
