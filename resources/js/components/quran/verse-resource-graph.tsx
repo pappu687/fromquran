@@ -61,9 +61,7 @@ export function VerseResourceGraph({
             );
             ctx.fill();
 
-            ctx.fillStyle = document.documentElement.classList.contains('dark')
-                ? '#e2e8f0'
-                : '#334155'; // slate-200 : slate-700
+            ctx.fillStyle = '#334155'; // slate-700, force light theme
 
             // Offset text position dynamically based on font size
             ctx.fillText(label, node.x + 8, node.y + fontSize / 3);

@@ -1,8 +1,8 @@
 import { Breadcrumbs } from '@/components/breadcrumbs';
+import { CommandPalette } from '@/components/command-palette';
 import { Icon } from '@/components/icon';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { CommandPalette } from '@/components/command-palette';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -122,7 +122,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                     Navigation Menu
                                 </SheetTitle>
                                 <SheetHeader className="flex justify-start text-left">
-                                    <AppLogoIcon className="h-6 w-6 fill-current text-black dark:text-white" />
+                                    <AppLogoIcon className="h-6 w-6 fill-current text-black" />
                                 </SheetHeader>
                                 <div className="flex h-full flex-1 flex-col space-y-4 p-4">
                                     <div className="flex h-full flex-col justify-between text-sm">
@@ -178,7 +178,11 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                         <span className="sr-only">Home</span>
                     </Link>
 
-                    <Link href="/" prefetch className="flex items-center space-x-2">
+                    <Link
+                        href="/"
+                        prefetch
+                        className="flex items-center space-x-2"
+                    >
                         <AppLogo />
                     </Link>
 
@@ -226,8 +230,10 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                     <InputGroupInput
                                         placeholder="Search..."
                                         readOnly
-                                        onClick={() => setCommandPaletteOpen(true)}
-                                        className="cursor-pointer pl-9 pr-16"
+                                        onClick={() =>
+                                            setCommandPaletteOpen(true)
+                                        }
+                                        className="cursor-pointer pr-16 pl-9"
                                     />
                                     <InputGroupAddon align="start">
                                         <SearchIcon className="h-4 w-4" />
@@ -310,7 +316,10 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                     </div>
                 </div>
             )}
-            <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
+            <CommandPalette
+                open={commandPaletteOpen}
+                onOpenChange={setCommandPaletteOpen}
+            />
         </>
     );
 }

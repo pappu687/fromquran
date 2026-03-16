@@ -5,7 +5,6 @@ import {
     Sheet,
     SheetContent,
     SheetDescription,
-    SheetFooter,
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
@@ -38,7 +37,9 @@ export function ReaderSettingsSheet({
     onOpenChange,
 }: ReaderSettingsSheetProps) {
     const { settings, updateSettings } = useReaderSettings();
-    const [availableTranslations, setAvailableTranslations] = useState<Translation[]>([]);
+    const [availableTranslations, setAvailableTranslations] = useState<
+        Translation[]
+    >([]);
     const [loadingTranslations, setLoadingTranslations] = useState(false);
 
     // Local state for form - initialized from settings
@@ -48,7 +49,9 @@ export function ReaderSettingsSheet({
     );
     const [showArabic, setShowArabic] = useState(settings.showArabic);
     const [mushafFont, setMushafFont] = useState(settings.mushafFont);
-    const [showRecentlyViewed, setShowRecentlyViewed] = useState(settings.showRecentlyViewed);
+    const [showRecentlyViewed, setShowRecentlyViewed] = useState(
+        settings.showRecentlyViewed,
+    );
 
     // Fetch translations from API
     useEffect(() => {
@@ -97,7 +100,9 @@ export function ReaderSettingsSheet({
     const handleTranslationToggle = (translationId: number) => {
         let newTranslations;
         if (selectedTranslations.includes(translationId)) {
-            newTranslations = selectedTranslations.filter((id) => id !== translationId);
+            newTranslations = selectedTranslations.filter(
+                (id) => id !== translationId,
+            );
         } else {
             // Limit to maximum 2 translations
             if (selectedTranslations.length >= 2) {
@@ -108,7 +113,7 @@ export function ReaderSettingsSheet({
                 newTranslations = [...selectedTranslations, translationId];
             }
         }
-        
+
         setSelectedTranslations(newTranslations);
         updateSettings({ selectedTranslations: newTranslations });
     };
@@ -130,7 +135,7 @@ export function ReaderSettingsSheet({
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="w-[400px] sm:w-[540px]">
+            <SheetContent className="w-full max-w-xs sm:max-w-[540px]">
                 <SheetHeader>
                     <SheetTitle>Reader Settings</SheetTitle>
                     <SheetDescription>
@@ -138,7 +143,7 @@ export function ReaderSettingsSheet({
                     </SheetDescription>
                 </SheetHeader>
 
-                <div className="mt-6 space-y-6 p-5">
+                <div className="mt-6 space-y-6 px-4 pt-4 pb-6 sm:p-5">
                     {/* Font Size Control */}
                     <div className="space-y-2">
                         <Label>Arabic Font Size</Label>
@@ -168,6 +173,7 @@ export function ReaderSettingsSheet({
                                 <Plus className="h-4 w-4" />
                             </Button>
                         </div>
+
                         <p className="text-xs text-muted-foreground">
                             Range: {MIN_FONT_SIZE} - {MAX_FONT_SIZE} rem
                         </p>
@@ -243,8 +249,9 @@ export function ReaderSettingsSheet({
                     {/* Translations Selector */}
                     <div className="space-y-2">
                         <Label>Translations (Max 2)</Label>
-                        <div className="max-h-[300px] space-y-2 overflow-y-auto pr-2 custom-scrollbar">
-                            {loadingTranslations && availableTranslations.length === 0 ? (
+                        <div className="custom-scrollbar max-h-[300px] space-y-2 overflow-y-auto pr-2">
+                            {loadingTranslations &&
+                            availableTranslations.length === 0 ? (
                                 <div className="flex items-center justify-center py-4">
                                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                                 </div>
