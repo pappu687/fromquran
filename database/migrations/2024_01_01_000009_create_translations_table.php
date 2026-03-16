@@ -13,15 +13,15 @@ return new class extends Migration
     {
         Schema::create('translations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('language_id')->constrained()->onDelete('cascade');
+            $table->foreignId('language_id');
             $table->text('text');
-            $table->foreignId('resource_content_id')->constrained()->onDelete('cascade');
-            $table->foreignId('verse_id')->constrained()->onDelete('cascade');
+            $table->foreignId('resource_content_id');
+            $table->foreignId('verse_id');
             $table->string('language_name');
             $table->string('resource_name')->nullable();
             $table->integer('priority')->default(0);
             $table->string('verse_key');
-            $table->foreignId('chapter_id')->constrained()->onDelete('cascade');
+            $table->foreignId('chapter_id');
             $table->integer('verse_number');
             $table->integer('juz_number');
             $table->integer('hizb_number');

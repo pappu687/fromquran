@@ -14,18 +14,18 @@ return new class extends Migration
         Schema::create('resource_contents', function (Blueprint $table) {
             $table->id();
             $table->boolean('approved')->default(false);
-            $table->foreignId('author_id')->nullable()->constrained()->onDelete('set null');
-            $table->foreignId('data_source_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('author_id')->nullable();
+            $table->foreignId('data_source_id')->nullable();
             $table->string('author_name')->nullable();
             $table->string('resource_type_name');
             $table->string('sub_type');
             $table->string('name');
             $table->text('description')->nullable();
             $table->string('cardinality_type')->default('1_ayah');
-            $table->foreignId('language_id')->constrained()->onDelete('cascade');
+            $table->foreignId('language_id');
             $table->string('language_name');
             $table->string('slug')->unique();
-            $table->foreignId('mobile_translation_id')->nullable()->constrained('resource_contents')->onDelete('set null');
+            $table->foreignId('mobile_translation_id')->nullable();
             $table->integer('priority')->default(0);
             $table->text('resource_info')->nullable();
             $table->string('resource_id')->nullable();

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('quran_bookmarks', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id');
             $table->integer('chapter_id');
             $table->integer('verse_number');
             $table->string('verse_id')->unique(); // Unique identifier for the verse

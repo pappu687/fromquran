@@ -84,7 +84,7 @@ class FortifyServiceProvider extends ServiceProvider
             return new class implements LogoutResponse {
                 public function toResponse($request)
                 {
-                    return redirect('/');
+                    return Inertia::location('/');
                 }
             };
         });

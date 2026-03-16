@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('revelation_place'); // 'meccan' or 'medinan'
             $table->string('name_complex');
             $table->string('name_arabic');
+            $table->string('name_roman')->nullable();
             $table->string('name_simple');
             $table->string('pages')->nullable();
             $table->integer('verses_count');

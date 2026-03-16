@@ -25,10 +25,7 @@ return new class extends Migration
             $table->integer('priority')->default(0);
             $table->timestamps();
 
-            // Foreign keys
-            $table->foreign('chapter_id')->references('id')->on('chapters')->onDelete('cascade');
-            $table->foreign('reciter_id')->references('id')->on('reciters')->onDelete('set null');
-            $table->foreign('audio_recitation_id')->references('id')->on('audio_recitations')->onDelete('set null');
+
 
             // Indexes
             $table->index('chapter_id');

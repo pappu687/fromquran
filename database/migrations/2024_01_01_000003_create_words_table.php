@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('words', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('verse_id')->constrained()->onDelete('cascade');
-            $table->foreignId('chapter_id')->constrained()->onDelete('cascade');
+            $table->foreignId('verse_id');
+            $table->foreignId('chapter_id');
             $table->integer('position');
             $table->string('text_uthmani');
             $table->string('text_indopak')->nullable();
@@ -27,13 +27,13 @@ return new class extends Migration
             $table->string('code_hex');
             $table->string('code_hex_v3')->nullable();
             $table->integer('code_dec_v3')->nullable();
-            $table->foreignId('char_type_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('char_type_id')->nullable();
             $table->string('pause_name')->nullable();
             $table->string('audio_url')->nullable();
             $table->text('image_blob')->nullable();
             $table->string('image_url')->nullable();
-            $table->foreignId('token_id')->nullable()->constrained()->onDelete('set null');
-            $table->foreignId('topic_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('token_id')->nullable();
+            $table->foreignId('topic_id')->nullable();
             $table->string('location')->nullable();
             $table->string('char_type_name')->nullable();
             $table->string('text_imlaei')->nullable();

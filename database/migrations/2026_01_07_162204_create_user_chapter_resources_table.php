@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('user_chapter_resources', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('chapter_id')->constrained()->onDelete('cascade');
-            $table->foreignId('resource_type_id')->constrained('resource_types')->onDelete('restrict');
+            $table->foreignId('user_id');
+            $table->foreignId('chapter_id');
+            $table->foreignId('resource_type_id');
             $table->string('resource_url');
             $table->text('comment')->nullable();
             $table->string('status')->default('pending');

@@ -21,10 +21,7 @@ return new class extends Migration
             $table->boolean('repeat_chapter')->default(false);
             $table->timestamps();
 
-            // Foreign keys
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('reciter_id')->references('id')->on('reciters')->onDelete('set null');
-            $table->foreign('audio_recitation_id')->references('id')->on('audio_recitations')->onDelete('set null');
+
 
             // Indexes
             $table->unique('user_id');

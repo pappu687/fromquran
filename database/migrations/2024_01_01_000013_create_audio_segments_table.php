@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('audio_segments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('audio_file_id')->constrained()->onDelete('cascade');
-            $table->foreignId('audio_recitation_id')->nullable()->constrained()->onDelete('cascade');
-            $table->foreignId('chapter_id')->constrained()->onDelete('cascade');
-            $table->foreignId('verse_id')->constrained()->onDelete('cascade');
+            $table->foreignId('audio_file_id');
+            $table->foreignId('audio_recitation_id')->nullable();
+            $table->foreignId('chapter_id');
+            $table->foreignId('verse_id');
             $table->string('verse_key');
             $table->integer('verse_number');
             $table->integer('timestamp_from');

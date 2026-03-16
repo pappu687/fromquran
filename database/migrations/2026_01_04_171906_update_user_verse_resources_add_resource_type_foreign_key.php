@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -44,9 +45,9 @@ return new class extends Migration
         DB::statement('
             CREATE TABLE user_verse_resources_new (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                user_id INTEGER NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
-                verse_id INTEGER NOT NULL REFERENCES "verses"("id") ON DELETE CASCADE,
-                resource_type_id INTEGER NOT NULL REFERENCES "resource_types"("id") ON DELETE RESTRICT,
+                user_id INTEGER NOT NULL,
+                verse_id INTEGER NOT NULL,
+                resource_type_id INTEGER NOT NULL,
                 resource_url VARCHAR NOT NULL,
                 comment TEXT,
                 status VARCHAR NOT NULL DEFAULT "pending",
@@ -78,8 +79,8 @@ return new class extends Migration
         DB::statement('
             CREATE TABLE user_verse_resources_new (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                user_id INTEGER NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
-                verse_id INTEGER NOT NULL REFERENCES "verses"("id") ON DELETE CASCADE,
+                user_id INTEGER NOT NULL,
+                verse_id INTEGER NOT NULL,
                 resource_type VARCHAR NOT NULL CHECK(resource_type IN (
                     "youtube_tafseer", "podcast", "article", "shan_e_nuzul",
                     "hadith", "fiqh_ruling", "fatwa", "scholarly_commentary", "other"

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('verse_reports', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id');
             $table->unsignedInteger('chapter_id');
             $table->unsignedInteger('verse_id');
             $table->string('type'); // e.g., 'translation_error', 'transcription_error', etc.

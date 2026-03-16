@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('collections', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id');
             $table->string('name');
             $table->text('description')->nullable();
             $table->string('color')->default('#3b82f6'); // Default blue color

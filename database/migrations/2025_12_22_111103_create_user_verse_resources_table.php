@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('user_verse_resources', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('verse_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id');
+            $table->foreignId('verse_id');
             $table->enum('resource_type', [
                 'youtube_tafseer',
                 'podcast',

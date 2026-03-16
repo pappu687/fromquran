@@ -13,14 +13,14 @@ return new class extends Migration
     {
         Schema::create('tafsirs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('verse_id')->constrained()->onDelete('cascade');
-            $table->foreignId('language_id')->constrained()->onDelete('cascade');
+            $table->foreignId('verse_id');
+            $table->foreignId('language_id');
             $table->text('text');
             $table->string('language_name');
-            $table->foreignId('resource_content_id')->constrained()->onDelete('cascade');
+            $table->foreignId('resource_content_id');
             $table->string('resource_name')->nullable();
             $table->string('verse_key');
-            $table->foreignId('chapter_id')->constrained()->onDelete('cascade');
+            $table->foreignId('chapter_id');
             $table->integer('verse_number');
             $table->integer('juz_number');
             $table->integer('hizb_number');
@@ -30,8 +30,8 @@ return new class extends Migration
             $table->string('group_verse_key_to')->nullable();
             $table->integer('group_verses_count')->nullable();
             $table->integer('group_tafsir_id')->nullable();
-            $table->foreignId('start_verse_id')->nullable()->constrained('verses')->onDelete('cascade');
-            $table->foreignId('end_verse_id')->nullable()->constrained('verses')->onDelete('cascade');
+            $table->foreignId('start_verse_id')->nullable();
+            $table->foreignId('end_verse_id')->nullable();
             $table->integer('ruku_number');
             $table->integer('surah_ruku_number');
             $table->integer('manzil_number');

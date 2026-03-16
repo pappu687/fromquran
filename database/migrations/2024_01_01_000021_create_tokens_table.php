@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('text_imlaei')->nullable();
             $table->string('text_uthmani_tajweed')->nullable();
             $table->text('text')->nullable();
-            $table->foreignId('resource_content_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('resource_content_id')->nullable();
             $table->integer('record_id')->nullable();
             $table->string('record_type')->nullable();
             $table->integer('uniq_token_count')->default(0);

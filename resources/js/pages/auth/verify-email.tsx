@@ -24,23 +24,23 @@ export default function VerifyEmail({ status }: { status?: string }) {
 
             <Form action={sendStore().url} method="post" className="space-y-6 text-center">
                 {({ processing }) => (
-                    <>
-                        <Button disabled={processing} variant="secondary">
-                            {processing && <Spinner />}
-                            Resend verification email
-                        </Button>
-
-                        <TextLink
-                            href={logout().url}
-                            method="post"
-                            as="button"
-                            className="mx-auto block text-sm"
-                        >
-                            Log out
-                        </TextLink>
-                    </>
+                    <Button disabled={processing} variant="secondary">
+                        {processing && <Spinner />}
+                        Resend verification email
+                    </Button>
                 )}
             </Form>
+
+            <div className="mt-4 text-center">
+                <TextLink
+                    href={logout().url}
+                    method="post"
+                    as="button"
+                    className="mx-auto block text-sm"
+                >
+                    Log out
+                </TextLink>
+            </div>
         </AuthLayout>
     );
 }

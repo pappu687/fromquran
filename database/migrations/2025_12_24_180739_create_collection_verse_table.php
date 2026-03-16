@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('collection_verse', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('collection_id')->constrained()->onDelete('cascade');
-            $table->foreignId('verse_id')->constrained()->onDelete('cascade');
+            $table->foreignId('collection_id');
+            $table->foreignId('verse_id');
             $table->unsignedInteger('display_order')->default(0);
             $table->timestamps();
 

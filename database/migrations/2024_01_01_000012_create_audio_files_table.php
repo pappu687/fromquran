@@ -13,16 +13,16 @@ return new class extends Migration
     {
         Schema::create('audio_files', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('verse_id')->constrained()->onDelete('cascade');
+            $table->foreignId('verse_id');
             $table->text('url');
             $table->integer('duration')->nullable();
             $table->text('segments')->nullable();
             $table->string('mime_type')->nullable();
             $table->string('format')->nullable();
             $table->boolean('is_enabled')->default(true);
-            $table->foreignId('recitation_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('recitation_id')->nullable();
             $table->string('verse_key');
-            $table->foreignId('chapter_id')->constrained()->onDelete('cascade');
+            $table->foreignId('chapter_id');
             $table->integer('verse_number');
             $table->integer('juz_number');
             $table->integer('hizb_number');

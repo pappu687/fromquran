@@ -17,18 +17,18 @@ return new class extends Migration
             $table->string('arabic_name')->nullable();
             $table->string('relative_path')->nullable();
             $table->string('format')->nullable();
-            $table->foreignId('section_id')->nullable()->constrained('audio_sections')->onDelete('set null');
+            $table->foreignId('section_id')->nullable();
             $table->text('description')->nullable();
             $table->integer('files_count')->default(0);
-            $table->foreignId('resource_content_id')->nullable()->constrained()->onDelete('set null');
-            $table->foreignId('recitation_style_id')->nullable()->constrained()->onDelete('set null');
-            $table->foreignId('reciter_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('resource_content_id')->nullable();
+            $table->foreignId('recitation_style_id')->nullable();
+            $table->foreignId('reciter_id')->nullable();
             $table->boolean('approved')->default(false);
             $table->integer('home')->default(0);
             $table->integer('priority')->default(0);
             $table->integer('segments_count')->default(0);
             $table->float('files_size')->nullable();
-            $table->foreignId('qirat_type_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('qirat_type_id')->nullable();
             $table->boolean('segment_locked')->default(false);
             $table->timestamps();
 

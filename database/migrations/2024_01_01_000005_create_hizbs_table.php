@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->integer('hizb_number')->unique();
             $table->jsonb('verse_mapping');
-            $table->foreignId('first_verse_id')->constrained('verses')->onDelete('cascade');
-            $table->foreignId('last_verse_id')->constrained('verses')->onDelete('cascade');
+            $table->foreignId('first_verse_id');
+            $table->foreignId('last_verse_id');
             $table->integer('verses_count');
             $table->timestamps();
 

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('verses', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('chapter_id')->constrained()->onDelete('cascade');
+            $table->foreignId('chapter_id');
             $table->integer('verse_number');
             $table->integer('verse_index')->unique();
             $table->string('verse_key'); // Format: "1:1" for chapter:verse
@@ -28,9 +28,9 @@ return new class extends Migration
             $table->integer('page_number');
             $table->text('image_url')->nullable();
             $table->integer('image_width')->nullable();
-            $table->foreignId('verse_root_id')->nullable()->constrained('verse_roots')->onDelete('set null');
-            $table->foreignId('verse_lemma_id')->nullable()->constrained('verse_lemmas')->onDelete('set null');
-            $table->foreignId('verse_stem_id')->nullable()->constrained('verse_stems')->onDelete('set null');
+            $table->foreignId('verse_root_id')->nullable();
+            $table->foreignId('verse_lemma_id')->nullable();
+            $table->foreignId('verse_stem_id')->nullable();
             $table->text('text_imlaei')->nullable();
             $table->text('text_uthmani_simple')->nullable();
             $table->text('text_uthmani_tajweed')->nullable();

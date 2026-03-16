@@ -25,7 +25,7 @@ return new class extends Migration
             $table->text('ayahs')->nullable();
             $table->text('related_topics')->nullable();
 
-            $table->foreign('parent_id')->nullable()->references('topic_id')->on('topics')->onDelete('set null');
+
             $table->index('parent_id');
             $table->index('thematic_parent_id');
             $table->index('ontology_parent_id');

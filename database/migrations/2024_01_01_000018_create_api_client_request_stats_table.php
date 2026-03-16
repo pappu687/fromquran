@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('api_client_request_stats', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('api_client_id')->constrained()->onDelete('cascade');
+            $table->foreignId('api_client_id');
             $table->date('date');
             $table->integer('requests_count')->default(0);
             $table->timestamps();
