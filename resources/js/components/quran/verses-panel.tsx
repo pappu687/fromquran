@@ -150,7 +150,9 @@ export function VersesPanel({
                                 className="font-arabic text-center leading-loose text-foreground/90"
                                 dir="rtl"
                                 aria-label="Bismillahir Rahmanir Rahim"
-                                style={{ fontSize: `${settings.fontSize * 1.2}rem` }}
+                                style={{
+                                    fontSize: `${settings.fontSize * 1.1}rem`,
+                                }}
                             >
                                 بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
                             </p>
