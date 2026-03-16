@@ -185,7 +185,7 @@ const MobileMenuContent = React.memo(
                                     <ToggleGroupItem
                                         value="list"
                                         aria-label="List view"
-                                        className="h-11 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                                        className="h-11 data-[state=on]:bg-muted data-[state=on]:text-foreground"
                                     >
                                         <List className="mr-2 h-4 w-4" />
                                         List
@@ -193,7 +193,7 @@ const MobileMenuContent = React.memo(
                                     <ToggleGroupItem
                                         value="reading"
                                         aria-label="Reading view"
-                                        className="h-11 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                                        className="h-11 data-[state=on]:bg-muted data-[state=on]:text-foreground"
                                     >
                                         <BookOpen className="mr-2 h-4 w-4" />
                                         Reading
@@ -316,7 +316,11 @@ export function NavActions() {
                 >
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <ToggleGroupItem value="list" aria-label="List view">
+                            <ToggleGroupItem
+                                value="list"
+                                aria-label="List view"
+                                className="data-[state=on]:bg-muted data-[state=on]:text-foreground"
+                            >
                                 <List className="h-4 w-4" />
                             </ToggleGroupItem>
                         </TooltipTrigger>
@@ -328,6 +332,7 @@ export function NavActions() {
                             <ToggleGroupItem
                                 value="reading"
                                 aria-label="Reading view"
+                                className="data-[state=on]:bg-muted data-[state=on]:text-foreground"
                             >
                                 <BookOpen className="h-4 w-4" />
                             </ToggleGroupItem>

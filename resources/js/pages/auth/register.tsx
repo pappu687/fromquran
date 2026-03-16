@@ -4,6 +4,7 @@ import { Form, Head, usePage } from '@inertiajs/react';
 
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
+import { TurnstileWidget } from '@/components/turnstile-widget';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -18,16 +19,28 @@ import { Spinner } from '@/components/ui/spinner';
 import AuthLayout from '@/layouts/auth-layout';
 
 export default function Register() {
-    const page = usePage<{ googleAuthEnabled?: boolean }>();
+    const page = usePage<{
+        googleAuthEnabled?: boolean;
+        turnstile?: { enabled: boolean };
+    }>();
     const googleAuthEnabled = Boolean(page.props.googleAuthEnabled);
+    const turnstileEnabled = Boolean(page.props.turnstile?.enabled);
 
     return (
         <AuthLayout>
-            <Head title="Register" />
+            <Head title="Register">
+                {turnstileEnabled && (
+                    <script
+                        src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+                        async
+                        defer
+                    />
+                )}
+            </Head>
             <Form
                 action={registerStore().url}
                 method="post"
-                resetOnSuccess={['password', 'password_confirmation']}
+                resetOnSuccess={['password']}
                 disableWhileProcessing
             >
                 {({ processing, errors }) => (
@@ -73,7 +86,7 @@ export default function Register() {
                                                 tabIndex={2}
                                                 autoComplete="email"
                                                 name="email"
-                                                placeholder="m@example.com"
+                                                placeholder=""
                                             />
                                             <InputError
                                                 message={errors.email}
@@ -98,22 +111,12 @@ export default function Register() {
                                         </Field>
 
                                         <Field>
-                                            <FieldLabel htmlFor="password_confirmation">
-                                                Confirm Password
-                                            </FieldLabel>
-                                            <Input
-                                                id="password_confirmation"
-                                                type="password"
-                                                required
-                                                tabIndex={4}
-                                                autoComplete="new-password"
-                                                name="password_confirmation"
-                                            />
-                                            <InputError
-                                                message={
-                                                    errors.password_confirmation
-                                                }
-                                            />
+                                            <TurnstileWidget />
+                                            {errors.turnstile_token && (
+                                                <p className="text-sm text-destructive">
+                                                    {errors.turnstile_token}
+                                                </p>
+                                            )}
                                         </Field>
 
                                         <Field>

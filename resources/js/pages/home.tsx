@@ -148,15 +148,7 @@ export default function HomePage() {
                                 >
                                     Start Reading
                                     <ArrowRight className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                    size="lg"
-                                    variant="ghost"
-                                    onClick={scrollToFeatures}
-                                    className="gap-2 text-base font-medium"
-                                >
-                                    Learn More
-                                </Button>
+                                </Button>                               
                             </div>
 
                             <div className="flex items-center gap-6 text-sm text-muted-foreground">

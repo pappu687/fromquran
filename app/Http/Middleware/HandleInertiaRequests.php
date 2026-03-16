@@ -53,6 +53,10 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'turnstile' => [
+                'enabled' => config('turnstile.enabled'),
+                'siteKey' => config('turnstile.site_key'),
+            ],
         ];
     }
 }

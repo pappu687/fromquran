@@ -72,7 +72,7 @@ export function LoginForm({
                                         autoFocus
                                         tabIndex={1}
                                         autoComplete="email"
-                                        placeholder="m@example.com"
+                                        placeholder=""
                                     />
                                     <InputError message={errors.email} />
                                 </Field>

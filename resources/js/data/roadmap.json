@@ -1,51 +1,53 @@
 [
     {
         "id": 1,
-        "title": "Foundation & Core Features",
-        "description": "Establish the base architecture and core reading experience.",
-        "status": "completed",
+        "title": "Audio & Recitation",
+        "description": "Enhancing the auditory experience of the Quran.",
+        "status": "planned",
         "items": [
-            { "id": 11, "task": "Project initialization with Laravel & React", "completed": true },
-            { "id": 12, "task": "Quran database integration", "completed": true },
-            { "id": 13, "task": "Basic Verse-by-Verse reader UI", "completed": true },
-            { "id": 14, "task": "Search functionality (Solr integration)", "completed": true }
+            { "id": 11, "task": "Verse audio playback", "completed": false },
+            { "id": 12, "task": "Audio looping support", "completed": false },
+            { "id": 13, "task": "Multiple reciter support", "completed": false }
         ]
     },
     {
         "id": 2,
-        "title": "User Experience & Personalization",
-        "description": "Improving how users interact with the Quran and save their progress.",
-        "status": "in-progress",
+        "title": "Advanced Reader Features",
+        "description": "Deepening the study and understanding of the text.",
+        "status": "planned",
         "items": [
-            { "id": 21, "task": "User Authentication & Profiles", "completed": true },
-            { "id": 22, "task": "Bookmarks and Favorites", "completed": true },
-            { "id": 23, "task": "Personal Collections", "completed": true },
-            { "id": 24, "task": "Customizable reading settings (font size, themes)", "completed": true },
-            { "id": 25, "task": "Dynamic Translation selection", "completed": true }
+            { "id": 21, "task": "Tajweed verse view in sidebar", "completed": false },
+            { "id": 22, "task": "20 multilingual translations", "completed": false },
+            { "id": 23, "task": "Partial verse highlighting with notes", "completed": false }
         ]
     },
     {
         "id": 3,
-        "title": "Community & Contributions",
-        "description": "Building tools for community engagement and content enrichment.",
+        "title": "Expanded Knowledge Base",
+        "description": "Integrating broader Islamic scholarship.",
         "status": "planned",
         "items": [
-            { "id": 31, "task": "User-submitted resources (Tafsir, Audio, Reflections)", "completed": true },
-            { "id": 32, "task": "Moderation dashboard", "completed": true },
-            { "id": 33, "task": "Community discussions on verses", "completed": false },
-            { "id": 34, "task": "Collaborative collection building", "completed": false }
+            { "id": 31, "task": "Additional free Tafseer resources", "completed": false },
+            { "id": 32, "task": "Complete Hadith database (major books)", "completed": false }
         ]
     },
     {
         "id": 4,
-        "title": "Advanced Features & Expansion",
-        "description": "Future-proof features and platform growth.",
+        "title": "Visualization & Analytics",
+        "description": "Data-driven insights and interactive exploration.",
         "status": "planned",
         "items": [
-            { "id": 41, "task": "Mobile application (React Native)", "completed": false },
-            { "id": 42, "task": "Audio recitation synchronization", "completed": false },
-            { "id": 43, "task": "AI-powered verse insights", "completed": false },
-            { "id": 44, "task": "Multi-language UI localization", "completed": false }
+            { "id": 41, "task": "Interactive drill-down graphs", "completed": false },
+            { "id": 42, "task": "Numerical resource analytics graphs", "completed": false }
+        ]
+    },
+    {
+        "id": 5,
+        "title": "Social & Sharing",
+        "description": "Engaging with the community and sharing wisdom.",
+        "status": "planned",
+        "items": [
+            { "id": 51, "task": "Verse sharing with image templates", "completed": false }
         ]
     }
 ]
