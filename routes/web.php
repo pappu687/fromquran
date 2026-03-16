@@ -11,6 +11,14 @@ Route::get('/', function () {
     return Inertia::render('home');
 })->name('home');
 
+// Fallback logout for manual GET requests
+Route::get('/logout', function () {
+    auth()->guard('web')->logout();
+    session()->invalidate();
+    session()->regenerateToken();
+    return redirect('/');
+});
+
 // Static marketing pages
 Route::get('/about', function () {
     return Inertia::render('about');
