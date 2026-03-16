@@ -18,9 +18,11 @@ class CloudflarePurgeCache extends Command
     {
         $zoneId = config('services.cloudflare.zone_id');
         $token  = config('services.cloudflare.token');
+        $email  = config('services.cloudflare.email');
+        $apiKey = config('services.cloudflare.api_key');
 
-        if (!$zoneId || !$token) {
-            $this->error('Missing Cloudflare zone_id or token.');
+        if (!$zoneId) {
+            $this->error('Missing Cloudflare zone_id.');
             return self::FAILURE;
         }
 
@@ -37,9 +39,25 @@ class CloudflarePurgeCache extends Command
             return self::FAILURE;
         }
 
-        $response = Http::withToken($token)
-            ->acceptJson()
-            ->post("https://api.cloudflare.com/client/v4/zones/{$zoneId}/purge_cache", $payload);
+        $this->info("Purging Cloudflare cache for Zone: " . substr($zoneId, 0, 4) . "...");
+
+        $request = Http::acceptJson();
+
+        if ($token) {
+            $request->withToken(trim($token));
+            $this->comment("Using API Token (Bearer Auth)");
+        } elseif ($email && $apiKey) {
+            $request->withHeaders([
+                'X-Auth-Email' => trim($email),
+                'X-Auth-Key' => trim($apiKey),
+            ]);
+            $this->comment("Using Global API Key (X-Auth Auth)");
+        } else {
+            $this->error('Missing Cloudflare credentials (API Token or Email+Global Key).');
+            return self::FAILURE;
+        }
+
+        $response = $request->post("https://api.cloudflare.com/client/v4/zones/{$zoneId}/purge_cache", $payload);
 
         if ($response->successful() && data_get($response->json(), 'success') === true) {
             $this->info('Cloudflare cache purged successfully.');
@@ -47,7 +65,16 @@ class CloudflarePurgeCache extends Command
         }
 
         $this->error('Cloudflare purge failed.');
-        $this->line($response->body());
+        $this->line("Status Code: " . $response->status());
+        $this->line("Response: " . $response->body());
+
+        if ($response->status() === 403 || $response->status() === 401) {
+            $this->warn("\nPossible causes:");
+            $this->line("1. Invalid API Token or Global API Key.");
+            $this->line("2. API Token lacks 'Cache Purge' permissions for this zone.");
+            $this->line("3. Zone ID is incorrect or not associated with this account.");
+            $this->line("4. Your token has IP restrictions that prevent this request.");
+        }
 
         return self::FAILURE;
     }
