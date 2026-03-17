@@ -293,30 +293,30 @@ export function ResourcesSheet({
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="w-full sm:w-[500px] sm:max-w-lg">
-                <SheetHeader>
+            <SheetContent className="flex h-full w-full flex-col overflow-hidden p-0 sm:w-[500px] sm:max-w-lg">
+                <SheetHeader className="px-4 pt-6 pb-2">
                     <SheetTitle>
                         Related Resources for ({chapterNumber} : {verseNumber})
                     </SheetTitle>
                 </SheetHeader>
 
-                {chapterNumber && hasMore && (
-                    <div className="px-4 pb-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                                router.visit(
-                                    `/related/${chapterNumber}/${verseNumber}`,
-                                )
-                            }
-                        >
-                            View all ({totalResources})
-                        </Button>
-                    </div>
-                )}
+                <div className="flex-1 overflow-y-auto px-4 pb-4">
+                    {chapterNumber && hasMore && (
+                        <div className="pb-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                    router.visit(
+                                        `/related/${chapterNumber}/${verseNumber}`,
+                                    )
+                                }
+                            >
+                                View all ({totalResources})
+                            </Button>
+                        </div>
+                    )}
 
-                <div className="px-4">
                     {loading ? (
                         <div className="space-y-4">
                             <Skeleton className="h-12 w-full" />
@@ -391,12 +391,7 @@ export function ResourcesSheet({
                                                 </div>
                                             </AccordionTrigger>
                                             <AccordionContent className="pt-4">
-                                                <div
-                                                    className="space-y-4 overflow-y-auto pr-2"
-                                                    style={{
-                                                        maxHeight: '600px',
-                                                    }}
-                                                >
+                                                <div className="space-y-4 pr-2">
                                                     {type ===
                                                     'Similar Verses' ? (
                                                         <div className="flex flex-wrap gap-2">
@@ -598,10 +593,7 @@ export function ResourcesSheet({
                                         Related Verses ({similarVerses.length})
                                     </AccordionTrigger>
                                     <AccordionContent>
-                                        <div
-                                            className="space-y-4 overflow-y-auto pr-2"
-                                            style={{ maxHeight: '500px' }}
-                                        >
+                                        <div className="space-y-4 pr-2">
                                             {similarVerses.map((similar) => (
                                                 <div
                                                     key={similar.id}

@@ -155,7 +155,7 @@ export default function RelatedPage({
     const baseUrl = appUrl.replace(/\/$/, '');
     const path = url.startsWith('/') ? url : `/${url}`;
     const canonicalUrl = `${baseUrl}${path}`;
-    const ogImage = `${baseUrl}/fromquran-logo.svg`;
+    const ogImage = `${baseUrl}/og-banner.png`;
     const fullTitle = `${pageTitle} | From Quran`;
 
     useEffect(() => {
