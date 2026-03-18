@@ -192,6 +192,9 @@ Route::middleware(['auth', 'role:Admin|Moderator|Reviewer'])->prefix('admin')->g
     Route::get('/resource-submissions', [\App\Http\Controllers\Admin\ResourceSubmissionController::class, 'index'])
         ->name('admin.resource-submissions');
 
+    Route::get('/collections', [\App\Http\Controllers\Admin\CollectionManagementController::class, 'index'])
+        ->name('admin.collections');
+
     Route::get('/add-resource', [\App\Http\Controllers\Admin\AddResourceController::class, 'index'])
         ->name('admin.add-resource');
     Route::post('/add-resource/search', [\App\Http\Controllers\Admin\AddResourceController::class, 'search'])
@@ -219,6 +222,18 @@ Route::middleware(['auth', 'role:Admin|Moderator|Reviewer'])->prefix('admin')->g
     Route::post('/resource-submissions/bulk-reject', [\App\Http\Controllers\Admin\ResourceSubmissionController::class, 'bulkReject'])
         ->middleware('role:Admin|Moderator')
         ->name('admin.resource-submissions.bulk-reject');
+
+    Route::post('/collections/{collection}/approve', [\App\Http\Controllers\Admin\CollectionManagementController::class, 'approve'])
+        ->middleware('role:Admin|Moderator')
+        ->name('admin.collections.approve');
+
+    Route::post('/collections/{collection}/reject', [\App\Http\Controllers\Admin\CollectionManagementController::class, 'reject'])
+        ->middleware('role:Admin|Moderator')
+        ->name('admin.collections.reject');
+
+    Route::delete('/collections/{collection}', [\App\Http\Controllers\Admin\CollectionManagementController::class, 'destroy'])
+        ->middleware('role:Admin|Moderator')
+        ->name('admin.collections.destroy');
 
     // User Management (Admin only)
     Route::prefix('users')->middleware('role:Admin')->group(function () {

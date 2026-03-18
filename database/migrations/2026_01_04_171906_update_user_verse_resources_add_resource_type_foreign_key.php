@@ -12,10 +12,23 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('user_verse_resources')) {
+            return;
+        }
+
+        if (
+            Schema::hasColumn('user_verse_resources', 'resource_type_id') &&
+            ! Schema::hasColumn('user_verse_resources', 'resource_type')
+        ) {
+            return;
+        }
+
         // Add new column for foreign key
-        Schema::table('user_verse_resources', function (Blueprint $table) {
-            $table->unsignedBigInteger('resource_type_id')->nullable();
-        });
+        if (! Schema::hasColumn('user_verse_resources', 'resource_type_id')) {
+            Schema::table('user_verse_resources', function (Blueprint $table) {
+                $table->unsignedBigInteger('resource_type_id')->nullable();
+            });
+        }
 
         // Map existing enum values to resource_type_id
         $types = [
@@ -75,6 +88,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (! Schema::hasTable('user_verse_resources')) {
+            return;
+        }
+
         // Create the old table structure with enum
         DB::statement('
             CREATE TABLE user_verse_resources_new (

@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import {
     BookOpen,
     FileUp,
@@ -6,6 +6,7 @@ import {
     Heart,
     LogOut,
     Settings,
+    ShieldCheck,
 } from 'lucide-react';
 import * as React from 'react';
 
@@ -59,7 +60,15 @@ const userNavData = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-    const { user, logout } = useAuth();
+    const { user, logout, hasRole } = useAuth();
+    const { url } = usePage();
+    // Normalize to pathname only (strip query string)
+    const currentPath = url.split('?')[0];
+
+    const isCurrentPath = (itemUrl: string) => {
+        if (itemUrl === '/') return currentPath === '/';
+        return currentPath.startsWith(itemUrl);
+    };
 
     return (
         <Sidebar className="border-r-0" {...props}>
@@ -81,7 +90,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
             <SidebarContent>
                 {/* Main Navigation */}
-                <NavMain items={userNavData.navMain} />
+                <NavMain
+                    items={userNavData.navMain.map((item) => ({
+                        ...item,
+                        isActive: isCurrentPath(item.url),
+                    }))}
+                />
 
                 {/* User Menu - Only show if logged in */}
                 {user && (
@@ -94,6 +108,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                             <SidebarMenuButton
                                                 asChild
                                                 tooltip={item.title}
+                                                isActive={isCurrentPath(item.url)}
                                             >
                                                 <Link href={item.url}>
                                                     <item.icon />
@@ -102,6 +117,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                             </SidebarMenuButton>
                                         </SidebarMenuItem>
                                     ))}
+
+                                    {/* Admin Panel — only for admins */}
+                                    {hasRole('Admin') && (
+                                        <SidebarMenuItem>
+                                            <SidebarMenuButton
+                                                asChild
+                                                tooltip="Admin Panel"
+                                                isActive={isCurrentPath('/admin')}
+                                            >
+                                                <Link href="/admin">
+                                                    <ShieldCheck />
+                                                    <span>Admin Panel</span>
+                                                </Link>
+                                            </SidebarMenuButton>
+                                        </SidebarMenuItem>
+                                    )}
                                 </SidebarMenu>
                             </SidebarGroupContent>
                         </SidebarGroup>

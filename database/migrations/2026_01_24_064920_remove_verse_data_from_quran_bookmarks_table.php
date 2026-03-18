@@ -11,13 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('quran_bookmarks', function (Blueprint $table) {
-            $table->dropColumn('verse_data');
+        if (! Schema::hasTable('quran_bookmarks')) {
+            return;
+        }
 
-            // Remove the global unique constraint on verse_id if it exists
-            // Laravel naming convention for unique index: table_column_unique
-            $table->dropUnique(['verse_id']);
-        });
+        if (Schema::hasColumn('quran_bookmarks', 'verse_data')) {
+            Schema::table('quran_bookmarks', function (Blueprint $table) {
+                $table->dropColumn('verse_data');
+            });
+        }
+
+        try {
+            Schema::table('quran_bookmarks', function (Blueprint $table) {
+                $table->dropUnique(['verse_id']);
+            });
+        } catch (\Throwable $e) {
+        }
     }
 
     /**

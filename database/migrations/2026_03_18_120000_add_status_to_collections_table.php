@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -11,13 +12,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (! Schema::hasTable('collections') || Schema::hasColumn('collections', 'deleted_at')) {
+        if (! Schema::hasTable('collections') || Schema::hasColumn('collections', 'status')) {
             return;
         }
 
         Schema::table('collections', function (Blueprint $table) {
-            $table->softDeletes();
+            $table->string('status')->default('approved')->after('is_public');
+            $table->index(['status', 'is_public']);
         });
+
+        DB::table('collections')
+            ->whereNull('status')
+            ->update(['status' => 'approved']);
     }
 
     /**
@@ -26,7 +32,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('collections', function (Blueprint $table) {
-            $table->dropSoftDeletes();
+            $table->dropIndex(['status', 'is_public']);
+            $table->dropColumn('status');
         });
     }
 };

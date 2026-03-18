@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('audio_segments')) {
+            return;
+        }
+
         Schema::create('audio_segments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('audio_file_id');

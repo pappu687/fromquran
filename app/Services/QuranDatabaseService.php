@@ -131,7 +131,7 @@ class QuranDatabaseService {
                 return array(  );
             }
 
-            // Collect verse_keys from Solr and load DB metadata + resource counts
+            // Collect verse_keys from Solr and load DB metadata
             $verseKeys = array(  );
 
             foreach ( $resultSet as $doc ) {
@@ -141,21 +141,7 @@ class QuranDatabaseService {
             }
 
             $verseMeta = Verse::whereIn( 'verses.verse_key', $verseKeys )
-                ->leftJoin( 'user_verse_resources', function ( $join ) {
-                    $join->on( 'verses.id', '=', 'user_verse_resources.verse_id' )
-                        ->where( 'user_verse_resources.status', '=', 'approved' );
-                } )
                 ->select(
-                    'verses.id',
-                    'verses.chapter_id',
-                    'verses.verse_number',
-                    'verses.verse_key',
-                    'verses.juz_number',
-                    'verses.rub_el_hizb_number',
-                    'verses.page_number',
-                    DB::raw( 'COUNT(DISTINCT user_verse_resources.id) as resource_count' )
-                )
-                ->groupBy(
                     'verses.id',
                     'verses.chapter_id',
                     'verses.verse_number',
@@ -178,6 +164,9 @@ class QuranDatabaseService {
                 }
 
                 $meta = $verseMeta->get( $verseKey );
+                $resourceCount = isset( $doc[ 'num_resource_i' ] )
+                    ? (int) $doc[ 'num_resource_i' ]
+                    : 0;
 
                 // Translations from Solr
                 $translations = [];
@@ -203,8 +192,8 @@ class QuranDatabaseService {
                     'hizbQuarter'   => $meta->rub_el_hizb_number ?? null,
                     'sajda'         => false,
                     'audioUrl'      => null,
-                    'hasResources'  => isset( $meta ) ? $meta->resource_count > 0 : false,
-                    'resourceCount' => isset( $meta ) ? (int) $meta->resource_count : 0,
+                    'hasResources'  => $resourceCount > 0,
+                    'resourceCount' => $resourceCount,
                  );
             }
 
@@ -366,6 +355,8 @@ class QuranDatabaseService {
                     'translation'   => $translation,
                     'juzNumber'     => $verse->juz_number,
                     'pageNumber'    => $verse->page_number,
+                    'hasResources'  => isset( $doc[ 'num_resource_i' ] ) ? (int) $doc[ 'num_resource_i' ] > 0 : false,
+                    'resourceCount' => isset( $doc[ 'num_resource_i' ] ) ? (int) $doc[ 'num_resource_i' ] : 0,
                  );
             }
 

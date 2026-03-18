@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('chapters')) {
+            return;
+        }
+
         Schema::create('chapters', function (Blueprint $table) {
             $table->id();
             $table->boolean('bismillah_pre')->default(true);

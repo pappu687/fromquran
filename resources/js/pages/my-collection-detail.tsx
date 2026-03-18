@@ -87,6 +87,7 @@ interface Collection {
     description?: string;
     color: string;
     is_public: boolean;
+    status: 'pending' | 'approved' | 'rejected';
     slug: string;
     created_at: string;
     verses: Verse[];
@@ -205,6 +206,18 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
             coordinateGetter: sortableKeyboardCoordinates,
         }),
     );
+
+    const getStatusBadgeClasses = (status: Collection['status']) => {
+        if (status === 'approved') {
+            return 'border-green-500/20 bg-green-500/10 text-green-700 dark:text-green-400';
+        }
+
+        if (status === 'rejected') {
+            return 'border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-400';
+        }
+
+        return 'border-yellow-500/20 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400';
+    };
 
     useEffect(() => {
         loadCollection();
@@ -523,6 +536,15 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
                                     )}
                                     {collection.is_public ? 'Public' : 'Private'}
                                 </Badge>
+                                <Badge
+                                    variant="outline"
+                                    className={getStatusBadgeClasses(
+                                        collection.status,
+                                    )}
+                                >
+                                    {collection.status.charAt(0).toUpperCase() +
+                                        collection.status.slice(1)}
+                                </Badge>
                             </div>
                             {collection.description && (
                                 <p className="text-muted-foreground">
@@ -726,4 +748,3 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
         </AppLayout>
     );
 }
-

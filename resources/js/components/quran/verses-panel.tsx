@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useReadingMode } from '@/contexts/reading-mode-context';
 import { useReaderSettings } from '@/contexts/reader-settings-context';
 import { useVersesPanel } from '@/hooks/use-verses-panel';
@@ -109,6 +110,8 @@ export function VersesPanel({
         );
     }
 
+    const showChapterLoadingSkeleton = loading && verses.length === 0 && !error;
+
     return (
         <div
             className={cn(
@@ -159,8 +162,39 @@ export function VersesPanel({
                         </div>
                     )}
 
+                    {showChapterLoadingSkeleton && (
+                        <div className="space-y-6">
+                            {Array.from({ length: 5 }).map((_, index) => (
+                                <div
+                                    key={index}
+                                    className="rounded-2xl border border-border/40 bg-background/70 px-4 py-5 md:px-5"
+                                >
+                                    <div className="mb-5 flex items-center justify-between">
+                                        <Skeleton className="h-8 w-8 rounded-[40%]" />
+                                        <div className="flex items-center gap-2">
+                                            <Skeleton className="h-8 w-8 rounded-md" />
+                                            <Skeleton className="h-8 w-8 rounded-md" />
+                                            <Skeleton className="h-8 w-8 rounded-md" />
+                                        </div>
+                                    </div>
+                                    <div className="mb-5 space-y-3">
+                                        <Skeleton className="ml-auto h-8 w-5/6" />
+                                        <Skeleton className="ml-auto h-8 w-4/6" />
+                                    </div>
+                                    {showTranslation && (
+                                        <div className="space-y-2">
+                                            <Skeleton className="h-4 w-full" />
+                                            <Skeleton className="h-4 w-[92%]" />
+                                            <Skeleton className="h-4 w-[78%]" />
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
                     {/* Verses */}
-                    {mode === 'list' ? (
+                    {!showChapterLoadingSkeleton && mode === 'list' ? (
                         verses.map((verse) => (
                             <VerseCard
                                 className="bg-transparent px-0 py-3 md:p-3"
@@ -176,6 +210,7 @@ export function VersesPanel({
                                     verse.id.toString(),
                                 )}
                                 hasResources={verse.hasResources || false}
+                                resourceCount={verse.resourceCount || 0}
                                 onBookmarkToggle={() =>
                                     handleBookmarkToggle(verse as Verse)
                                 }
@@ -184,12 +219,15 @@ export function VersesPanel({
                                 showTranslation={showTranslation}
                             />
                         ))
-                    ) : (
+                    ) : !showChapterLoadingSkeleton ? (
                         <VerseReading verses={verses} />
-                    )}
+                    ) : null}
 
                     {/* Load More Button */}
-                    {!fromVerse && !toVerse && hasMore && (
+                    {!showChapterLoadingSkeleton &&
+                        !fromVerse &&
+                        !toVerse &&
+                        hasMore && (
                         <div className="mt-6 flex justify-center">
                             <Button
                                 variant="outline"

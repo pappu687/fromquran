@@ -11,13 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('user_chapter_resources', function (Blueprint $table) {
-            $table->string('thumbnail_url')->nullable()->after('resource_url');
-        });
+        if (Schema::hasTable('user_chapter_resources') && ! Schema::hasColumn('user_chapter_resources', 'thumbnail_url')) {
+            Schema::table('user_chapter_resources', function (Blueprint $table) {
+                $table->string('thumbnail_url')->nullable()->after('resource_url');
+            });
+        }
 
-        Schema::table('user_verse_resources', function (Blueprint $table) {
-            $table->string('thumbnail_url')->nullable()->after('resource_url');
-        });
+        if (Schema::hasTable('user_verse_resources') && ! Schema::hasColumn('user_verse_resources', 'thumbnail_url')) {
+            Schema::table('user_verse_resources', function (Blueprint $table) {
+                $table->string('thumbnail_url')->nullable()->after('resource_url');
+            });
+        }
     }
 
     /**

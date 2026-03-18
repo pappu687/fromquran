@@ -32,6 +32,7 @@ class CollectionController extends Controller
     public function publicIndex(Request $request): JsonResponse
     {
         $collections = Collection::where('is_public', true)
+            ->where('status', 'approved')
             ->withCount('verses')
             ->orderBy('created_at', 'desc')
             ->get();
@@ -68,6 +69,9 @@ class CollectionController extends Controller
             'description' => $validated['description'] ?? null,
             'color' => $validated['color'] ?? '#3b82f6',
             'is_public' => $validated['is_public'] ?? false,
+            'status' => ($validated['is_public'] ?? false)
+                ? 'pending'
+                : 'approved',
         ]);
 
         $collection->loadCount('verses');
@@ -84,12 +88,15 @@ class CollectionController extends Controller
             ->withCount('verses')
             ->firstOrFail();
 
-        // Check if user owns the collection or if it's public
-        if (!$collection->is_public) {
-            $user = Auth::user();
-            if (!$user || $collection->user_id !== $user->id) {
-                return response()->json(['message' => 'Unauthorized'], 403);
-            }
+        $user = Auth::user();
+        $ownsCollection = $user && $collection->user_id === $user->id;
+
+        // Check if user owns the collection or if it's an approved public collection
+        if (
+            !$ownsCollection &&
+            (!$collection->is_public || $collection->status !== 'approved')
+        ) {
+            return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         $collection->load(['verses' => function ($query) {
@@ -118,11 +125,22 @@ class CollectionController extends Controller
             'is_public' => 'nullable|boolean',
         ]);
 
+        $isPublic = $validated['is_public'] ?? $collection->is_public;
+        $status = $collection->status;
+
+        if (
+            ($isPublic && !$collection->is_public) ||
+            ($isPublic && $collection->status === 'rejected')
+        ) {
+            $status = 'pending';
+        }
+
         $collection->update([
             'name' => $validated['name'] ?? $collection->name,
             'description' => $validated['description'] ?? $collection->description,
             'color' => $validated['color'] ?? $collection->color,
-            'is_public' => $validated['is_public'] ?? $collection->is_public,
+            'is_public' => $isPublic,
+            'status' => $status,
         ]);
 
         $collection->loadCount('verses');

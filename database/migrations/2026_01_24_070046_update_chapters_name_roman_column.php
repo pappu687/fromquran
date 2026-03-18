@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! \Illuminate\Support\Facades\Schema::hasTable('chapters') || ! \Illuminate\Support\Facades\Schema::hasColumn('chapters', 'name_roman')) {
+            return;
+        }
+
         $chaptersData = [
             ["id" => 1, "transliteration" => "Al-Fatihah"],
             ["id" => 2, "transliteration" => "Al-Baqarah"],
@@ -140,6 +144,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        \Illuminate\Support\Facades\DB::table('chapters')->update(['name_roman' => '']);
+        if (\Illuminate\Support\Facades\Schema::hasTable('chapters') && \Illuminate\Support\Facades\Schema::hasColumn('chapters', 'name_roman')) {
+            \Illuminate\Support\Facades\DB::table('chapters')->update(['name_roman' => '']);
+        }
     }
 };

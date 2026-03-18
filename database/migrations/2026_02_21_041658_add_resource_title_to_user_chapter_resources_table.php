@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('user_chapter_resources') || Schema::hasColumn('user_chapter_resources', 'resource_title')) {
+            return;
+        }
+
         Schema::table('user_chapter_resources', function (Blueprint $table) {
             $table->string('resource_title')->nullable()->after('resource_url');
         });

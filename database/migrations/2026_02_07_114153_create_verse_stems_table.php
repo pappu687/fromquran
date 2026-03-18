@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('verse_stems')) {
+            return;
+        }
+
         Schema::create('verse_stems', function (Blueprint $table) {
             $table->id();
             $table->string('text_madani', 255)->nullable()->collation('utf8mb4_general_ci');

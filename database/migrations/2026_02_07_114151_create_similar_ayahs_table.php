@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('similar_ayahs')) {
+            return;
+        }
+
         Schema::create('similar_ayahs', function (Blueprint $table) {
             $table->text('verse_key');
             $table->text('matched_ayah_key');

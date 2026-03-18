@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('verses')) {
+            return;
+        }
+
         Schema::create('verses', function (Blueprint $table) {
             $table->id();
             $table->foreignId('chapter_id');

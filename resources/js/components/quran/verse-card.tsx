@@ -47,6 +47,7 @@ interface Verse {
     audioUrl?: string;
     juzNumber: number;
     pageNumber: number;
+    resourceCount?: number;
 }
 
 interface VerseCardProps {
@@ -54,6 +55,7 @@ interface VerseCardProps {
     totalVerses?: number;
     isBookmarked?: boolean;
     hasResources?: boolean;
+    resourceCount?: number;
     onBookmarkToggle?: (verseId: number) => void;
     onCopy?: (verseId: number, text: string) => void;
     onPlayAudio?: (audioUrl: string) => void;
@@ -68,6 +70,7 @@ export function VerseCard({
     totalVerses,
     isBookmarked = false,
     hasResources = false,
+    resourceCount = 0,
     onBookmarkToggle,
     onCopy,
     onPlayAudio,
@@ -138,6 +141,10 @@ export function VerseCard({
     const verseLabel = verse.chapterNumber
         ? `Quran ${verse.chapterNumber}:${verse.verseNumber}`
         : `Verse ${verse.verseNumber}`;
+    const resourcesTooltip =
+        resourceCount > 0
+            ? `View (${resourceCount}) Resources`
+            : 'View Resources';
 
     const openShareWindow = (href: string) => {
         window.open(href, '_blank', 'noopener,noreferrer');
@@ -237,7 +244,9 @@ export function VerseCard({
                                         />
                                     </Button>
                                 </TooltipTrigger>
-                                <TooltipContent>View Resources</TooltipContent>
+                                <TooltipContent>
+                                    {resourcesTooltip}
+                                </TooltipContent>
                             </Tooltip>
 
                             <Tooltip>

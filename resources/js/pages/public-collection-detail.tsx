@@ -29,6 +29,7 @@ interface Collection {
     description?: string;
     color: string;
     is_public: boolean;
+    status: 'pending' | 'approved' | 'rejected';
     slug: string;
     created_at: string;
     verses: Verse[];

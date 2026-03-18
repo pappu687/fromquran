@@ -4,6 +4,7 @@ import {
     Users,
     Shield,
     FileText,
+    FolderOpen,
     Settings,
     BookOpen,
     Languages,
@@ -59,6 +60,11 @@ const adminNavData = {
             title: 'Resource Submission',
             url: '/admin/resource-submissions',
             icon: FileText,
+        },
+        {
+            title: 'Collections',
+            url: '/admin/collections',
+            icon: FolderOpen,
         },
         {
             title: 'Add Resource',

@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('audio_recitations')) {
+            return;
+        }
+
         Schema::create('audio_recitations', function (Blueprint $table) {
             $table->id();
             $table->string('name');

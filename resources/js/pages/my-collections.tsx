@@ -53,6 +53,7 @@ interface Collection {
     description?: string;
     color: string;
     is_public: boolean;
+    status: 'pending' | 'approved' | 'rejected';
     verses_count: number;
     slug: string;
     created_at: string;
@@ -164,6 +165,18 @@ export default function MyCollectionsPage() {
 
     const handleViewCollection = (slug: string) => {
         router.visit(`/my-collections/${slug}`);
+    };
+
+    const getStatusBadgeClasses = (status: Collection['status']) => {
+        if (status === 'approved') {
+            return 'border-green-500/20 bg-green-500/10 text-green-700 dark:text-green-400';
+        }
+
+        if (status === 'rejected') {
+            return 'border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-400';
+        }
+
+        return 'border-yellow-500/20 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400';
     };
 
     if (isLoading) {
@@ -316,26 +329,41 @@ export default function MyCollectionsPage() {
                                                 </div>
                                                 <div className="flex items-center gap-1.5 text-muted-foreground">
                                                     <span className="text-[10px]">
-                                                        <Badge
-                                                            variant={
-                                                                collection.is_public
-                                                                    ? 'default'
-                                                                    : 'secondary'
-                                                            }
-                                                            className="flex flex-shrink-0 items-center gap-1 px-2 py-0.5 text-xs"
-                                                        >
-                                                            {collection.is_public ? (
-                                                                <>
-                                                                    <Globe className="h-2.5 w-2.5" />
-                                                                    Public
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <Lock className="h-2.5 w-2.5" />
-                                                                    Private
-                                                                </>
-                                                            )}
-                                                        </Badge>
+                                                        <div className="flex items-center gap-2">
+                                                            <Badge
+                                                                variant={
+                                                                    collection.is_public
+                                                                        ? 'default'
+                                                                        : 'secondary'
+                                                                }
+                                                                className="flex flex-shrink-0 items-center gap-1 px-2 py-0.5 text-xs"
+                                                            >
+                                                                {collection.is_public ? (
+                                                                    <>
+                                                                        <Globe className="h-2.5 w-2.5" />
+                                                                        Public
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <Lock className="h-2.5 w-2.5" />
+                                                                        Private
+                                                                    </>
+                                                                )}
+                                                            </Badge>
+                                                            <Badge
+                                                                variant="outline"
+                                                                className={getStatusBadgeClasses(
+                                                                    collection.status,
+                                                                )}
+                                                            >
+                                                                {collection.status
+                                                                    .charAt(0)
+                                                                    .toUpperCase() +
+                                                                    collection.status.slice(
+                                                                        1,
+                                                                    )}
+                                                            </Badge>
+                                                        </div>
                                                     </span>
                                                 </div>
                                             </div>

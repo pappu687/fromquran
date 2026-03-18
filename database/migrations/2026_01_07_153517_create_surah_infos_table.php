@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('surah_infos')) {
+            return;
+        }
+
         Schema::create('surah_infos', function (Blueprint $table) {
             $table->id();
             $table->integer('surah_number')->index();

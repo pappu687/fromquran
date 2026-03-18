@@ -11,18 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('resource_types', function (Blueprint $table) {
-            $table->id();
-            $table->string('slug')->unique();
-            $table->string('name');
-            $table->unsignedInteger('display_order')->default(0);
-            $table->timestamps();
+        if (! Schema::hasTable('resource_types')) {
+            Schema::create('resource_types', function (Blueprint $table) {
+                $table->id();
+                $table->string('slug')->unique();
+                $table->string('name');
+                $table->unsignedInteger('display_order')->default(0);
+                $table->timestamps();
 
-            $table->index('display_order');
-        });
+                $table->index('display_order');
+            });
+        }
 
         // Insert default resource types from the existing enum
-        DB::table('resource_types')->insert([
+        DB::table('resource_types')->insertOrIgnore([
             [
                 'slug' => 'youtube_tafseer',
                 'name' => 'YouTube Tafseer',

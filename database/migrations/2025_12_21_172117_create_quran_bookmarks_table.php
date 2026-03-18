@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('quran_bookmarks')) {
+            return;
+        }
+
         Schema::create('quran_bookmarks', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id');

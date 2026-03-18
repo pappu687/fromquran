@@ -173,6 +173,7 @@ const MobileMenuContent = React.memo(
                                 </p>
                                 <ToggleGroup
                                     type="single"
+                                    variant="outline"
                                     value={mode}
                                     onValueChange={(value) => {
                                         if (value)
@@ -185,7 +186,11 @@ const MobileMenuContent = React.memo(
                                     <ToggleGroupItem
                                         value="list"
                                         aria-label="List view"
-                                        className="h-11 data-[state=on]:bg-muted data-[state=on]:text-foreground"
+                                        className={
+                                            mode === 'list'
+                                                ? 'bg-gray-300 text-white hover:bg-gray-300 hover:text-white'
+                                                : ''
+                                        }
                                     >
                                         <List className="mr-2 h-4 w-4" />
                                         List
@@ -193,7 +198,11 @@ const MobileMenuContent = React.memo(
                                     <ToggleGroupItem
                                         value="reading"
                                         aria-label="Reading view"
-                                        className="h-11 data-[state=on]:bg-muted data-[state=on]:text-foreground"
+                                        className={
+                                            mode === 'reading'
+                                                ? 'bg-gray-300 text-white hover:bg-gray-300 hover:text-white'
+                                                : ''
+                                        }
                                     >
                                         <BookOpen className="mr-2 h-4 w-4" />
                                         Reading
@@ -319,7 +328,11 @@ export function NavActions() {
                             <ToggleGroupItem
                                 value="list"
                                 aria-label="List view"
-                                className="data-[state=on]:bg-muted data-[state=on]:text-foreground"
+                                className={
+                                    mode === 'list'
+                                        ? 'bg-gray-700 text-white hover:bg-gray-700 hover:text-white'
+                                        : ''
+                                }
                             >
                                 <List className="h-4 w-4" />
                             </ToggleGroupItem>
@@ -332,7 +345,11 @@ export function NavActions() {
                             <ToggleGroupItem
                                 value="reading"
                                 aria-label="Reading view"
-                                className="data-[state=on]:bg-muted data-[state=on]:text-foreground"
+                                className={
+                                    mode === 'reading'
+                                        ? 'bg-gray-700 text-white hover:bg-gray-700 hover:text-white'
+                                        : ''
+                                }
                             >
                                 <BookOpen className="h-4 w-4" />
                             </ToggleGroupItem>
@@ -367,7 +384,9 @@ export function NavActions() {
                             <Lock className="h-4 w-4" />
                         </Button>
                     </TooltipTrigger>
-                    <TooltipContent>Login to access all features</TooltipContent>
+                    <TooltipContent>
+                        Login to access all features
+                    </TooltipContent>
                 </Tooltip>
             )}
 

@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('hizbs')) {
+            return;
+        }
+
         Schema::create('hizbs', function (Blueprint $table) {
             $table->id();
             $table->integer('hizb_number')->unique();
@@ -31,6 +35,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('hizs');
+        Schema::dropIfExists('hizbs');
     }
 };

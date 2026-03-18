@@ -18,6 +18,7 @@ class Collection extends Model
         'description',
         'color',
         'is_public',
+        'status',
         'slug',
     ];
 
@@ -78,6 +79,14 @@ class Collection extends Model
     public function scopePublic($query)
     {
         return $query->where('is_public', true);
+    }
+
+    /**
+     * Scope to get approved collections.
+     */
+    public function scopeApproved($query)
+    {
+        return $query->where('status', 'approved');
     }
 
     /**

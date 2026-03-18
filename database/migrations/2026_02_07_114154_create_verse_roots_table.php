@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('verse_roots')) {
+            return;
+        }
+
         Schema::create('verse_roots', function (Blueprint $table) {
             $table->id();
             $table->text('value')->nullable()->collation('utf8mb4_general_ci');

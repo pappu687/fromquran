@@ -213,7 +213,17 @@ export default function SearchPage({
                                                         pageNumber:
                                                             verse.pageNumber ??
                                                             0,
+                                                        resourceCount:
+                                                            verse.resourceCount ??
+                                                            0,
                                                     }}
+                                                    hasResources={
+                                                        verse.hasResources ??
+                                                        false
+                                                    }
+                                                    resourceCount={
+                                                        verse.resourceCount ?? 0
+                                                    }
                                                     showTranslation
                                                     hideHeaderActions={false}
                                                     className={cn(
@@ -320,4 +330,3 @@ export default function SearchPage({
         </>
     );
 }
-

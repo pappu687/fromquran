@@ -4,6 +4,8 @@ namespace App\Console\Commands;
 
 use App\Models\Verse;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Solarium\Client;
 
 class IndexVersesToSolr extends Command
@@ -57,6 +59,19 @@ class IndexVersesToSolr extends Command
             ->orderBy('id')
             ->chunk(200, function ($verses) use ($bar) {
                 $update = $this->client->createUpdate();
+                $verseIds = $verses->pluck('id')->all();
+                $resourceCountsQuery = DB::table('user_verse_resources')
+                    ->select('verse_id', DB::raw('COUNT(*) as resource_count'))
+                    ->whereIn('verse_id', $verseIds)
+                    ->where('status', 'approved');
+
+                if (Schema::hasColumn('user_verse_resources', 'deleted_at')) {
+                    $resourceCountsQuery->whereNull('deleted_at');
+                }
+
+                $resourceCounts = $resourceCountsQuery
+                    ->groupBy('verse_id')
+                    ->pluck('resource_count', 'verse_id');
 
                 foreach ($verses as $verse) {
                     $doc = $update->createDocument();
@@ -74,6 +89,7 @@ class IndexVersesToSolr extends Command
                     $doc->page_number_i = (int) $verse->page_number;
                     $doc->ruku_number_i = (int) $verse->ruku_number;
                     $doc->surah_ruku_number_i = (int) $verse->surah_ruku_number;
+                    $doc->num_resource_i = (int) ($resourceCounts[$verse->id] ?? 0);
 
                     // Group translations by language and pick highest-priority text per language
                     $translationsByLanguage = $verse->translations->groupBy('language_id');
@@ -105,4 +121,3 @@ class IndexVersesToSolr extends Command
         return self::SUCCESS;
     }
 }
-

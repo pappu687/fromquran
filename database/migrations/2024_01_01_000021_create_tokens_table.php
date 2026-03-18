@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('tokens')) {
+            return;
+        }
+
         Schema::create('tokens', function (Blueprint $table) {
             $table->id();
             $table->string('text_uthmani');

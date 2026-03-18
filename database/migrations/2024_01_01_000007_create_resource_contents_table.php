@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('resource_contents')) {
+            return;
+        }
+
         Schema::create('resource_contents', function (Blueprint $table) {
             $table->id();
             $table->boolean('approved')->default(false);

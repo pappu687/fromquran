@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('user_audio_preferences')) {
+            return;
+        }
+
         Schema::create('user_audio_preferences', function (Blueprint $table) {
             $table->id();
             $table->integer('user_id');

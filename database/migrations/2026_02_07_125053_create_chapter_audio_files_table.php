@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('chapter_audio_files')) {
+            return;
+        }
+
         Schema::create('chapter_audio_files', function (Blueprint $table) {
             $table->id();
             $table->integer('chapter_id');

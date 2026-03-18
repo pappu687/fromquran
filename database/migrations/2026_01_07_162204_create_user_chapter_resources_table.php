@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('user_chapter_resources')) {
+            return;
+        }
+
         Schema::create('user_chapter_resources', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id');
