@@ -1,6 +1,8 @@
+import { ReaderSidebarFooter } from '@/components/quran/reader-sidebar-footer';
 import { Input } from '@/components/ui/input';
 import {
     SidebarContent,
+    SidebarFooter,
     SidebarGroup,
     SidebarGroupContent,
     SidebarHeader,
@@ -9,10 +11,10 @@ import {
     SidebarMenuItem,
     useSidebar,
 } from '@/components/ui/sidebar';
-import { BookOpen, Search, History, Star, Clock } from 'lucide-react';
-import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
-import { useState, useEffect } from 'react';
 import { useReaderSettings } from '@/contexts/reader-settings-context';
+import { History, Search } from 'lucide-react';
+import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
+import { useEffect, useState } from 'react';
 
 interface Chapter {
     id: number;
@@ -237,6 +239,10 @@ export function ChaptersPanel({
                     </SidebarGroup>
                 </OverlayScrollbarsComponent>
             </SidebarContent>
+
+            <SidebarFooter>
+                <ReaderSidebarFooter />
+            </SidebarFooter>
         </>
     );
 }

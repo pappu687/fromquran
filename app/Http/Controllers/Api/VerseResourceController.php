@@ -94,8 +94,8 @@ class VerseResourceController extends Controller
 
         $query = $this->client->createSelect();
 
-        // Query for verse resources, translations for this verse, and chapter resources for the verse's chapter
-        $q = "(document_type_s:user_verse_resource AND verse_id_i:{$verseId}) OR (document_type_s:translation AND verse_id_i:{$verseId})";
+        // Query for verse-specific and chapter-level resources only.
+        $q = "(document_type_s:user_verse_resource AND verse_id_i:{$verseId})";
         if ($chapterId) {
             $q .= " OR (document_type_s:user_chapter_resource AND chapter_id_i:{$chapterId})";
         }

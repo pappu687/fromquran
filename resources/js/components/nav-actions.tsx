@@ -181,7 +181,7 @@ const MobileMenuContent = React.memo(
                                                 value as 'list' | 'reading',
                                             );
                                     }}
-                                    className="grid w-full grid-cols-2 gap-2"
+                                    className="grid w-full grid-cols-2 gap-0"
                                 >
                                     <ToggleGroupItem
                                         value="list"
@@ -192,7 +192,7 @@ const MobileMenuContent = React.memo(
                                                 : ''
                                         }
                                     >
-                                        <List className="mr-2 h-4 w-4" />
+                                        <List className="h-4 w-4" />
                                         List
                                     </ToggleGroupItem>
                                     <ToggleGroupItem
@@ -204,7 +204,7 @@ const MobileMenuContent = React.memo(
                                                 : ''
                                         }
                                     >
-                                        <BookOpen className="mr-2 h-4 w-4" />
+                                        <BookOpen className="h-4 w-4" />
                                         Reading
                                     </ToggleGroupItem>
                                 </ToggleGroup>

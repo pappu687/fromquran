@@ -32,6 +32,10 @@ Route::get('/roadmap', function () {
     return Inertia::render('roadmap');
 })->name('roadmap');
 
+Route::get('/support', function () {
+    return Inertia::render('support');
+})->name('support');
+
 Route::post('/contact', [\App\Http\Controllers\ContactController::class, 'store'])
     ->name('contact.store');
 
