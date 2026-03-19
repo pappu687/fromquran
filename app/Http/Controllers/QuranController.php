@@ -67,6 +67,10 @@ class QuranController extends Controller
         if (!is_array($translations)) {
             $translations = explode(',', $translations);
         }
+        $translations = array_values(array_unique(array_filter(array_map(
+            static fn ($translation) => is_numeric($translation) ? (int) $translation : null,
+            $translations
+        ), static fn ($translation) => $translation !== null)));
 
         // Only treat as range when explicit query params are present
         $from = $request->has('from') ? (int) $request->query('from') : null;

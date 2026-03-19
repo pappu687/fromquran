@@ -11,6 +11,9 @@ export interface ChapterSummary {
 
 export interface VerseTranslation {
     resource_id: number;
+    resource_content_id?: number;
+    resource_name?: string;
+    language?: string;
     text: string;
 }
 

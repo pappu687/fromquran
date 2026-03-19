@@ -10,15 +10,7 @@ import {
 } from '@/components/ui/sheet';
 import { useReaderSettings } from '@/contexts/reader-settings-context';
 import { cn } from '@/lib/utils';
-import {
-    Check,
-    Languages,
-    Loader2,
-    Minus,
-    PanelsTopLeft,
-    Plus,
-    Type,
-} from 'lucide-react';
+import { Check, Loader2, Minus, Plus } from 'lucide-react';
 import { useEffect, useLayoutEffect, useState } from 'react';
 
 interface ReaderSettingsSheetProps {
@@ -32,6 +24,10 @@ interface Translation {
     language: string;
 }
 
+interface ReaderSettingsResponse {
+    translations_list?: Translation[];
+}
+
 const MUSHAF_FONTS = [
     { id: 'uthmanic', name: 'Uthmanic Hafs', description: 'Classic script' },
     { id: 'indopak', name: 'IndoPak', description: 'South Asian layout' },
@@ -42,27 +38,23 @@ const MAX_FONT_SIZE = 3;
 const FONT_SIZE_STEP = 0.2;
 
 interface SectionProps {
-    icon: React.ReactNode;
     title: string;
     description: string;
     children: React.ReactNode;
 }
 
-function SettingsSection({ icon, title, description, children }: SectionProps) {
+function SettingsSection({ title, description, children }: SectionProps) {
     return (
         <section className="border-b border-slate-200 pb-5 last:border-b-0 last:pb-0">
-            <div className="mb-4 flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-stone-100 text-slate-700">
-                    {icon}
-                </div>
-                <div>
-                    <h3 className="text-base font-semibold tracking-tight text-slate-950">
-                        {title}
-                    </h3>
+            <div className="mb-4">
+                <h3 className="text-base font-semibold tracking-tight text-slate-950">
+                    {title}
+                </h3>
+                {description && (
                     <p className="mt-1 text-sm leading-6 text-slate-500">
                         {description}
                     </p>
-                </div>
+                )}
             </div>
             {children}
         </section>
@@ -133,7 +125,8 @@ export function ReaderSettingsSheet({
                 setLoadingTranslations(true);
                 try {
                     const response = await fetch('/api/quran/settings');
-                    const data = await response.json();
+                    const data =
+                        (await response.json()) as ReaderSettingsResponse;
                     if (data.translations_list) {
                         setAvailableTranslations(data.translations_list);
                     }
@@ -146,6 +139,38 @@ export function ReaderSettingsSheet({
             fetchSettings();
         }
     }, [open, availableTranslations.length]);
+
+    useEffect(() => {
+        if (availableTranslations.length === 0) {
+            return;
+        }
+
+        const availableIds = new Set(
+            availableTranslations.map((translation) => translation.id),
+        );
+        const normalizedTranslations = settings.selectedTranslations.filter(
+            (id) => availableIds.has(id),
+        );
+        const nextTranslations =
+            normalizedTranslations.length > 0
+                ? normalizedTranslations.slice(0, 2)
+                : [availableTranslations[0].id];
+
+        const hasChanged =
+            nextTranslations.length !== settings.selectedTranslations.length ||
+            nextTranslations.some(
+                (id, index) => id !== settings.selectedTranslations[index],
+            );
+
+        if (hasChanged) {
+            setSelectedTranslations(nextTranslations);
+            updateSettings({ selectedTranslations: nextTranslations });
+        }
+    }, [
+        availableTranslations,
+        settings.selectedTranslations,
+        updateSettings,
+    ]);
 
     useLayoutEffect(() => {
         if (open) {
@@ -208,15 +233,10 @@ export function ReaderSettingsSheet({
                     <SheetTitle className="text-xl tracking-tight text-slate-950">
                         Reader Settings
                     </SheetTitle>
-                    <SheetDescription className="max-w-md leading-6 text-slate-500">
-                        Adjust the reading view, script style, and translation
-                        setup without leaving the page.
-                    </SheetDescription>
                 </SheetHeader>
 
                 <div className="space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
                     <SettingsSection
-                        icon={<Type className="h-4 w-4" />}
                         title="Reading View"
                         description="Control the script visibility and Arabic text size."
                     >
@@ -227,13 +247,9 @@ export function ReaderSettingsSheet({
                                         <Label className="text-sm font-medium text-slate-950">
                                             Arabic font size
                                         </Label>
-                                        <p className="mt-1 text-sm leading-6 text-slate-500">
-                                            Increase or reduce the Quran text
-                                            size for more comfortable reading.
-                                        </p>
                                     </div>
                                     <div className="text-right">
-                                        <div className="text-2xl font-semibold tracking-tight text-slate-950">
+                                        <div className="text-xl font-semibold tracking-tight text-slate-950">
                                             {fontSize.toFixed(1)}
                                         </div>
                                         <div className="text-xs text-slate-400">
@@ -282,11 +298,7 @@ export function ReaderSettingsSheet({
                         </div>
                     </SettingsSection>
 
-                    <SettingsSection
-                        icon={<PanelsTopLeft className="h-4 w-4" />}
-                        title="Layout"
-                        description="Adjust navigation behavior and default script style."
-                    >
+                    <SettingsSection title="Layout" description="">
                         <div className="space-y-3">
                             <div className="space-y-2 px-1">
                                 <Label className="text-sm font-medium text-slate-950">
@@ -348,20 +360,10 @@ export function ReaderSettingsSheet({
                     </SettingsSection>
 
                     <SettingsSection
-                        icon={<Languages className="h-4 w-4" />}
                         title="Translations"
                         description="Choose up to two translations to appear with the Arabic text."
                     >
                         <div>
-                            <div className="mb-3 flex items-center justify-between gap-3 px-1">
-                                <p className="text-sm text-slate-500">
-                                    Selected {selectedTranslations.length} of 2
-                                </p>
-                                <p className="text-xs text-slate-400">
-                                    New picks replace the oldest selection
-                                </p>
-                            </div>
-
                             <div className="max-h-[320px] space-y-1.5 overflow-y-auto px-1 py-1">
                                 {loadingTranslations &&
                                 availableTranslations.length === 0 ? (

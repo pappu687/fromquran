@@ -91,19 +91,17 @@ class IndexVersesToSolr extends Command
                     $doc->surah_ruku_number_i = (int) $verse->surah_ruku_number;
                     $doc->num_resource_i = (int) ($resourceCounts[$verse->id] ?? 0);
 
-                    // Group translations by language and pick highest-priority text per language
-                    $translationsByLanguage = $verse->translations->groupBy('language_id');
-
-                    foreach ($translationsByLanguage as $languageId => $translations) {
-                        $best = $translations->sortByDesc('priority')->first();
-
-                        if (!$best || !trim((string) $best->text)) {
+                    foreach ($verse->translations as $translation) {
+                        if (
+                            !$translation->resource_content_id ||
+                            !trim((string) $translation->text)
+                        ) {
                             continue;
                         }
 
-                        // Field like: translation_1_t, translation_2_t, etc. (uses Solr *_t dynamic field)
-                        $fieldName = 'translation_' . $languageId . '_t';
-                        $doc->$fieldName = $best->text;
+                        // Field like: translation_131_t where 131 is resource_content_id.
+                        $fieldName = 'translation_' . $translation->resource_content_id . '_t';
+                        $doc->$fieldName = $translation->text;
                     }
 
                     $update->addDocument($doc);

@@ -6,11 +6,13 @@ use App\Models\ResourceContent;
 use App\Models\TafseerBook;
 use App\Models\Translation;
 use App\Models\Verse;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Solarium\Client;
 
 class QuranDatabaseService {
+    private const CACHE_SCHEMA_VERSION = 'v2';
     private int $cacheTtl;
     private Client $solrClient;
 
@@ -73,7 +75,7 @@ class QuranDatabaseService {
      */
     public function getVerses( int $chapterId, int $page = 1, int $limit = 10, string $edition = 'en.sahih', array $translationIds = [] ): array {
         // We use a broader cache key here because we fetch all verses of the chapter at once
-        $cacheKey = "q.verses.{$chapterId}.all.{$edition}." . implode(',', $translationIds);
+        $cacheKey = "q." . self::CACHE_SCHEMA_VERSION . ".verses.{$chapterId}.all.{$edition}." . implode(',', $translationIds);
 
         return Cache::remember( $cacheKey, $this->cacheTtl, function () use ( $chapterId, $edition, $translationIds ) {
             $chapter = Chapter::where( 'id', $chapterId )
@@ -84,36 +86,21 @@ class QuranDatabaseService {
                 return array(  );
             }
 
-            // Resolve language_ids from translations
-            $languageIdMap = [];
+            $availableTranslationIds = $this->getAvailableTranslationResourceIds();
+            $translationResources = $this->resolveVerseTranslationResources(
+                $translationIds,
+                $edition,
+                $availableTranslationIds,
+            );
+
             if (!empty($translationIds)) {
-                $resources = ResourceContent::whereIn('id', $translationIds)
-                    ->where('approved', true)
-                    ->get();
-                
-                foreach ($resources as $resource) {
-                    $languageIdMap[$resource->id] = $resource->language_id;
-                }
-            } else if ( 'ar' !== $edition ) {
-                $resource = ResourceContent::where( 'resource_type', 'translation' )
-                    ->where( 'approved', true )
-                    ->where( function ( $query ) use ( $edition ) {
-                        $query->where( 'resource_id', 'like', "%{$edition}%" )
-                            ->orWhere( 'slug', 'like', "%{$edition}%" );
-                    } )
-                    ->first();
+                $translationResources = $translationResources->sortBy(function (
+                    ResourceContent $resource,
+                ) use ($translationIds) {
+                    $position = array_search($resource->id, $translationIds, true);
 
-                if ( ! $resource ) {
-                    // Fallback to any English translation resource
-                    $resource = ResourceContent::where( 'resource_type', 'translation' )
-                        ->where( 'approved', true )
-                        ->where( 'language_name', 'English' )
-                        ->first();
-                }
-
-                if ($resource) {
-                    $languageIdMap[$resource->id] = $resource->language_id;
-                }
+                    return $position === false ? PHP_INT_MAX : $position;
+                });
             }
 
             // Query Solr for all verses in this chapter
@@ -170,11 +157,14 @@ class QuranDatabaseService {
 
                 // Translations from Solr
                 $translations = [];
-                foreach ($languageIdMap as $resourceId => $langId) {
-                    $fieldName = 'translation_' . $langId . '_t';
+                foreach ($translationResources as $resource) {
+                    $fieldName = 'translation_' . $resource->id . '_t';
                     if (isset($doc[$fieldName])) {
                         $translations[] = [
-                            'resource_id' => $resourceId,
+                            'resource_id' => $resource->id,
+                            'resource_content_id' => $resource->id,
+                            'resource_name' => $resource->name,
+                            'language' => $resource->language_name,
                             'text' => $doc[$fieldName]
                         ];
                     }
@@ -238,9 +228,16 @@ class QuranDatabaseService {
      * Get available translations list from database
      */
     public function getTranslationsList(): array {
-        return Cache::remember( 'quran.db.translations_list', $this->cacheTtl * 24, function () {
+        return Cache::remember( 'quran.' . self::CACHE_SCHEMA_VERSION . '.db.translations_list', $this->cacheTtl * 24, function () {
+            $availableTranslationIds = $this->getAvailableTranslationResourceIds();
+
+            if ( empty( $availableTranslationIds ) ) {
+                return [];
+            }
+
             return ResourceContent::where( 'resource_type', 'translation' )
                 ->where( 'approved', true )
+                ->whereIn( 'id', $availableTranslationIds )
                 ->orderBy( 'priority' )
                 ->get()
                 ->map( function ( $resource ) {
@@ -251,6 +248,82 @@ class QuranDatabaseService {
                      );
                 } )
                 ->toArray();
+        } );
+    }
+
+    /**
+     * Resolve translation resources from explicit ids or the selected edition.
+     */
+    private function resolveVerseTranslationResources(
+        array $translationIds,
+        string $edition,
+        array $availableTranslationIds,
+    ): Collection {
+        $query = ResourceContent::query()
+            ->where('resource_type', 'translation')
+            ->where('approved', true)
+            ->when(!empty($availableTranslationIds), function ($builder) use ($availableTranslationIds) {
+                $builder->whereIn('id', $availableTranslationIds);
+            });
+
+        if (!empty($translationIds)) {
+            return $query
+                ->whereIn('id', $translationIds)
+                ->get()
+                ->keyBy('id');
+        }
+
+        if ('ar' === $edition) {
+            return collect();
+        }
+
+        $resource = (clone $query)
+            ->where(function ($builder) use ($edition) {
+                $builder->where('resource_id', 'like', "%{$edition}%")
+                    ->orWhere('slug', 'like', "%{$edition}%");
+            })
+            ->orderBy('priority')
+            ->first();
+
+        if (!$resource) {
+            $resource = (clone $query)
+                ->where('language_name', 'English')
+                ->orderBy('priority')
+                ->first();
+        }
+
+        if (!$resource) {
+            return collect();
+        }
+
+        return collect([$resource])->keyBy('id');
+    }
+
+    /**
+     * Get Solr-backed translation resource IDs by inspecting indexed verse fields.
+     */
+    private function getAvailableTranslationResourceIds(): array
+    {
+        return Cache::remember( 'quran.' . self::CACHE_SCHEMA_VERSION . '.solr.translation_resource_ids', $this->cacheTtl * 24, function () {
+            $select = $this->solrClient->createSelect();
+            $select->setQuery( 'verse_key_s:[* TO *] AND -document_type_s:[* TO *] AND -type_s:[* TO *]' );
+            $select->setStart( 0 )->setRows( 25 );
+
+            $resultSet = $this->solrClient->select( $select );
+            $resourceIds = [];
+
+            foreach ( $resultSet as $doc ) {
+                foreach ( $doc as $fieldName => $value ) {
+                    if ( preg_match( '/^translation_(\d+)_t$/', (string) $fieldName, $matches ) ) {
+                        $resourceIds[(int) $matches[1]] = true;
+                    }
+                }
+            }
+
+            $resourceIds = array_keys( $resourceIds );
+            sort( $resourceIds );
+
+            return $resourceIds;
         } );
     }
 
@@ -266,36 +339,22 @@ class QuranDatabaseService {
      * Search Quran text using Solr
      */
     public function search( string $query, string $edition = 'en.sahih' ): array {
-        $cacheKey = "quran.solr.search." . md5( $query . $edition );
+        $cacheKey = "quran." . self::CACHE_SCHEMA_VERSION . ".solr.search." . md5( $query . $edition );
 
         return Cache::remember( $cacheKey, $this->cacheTtl / 2, function () use ( $query, $edition ) {
-            // Resolve language_id from edition to pick correct translation field
-            $languageId = null;
-
-            if ( 'ar' !== $edition ) {
-                $resource = ResourceContent::where( 'resource_type', 'translation' )
-                    ->where( 'approved', true )
-                    ->where( function ( $q ) use ( $edition ) {
-                        $q->where( 'resource_id', 'like', "%{$edition}%" )
-                            ->orWhere( 'slug', 'like', "%{$edition}%" );
-                    } )
-                    ->first();
-
-                if ( ! $resource ) {
-                    $resource = ResourceContent::where( 'resource_type', 'translation' )
-                        ->where( 'approved', true )
-                        ->where( 'language_name', 'English' )
-                        ->first();
-                }
-
-                $languageId = $resource?->language_id;
-            }
+            $availableTranslationIds = $this->getAvailableTranslationResourceIds();
+            $translationResource = $this->resolveVerseTranslationResources(
+                [],
+                $edition,
+                $availableTranslationIds,
+            )->first();
+            $translationResourceId = $translationResource?->id;
 
             $select       = $this->solrClient->createSelect();
             $escapedQuery = addcslashes( $query, '+-&|!(){}[]^"~*?:\\/' );
 
-            if ( $languageId ) {
-                $fieldName = 'translation_' . $languageId . '_t';
+            if ( $translationResourceId ) {
+                $fieldName = 'translation_' . $translationResourceId . '_t';
                 $select->setQuery( sprintf( '(%s:%s) OR (text_uthmani_t:%s)', $fieldName, $escapedQuery, $escapedQuery ) );
             } else {
                 $select->setQuery( sprintf( 'text_uthmani_t:%s', $escapedQuery ) );
@@ -340,8 +399,8 @@ class QuranDatabaseService {
 
                 $translation = null;
 
-                if ( $languageId ) {
-                    $fieldName   = 'translation_' . $languageId . '_t';
+                if ( $translationResourceId ) {
+                    $fieldName   = 'translation_' . $translationResourceId . '_t';
                     $translation = $doc[ $fieldName ] ?? null;
                 }
 
