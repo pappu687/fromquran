@@ -1,13 +1,11 @@
-import { Head, Link, router } from '@inertiajs/react';
-import { FormEvent, useEffect, useState } from 'react';
 import { VerseCard } from '@/components/quran/verse-card';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
 import QuranReaderLayout from '@/layouts/quran-reader-layout';
-import { Field, FieldLabel } from '@/components/ui/field';
-import { ButtonGroup } from '@/components/ui/button-group';
-import { BookOpen } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Head, router } from '@inertiajs/react';
+import { BookOpen, Search as SearchIcon } from 'lucide-react';
+import { FormEvent, useEffect, useState } from 'react';
 
 interface VerseResult {
     id: number | null;
@@ -30,7 +28,6 @@ interface SearchPageProps {
     currentPage: number;
     perPage: number;
     total: number;
-    // Reader layout props
     chapters: {
         id: number;
         number: number;
@@ -60,7 +57,9 @@ export default function SearchPage({
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
-        if (!localQuery.trim()) return;
+        if (!localQuery.trim()) {
+            return;
+        }
 
         setIsSubmitting(true);
 
@@ -74,17 +73,45 @@ export default function SearchPage({
         );
     };
 
-    const hasResults = results && results.length > 0;
-
     const totalPages = Math.max(1, Math.ceil(total / perPage));
+    const hasResults = results.length > 0;
+    const showingFrom = total === 0 ? 0 : (currentPage - 1) * perPage + 1;
+    const showingTo = total === 0 ? 0 : Math.min(currentPage * perPage, total);
 
     const changePage = (page: number) => {
-        if (page < 1 || page > totalPages) return;
+        if (page < 1 || page > totalPages) {
+            return;
+        }
+
         router.get(
             '/search',
-            { query: query, page },
+            { query, page },
             { preserveScroll: true, preserveState: true },
         );
+    };
+
+    const getVisiblePages = () => {
+        const maxVisiblePages = 5;
+
+        if (totalPages <= maxVisiblePages) {
+            return Array.from({ length: totalPages }, (_, index) => index + 1);
+        }
+
+        if (currentPage <= 3) {
+            return [1, 2, 3, 4, totalPages];
+        }
+
+        if (currentPage >= totalPages - 2) {
+            return [
+                1,
+                totalPages - 3,
+                totalPages - 2,
+                totalPages - 1,
+                totalPages,
+            ];
+        }
+
+        return [1, currentPage - 1, currentPage, currentPage + 1, totalPages];
     };
 
     return (
@@ -94,220 +121,234 @@ export default function SearchPage({
                 chapters={chapters}
                 selectedChapter={undefined}
                 onChapterSelect={(chapterId) => {
-                    const chapter = chapters.find((c) => c.id === chapterId);
-                    if (!chapter) return;
+                    const chapter = chapters.find(
+                        (item) => item.id === chapterId,
+                    );
+                    if (!chapter) {
+                        return;
+                    }
+
                     router.visit(`/${chapter.number}`);
                 }}
             >
-                <div className="flex flex-1 flex-col px-4 py-5">
-                    <div className="mx-auto h-full w-full max-w-3xl">
-                        {/* Header & Search box */}
-                        <section className="mt-8 mb-10 text-center">
-                            <h1 className="mb-6 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-                                Search the Qur'an
-                            </h1>
+                <div className="flex flex-1 flex-col bg-[#fafaf8] px-4 py-5">
+                    <div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-8 py-4 sm:gap-10 sm:py-6">
+                        <section className="border-b border-slate-200 pb-6 sm:pb-8">
+                            <div className="max-w-3xl">
+                                <p className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">
+                                    Quran Search
+                                </p>
+                                <h1 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-4xl">
+                                    Search the Qur&apos;an with context
+                                </h1>
+                                <p className="mt-3 text-sm leading-7 text-slate-500 sm:text-base">
+                                    Find verses quickly, keep the Arabic and
+                                    translation readable, and jump straight into
+                                    the full reading context.
+                                </p>
+                            </div>
+
                             <form
                                 onSubmit={handleSubmit}
-                                className="mx-auto max-w-2xl"
+                                className="mt-6 max-w-3xl sm:mt-7"
                             >
-                                <Field className="w-full">
-                                    <ButtonGroup className="w-full shadow-sm">
+                                <div className="flex flex-col gap-3 sm:flex-row">
+                                    <div className="relative flex-1">
+                                        <SearchIcon className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-slate-400" />
                                         <Input
                                             id="q"
                                             value={localQuery}
                                             onChange={(e) =>
                                                 setLocalQuery(e.target.value)
                                             }
-                                            placeholder=""
-                                            className="h-12 flex-1 rounded-r-none border-border bg-background px-4 text-base focus-visible:ring-1 focus-visible:ring-blue-500"
+                                            placeholder="Search a word, phrase, or theme"
+                                            className="h-12 rounded-full border-slate-200 bg-white pr-4 pl-11 text-base shadow-none focus-visible:ring-1 focus-visible:ring-slate-900"
                                         />
-                                        <Button
-                                            type="submit"
-                                            className="h-12 rounded-l-none bg-blue-500 px-8 text-base font-medium text-white hover:bg-blue-600"
-                                        >
-                                            {isSubmitting
-                                                ? 'Searching…'
-                                                : 'Search'}
-                                        </Button>
-                                    </ButtonGroup>
-                                </Field>
-                                <p className="mt-3 text-left text-[13px] text-muted-foreground">
-                                    Press Enter to search.
-                                </p>
+                                    </div>
+                                    <Button
+                                        type="submit"
+                                        className="h-12 rounded-full px-6"
+                                    >
+                                        {isSubmitting ? 'Searching…' : 'Search'}
+                                    </Button>
+                                </div>
+                                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-400 sm:text-sm">
+                                    <span>Edition: {edition}</span>
+                                    <span className="text-slate-300">•</span>
+                                    <span>Press Enter to search</span>
+                                </div>
                             </form>
                         </section>
 
-                        {/* Results */}
-                        <main className="mx-auto flex w-full max-w-2xl flex-col gap-4">
-                            {query && !hasResults && (
-                                <div className="mt-8 text-center text-sm text-muted-foreground">
-                                    <p>
-                                        No verses found for{' '}
-                                        <span className="font-semibold text-foreground">
-                                            “{query}”
-                                        </span>
-                                        . Try different wording or a shorter
-                                        phrase.
+                        {query && (
+                            <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                                <div>
+                                    <p className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">
+                                        Results
+                                    </p>
+                                    <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+                                        {hasResults
+                                            ? `Matches for “${query}”`
+                                            : `No results for “${query}”`}
+                                    </h2>
+                                    <p className="mt-2 text-sm leading-7 text-slate-500">
+                                        {hasResults
+                                            ? `Showing ${showingFrom}-${showingTo} of ${total} matches.`
+                                            : 'Try a shorter phrase, another spelling, or a broader term.'}
                                     </p>
                                 </div>
-                            )}
 
-                            {hasResults && (
-                                <section className="space-y-6">
-                                    <div className="flex items-center justify-between text-[13px] text-muted-foreground">
-                                        <p>
-                                            Showing{' '}
-                                            <span className="font-medium text-foreground">
-                                                {results.length}
-                                            </span>{' '}
-                                            of{' '}
-                                            <span className="font-medium text-foreground">
-                                                {total}
-                                            </span>{' '}
-                                            matches for{' '}
-                                            <span className="font-medium text-blue-500">
-                                                "{query}"
-                                            </span>
-                                            .
-                                        </p>
-                                        <p>
+                                {hasResults && (
+                                    <div className="flex flex-wrap gap-2">
+                                        <div className="rounded-full bg-white px-3 py-1.5 text-sm text-slate-600 ring-1 ring-slate-200">
                                             Page {currentPage} of {totalPages}
+                                        </div>
+                                        <div className="rounded-full bg-white px-3 py-1.5 text-sm text-slate-600 ring-1 ring-slate-200">
+                                            {total} results
+                                        </div>
+                                    </div>
+                                )}
+                            </section>
+                        )}
+
+                        {!query && (
+                            <section className="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center shadow-none">
+                                <BookOpen className="mx-auto h-10 w-10 text-slate-300" />
+                                <h2 className="mt-4 text-xl font-semibold text-slate-950">
+                                    Start with a search
+                                </h2>
+                                <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-slate-500">
+                                    Enter a name, phrase, or topic to explore
+                                    matching verses.
+                                </p>
+                            </section>
+                        )}
+
+                        {query && !hasResults && (
+                            <section className="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center shadow-none">
+                                <SearchIcon className="mx-auto h-10 w-10 text-slate-300" />
+                                <h2 className="mt-4 text-xl font-semibold text-slate-950">
+                                    No verses found
+                                </h2>
+                                <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-slate-500">
+                                    No matches were found for “{query}”. Try a
+                                    broader keyword or a shorter phrase.
+                                </p>
+                            </section>
+                        )}
+
+                        {hasResults && (
+                            <main className="space-y-5">
+                                {results.map((verse) => (
+                                    <div
+                                        key={`${verse.chapterId}-${verse.verseNumber}-${verse.id ?? 'n'}`}
+                                        className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-none"
+                                    >
+                                        <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-4">
+                                            <span className="rounded-full bg-stone-100 px-3 py-1 text-[11px] font-semibold tracking-[0.16em] text-slate-600 uppercase">
+                                                {verse.chapterName ??
+                                                    `Surah ${verse.chapterId}`}
+                                            </span>
+                                            <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-200">
+                                                Ayah {verse.verseNumber}
+                                            </span>
+                                        </div>
+
+                                        <VerseCard
+                                            verse={{
+                                                id: verse.id ?? 0,
+                                                chapterId: verse.chapterId,
+                                                chapterNumber:
+                                                    verse.chapterNumber ??
+                                                    verse.chapterId,
+                                                verseNumber: verse.verseNumber,
+                                                text: verse.text,
+                                                translation:
+                                                    verse.translation ??
+                                                    undefined,
+                                                juzNumber: verse.juzNumber ?? 0,
+                                                pageNumber:
+                                                    verse.pageNumber ?? 0,
+                                                resourceCount:
+                                                    verse.resourceCount ?? 0,
+                                            }}
+                                            hasResources={
+                                                verse.hasResources ?? false
+                                            }
+                                            resourceCount={
+                                                verse.resourceCount ?? 0
+                                            }
+                                            showTranslation
+                                            hideHeaderActions={false}
+                                            className={cn(
+                                                'border-0 bg-transparent p-5 pt-3 shadow-none',
+                                            )}
+                                        />
+                                    </div>
+                                ))}
+
+                                {totalPages > 1 && (
+                                    <section className="flex flex-col gap-4 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                                        <p className="text-sm text-slate-500">
+                                            Showing {showingFrom} to {showingTo}{' '}
+                                            of {total} matches
                                         </p>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        {results.map((verse) => (
-                                            <div
-                                                key={`${verse.chapterId}-${verse.verseNumber}-${verse.id ?? 'n'}`}
-                                                className="overflow-hidden rounded-[16px] border border-border/50 bg-background"
-                                            >
-                                                <div className="flex items-center justify-between px-5 pt-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="flex items-center justify-center gap-2 rounded bg-muted/50 px-2 py-1 text-[10px] font-bold tracking-widest text-[#7D8893] uppercase">
-                                                            {verse.chapterName ??
-                                                                `Surah ${verse.chapterId}`}
-                                                        </span>
-                                                        <div className="flex h-5 items-center justify-center rounded-sm bg-muted/40 px-1.5 text-[11px] font-bold text-foreground/80 ring-1 ring-foreground/10 ring-inset">
-                                                            {verse.verseNumber}
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <VerseCard
-                                                    verse={{
-                                                        id: verse.id ?? 0,
-                                                        chapterId:
-                                                            verse.chapterId,
-                                                        chapterNumber:
-                                                            verse.chapterNumber ??
-                                                            verse.chapterId,
-                                                        verseNumber:
-                                                            verse.verseNumber,
-                                                        text: verse.text,
-                                                        translation:
-                                                            verse.translation ??
-                                                            undefined,
-                                                        juzNumber:
-                                                            verse.juzNumber ??
-                                                            0,
-                                                        pageNumber:
-                                                            verse.pageNumber ??
-                                                            0,
-                                                        resourceCount:
-                                                            verse.resourceCount ??
-                                                            0,
-                                                    }}
-                                                    hasResources={
-                                                        verse.hasResources ??
-                                                        false
-                                                    }
-                                                    resourceCount={
-                                                        verse.resourceCount ?? 0
-                                                    }
-                                                    showTranslation
-                                                    hideHeaderActions={false}
-                                                    className={cn(
-                                                        'bg-transparent',
-                                                        'border-0 shadow-none',
-                                                        'p-5 pt-1',
-                                                    )}
-                                                />
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    {/* Pagination controls */}
-                                    {totalPages > 1 && (
-                                        <div className="mt-8 flex items-center justify-between border-t border-border/50 pt-6 text-sm text-muted-foreground">
+                                        <div className="flex flex-wrap items-center gap-2">
                                             <Button
-                                                variant="ghost"
+                                                variant="outline"
                                                 size="sm"
                                                 disabled={currentPage === 1}
                                                 onClick={() =>
                                                     changePage(currentPage - 1)
                                                 }
-                                                className="w-24 justify-start text-[13px] font-medium hover:bg-transparent hover:text-foreground"
+                                                className="rounded-full shadow-none"
                                             >
-                                                « Previous
+                                                Previous
                                             </Button>
 
-                                            <div className="hidden h-9 items-center gap-1 rounded-md border border-border/50 bg-background px-1 shadow-sm sm:flex">
-                                                {(() => {
-                                                    const maxPagesToShow = 10;
-                                                    let startPage = Math.max(
-                                                        1,
-                                                        currentPage -
-                                                            Math.floor(
-                                                                maxPagesToShow /
-                                                                    2,
-                                                            ),
-                                                    );
-                                                    let endPage =
-                                                        startPage +
-                                                        maxPagesToShow -
-                                                        1;
+                                            {getVisiblePages().map(
+                                                (page, index, pages) => {
+                                                    const previousPage =
+                                                        pages[index - 1];
+                                                    const shouldShowGap =
+                                                        previousPage !==
+                                                            undefined &&
+                                                        page - previousPage > 1;
 
-                                                    if (endPage > totalPages) {
-                                                        endPage = totalPages;
-                                                        startPage = Math.max(
-                                                            1,
-                                                            endPage -
-                                                                maxPagesToShow +
-                                                                1,
-                                                        );
-                                                    }
-
-                                                    return Array.from(
-                                                        {
-                                                            length:
-                                                                endPage -
-                                                                startPage +
-                                                                1,
-                                                        },
-                                                        (_, i) => startPage + i,
-                                                    ).map((page) => (
-                                                        <button
-                                                            key={`page-${page}`}
-                                                            type="button"
-                                                            onClick={() =>
-                                                                changePage(page)
-                                                            }
-                                                            className={cn(
-                                                                'inline-flex h-7 min-w-[28px] items-center justify-center rounded-[4px] px-2 text-[13px] transition-colors',
-                                                                page ===
-                                                                    currentPage
-                                                                    ? 'bg-blue-50 font-semibold text-blue-600'
-                                                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                                                            )}
+                                                    return (
+                                                        <div
+                                                            key={page}
+                                                            className="flex items-center gap-2"
                                                         >
-                                                            {page}
-                                                        </button>
-                                                    ));
-                                                })()}
-                                            </div>
+                                                            {shouldShowGap && (
+                                                                <span className="px-1 text-sm text-slate-400">
+                                                                    ...
+                                                                </span>
+                                                            )}
+                                                            <Button
+                                                                variant={
+                                                                    page ===
+                                                                    currentPage
+                                                                        ? 'default'
+                                                                        : 'outline'
+                                                                }
+                                                                size="sm"
+                                                                onClick={() =>
+                                                                    changePage(
+                                                                        page,
+                                                                    )
+                                                                }
+                                                                className="min-w-10 rounded-full shadow-none"
+                                                            >
+                                                                {page}
+                                                            </Button>
+                                                        </div>
+                                                    );
+                                                },
+                                            )}
 
                                             <Button
-                                                variant="ghost"
+                                                variant="outline"
                                                 size="sm"
                                                 disabled={
                                                     currentPage === totalPages
@@ -315,15 +356,15 @@ export default function SearchPage({
                                                 onClick={() =>
                                                     changePage(currentPage + 1)
                                                 }
-                                                className="w-24 justify-end text-[13px] font-medium hover:bg-transparent hover:text-foreground"
+                                                className="rounded-full shadow-none"
                                             >
-                                                Next »
+                                                Next
                                             </Button>
                                         </div>
-                                    )}
-                                </section>
-                            )}
-                        </main>
+                                    </section>
+                                )}
+                            </main>
+                        )}
                     </div>
                 </div>
             </QuranReaderLayout>

@@ -1,7 +1,10 @@
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import AdminLayout from '@/layouts/admin-layout';
-import { DataTable, type Column, type SortDirection } from '@/components/ui/data-table';
+import { Button } from '@/components/ui/button';
+import {
+    DataTable,
+    type Column,
+    type SortDirection,
+} from '@/components/ui/data-table';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -15,6 +18,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import AdminLayout from '@/layouts/admin-layout';
 import { Head, router } from '@inertiajs/react';
 import { Eye, MoreHorizontal } from 'lucide-react';
 import { useState } from 'react';
@@ -83,7 +87,12 @@ interface AdminVersesProps {
     filters: Filters;
 }
 
-export default function AdminVerses({ verses: initialVerses, chapters, stats, filters }: AdminVersesProps) {
+export default function AdminVerses({
+    verses: initialVerses,
+    chapters,
+    stats,
+    filters,
+}: AdminVersesProps) {
     const [selectedChapter, setSelectedChapter] = useState(filters.chapter_id);
     const [selectedJuz, setSelectedJuz] = useState(filters.juz_number);
 
@@ -98,7 +107,7 @@ export default function AdminVerses({ verses: initialVerses, chapters, stats, fi
             {
                 preserveState: true,
                 preserveScroll: true,
-            }
+            },
         );
     };
 
@@ -112,7 +121,7 @@ export default function AdminVerses({ verses: initialVerses, chapters, stats, fi
             {
                 preserveState: true,
                 preserveScroll: true,
-            }
+            },
         );
     };
 
@@ -126,7 +135,7 @@ export default function AdminVerses({ verses: initialVerses, chapters, stats, fi
             {
                 preserveState: true,
                 preserveScroll: true,
-            }
+            },
         );
     };
 
@@ -141,7 +150,7 @@ export default function AdminVerses({ verses: initialVerses, chapters, stats, fi
             {
                 preserveState: true,
                 preserveScroll: true,
-            }
+            },
         );
     };
 
@@ -156,7 +165,7 @@ export default function AdminVerses({ verses: initialVerses, chapters, stats, fi
             {
                 preserveState: true,
                 preserveScroll: true,
-            }
+            },
         );
     };
 
@@ -171,7 +180,7 @@ export default function AdminVerses({ verses: initialVerses, chapters, stats, fi
             title: 'Verse Key',
             sortable: true,
             cell: (verse) => (
-                <span className="font-medium font-mono text-sm">
+                <span className="font-mono text-sm font-medium">
                     {verse.verse_key}
                 </span>
             ),
@@ -182,7 +191,9 @@ export default function AdminVerses({ verses: initialVerses, chapters, stats, fi
             sortable: true,
             cell: (verse) => (
                 <div className="flex flex-col">
-                    <span className="font-medium">{verse.chapter.name_simple}</span>
+                    <span className="font-medium">
+                        {verse.chapter.name_simple}
+                    </span>
                     <span className="text-xs text-muted-foreground">
                         {verse.chapter.name_arabic}
                     </span>
@@ -194,7 +205,9 @@ export default function AdminVerses({ verses: initialVerses, chapters, stats, fi
             title: 'Verse #',
             sortable: true,
             cell: (verse) => (
-                <span className="text-muted-foreground">#{verse.verse_number}</span>
+                <span className="text-muted-foreground">
+                    #{verse.verse_number}
+                </span>
             ),
         },
         {
@@ -203,7 +216,10 @@ export default function AdminVerses({ verses: initialVerses, chapters, stats, fi
             sortable: false,
             cell: (verse) => (
                 <div className="max-w-md">
-                    <p className="text-right font-arabic text-lg line-clamp-2" dir="rtl">
+                    <p
+                        className="font-arabic line-clamp-2 text-right text-lg"
+                        dir="rtl"
+                    >
                         {verse.text_uthmani}
                     </p>
                 </div>
@@ -260,51 +276,96 @@ export default function AdminVerses({ verses: initialVerses, chapters, stats, fi
         <>
             <Head title="Verses - Admin - From Quran" />
             <AdminLayout title="Verses">
-                <div className="space-y-4">
-                    {/* Header */}
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h2 className="text-2xl font-bold tracking-tight">
-                                Verse Management
-                            </h2>
-                            <p className="text-muted-foreground">
-                                Browse and manage Quran verses
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-sm">
-                                {stats.total_verses.toLocaleString()} verses
-                            </Badge>
-                            <Badge variant="outline" className="text-sm">
-                                {stats.total_translations.toLocaleString()} translations
-                            </Badge>
+                <div className="space-y-6">
+                    <div className="rounded-2xl border border-border/60 bg-[linear-gradient(180deg,hsl(var(--background))_0%,hsl(var(--muted)/0.16)_100%)] px-5 py-6 shadow-sm shadow-black/[0.03] md:px-7">
+                        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                            <div className="max-w-3xl space-y-2">
+                                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                                    Verse management
+                                </h2>
+                                <p className="text-sm leading-6 text-muted-foreground md:text-base">
+                                    Browse verses with lighter filtering and
+                                    quicker context across chapters and juz.
+                                </p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
+                                    <p className="text-lg font-semibold">
+                                        {stats.total_verses.toLocaleString()}
+                                    </p>
+                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+                                        Verses
+                                    </p>
+                                </div>
+                                <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
+                                    <p className="text-lg font-semibold">
+                                        {stats.total_translations.toLocaleString()}
+                                    </p>
+                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+                                        Translations
+                                    </p>
+                                </div>
+                                <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
+                                    <p className="text-lg font-semibold">
+                                        {stats.total_chapters}
+                                    </p>
+                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+                                        Chapters
+                                    </p>
+                                </div>
+                                <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
+                                    <p className="text-lg font-semibold">
+                                        {stats.total_juzs}
+                                    </p>
+                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+                                        Juz
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Filters */}
-                    <div className="flex gap-2">
-                        <Select value={selectedChapter} onValueChange={handleChapterFilter}>
-                            <SelectTrigger className="w-[200px]">
+                    <div className="flex flex-wrap gap-3 rounded-xl border border-border/60 bg-background/96 px-4 py-4 shadow-sm shadow-black/[0.02]">
+                        <Select
+                            value={selectedChapter}
+                            onValueChange={handleChapterFilter}
+                        >
+                            <SelectTrigger className="h-10 w-[210px] rounded-lg border-border/70 bg-background">
                                 <SelectValue placeholder="Filter by chapter" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Chapters</SelectItem>
+                                <SelectItem value="all">
+                                    All Chapters
+                                </SelectItem>
                                 {chapters.map((chapter) => (
-                                    <SelectItem key={chapter.id} value={chapter.id.toString()}>
-                                        {chapter.chapter_number}. {chapter.name_simple}
+                                    <SelectItem
+                                        key={chapter.id}
+                                        value={chapter.id.toString()}
+                                    >
+                                        {chapter.chapter_number}.{' '}
+                                        {chapter.name_simple}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
 
-                        <Select value={selectedJuz} onValueChange={handleJuzFilter}>
-                            <SelectTrigger className="w-[150px]">
+                        <Select
+                            value={selectedJuz}
+                            onValueChange={handleJuzFilter}
+                        >
+                            <SelectTrigger className="h-10 w-[150px] rounded-lg border-border/70 bg-background">
                                 <SelectValue placeholder="Filter by Juz" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Juz</SelectItem>
-                                {Array.from({ length: 30 }, (_, i) => i + 1).map((juz) => (
-                                    <SelectItem key={juz} value={juz.toString()}>
+                                {Array.from(
+                                    { length: 30 },
+                                    (_, i) => i + 1,
+                                ).map((juz) => (
+                                    <SelectItem
+                                        key={juz}
+                                        value={juz.toString()}
+                                    >
                                         Juz {juz}
                                     </SelectItem>
                                 ))}
@@ -312,7 +373,6 @@ export default function AdminVerses({ verses: initialVerses, chapters, stats, fi
                         </Select>
                     </div>
 
-                    {/* DataTable */}
                     <DataTable
                         data={initialVerses.data}
                         columns={columns}

@@ -14,7 +14,7 @@ import {
 import { useReaderSettings } from '@/contexts/reader-settings-context';
 import { History, Search } from 'lucide-react';
 import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 interface Chapter {
     id: number;
@@ -41,19 +41,23 @@ export function ChaptersPanel({
 }: ChaptersPanelProps) {
     const { settings } = useReaderSettings();
     const [searchTerm, setSearchTerm] = useState('');
-    const [recentlyViewed, setRecentlyViewed] = useState<number[]>([]);
-
-    // Load recently viewed from localStorage
-    useEffect(() => {
-        const saved = localStorage.getItem('quran_recently_viewed');
-        if (saved) {
-            try {
-                setRecentlyViewed(JSON.parse(saved));
-            } catch (e) {
-                console.error('Failed to parse recently viewed', e);
-            }
+    const [recentlyViewed, setRecentlyViewed] = useState<number[]>(() => {
+        if (typeof window === 'undefined') {
+            return [];
         }
-    }, []);
+
+        const saved = localStorage.getItem('quran_recently_viewed');
+        if (!saved) {
+            return [];
+        }
+
+        try {
+            return JSON.parse(saved) as number[];
+        } catch (e) {
+            console.error('Failed to parse recently viewed', e);
+            return [];
+        }
+    });
 
     const saveRecentlyViewed = (id: number) => {
         const updated = [
@@ -96,13 +100,13 @@ export function ChaptersPanel({
     return (
         <>
             <SidebarHeader className="shrink-0">
-                <div className="relative p-1">
-                    <Search className="absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <div className="relative px-2 py-1.5">
+                    <Search className="absolute top-1/2 left-5 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                         placeholder="Search surahs..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-8"
+                        className="h-10 rounded-full border-slate-200 bg-white pl-10 shadow-none focus-visible:ring-1 focus-visible:ring-slate-900"
                     />
                 </div>
             </SidebarHeader>
@@ -123,7 +127,7 @@ export function ChaptersPanel({
                         recentChapters.length > 0 &&
                         !searchTerm && (
                             <SidebarGroup>
-                                <div className="flex items-center gap-2 px-4 py-2 text-[10px] font-bold tracking-wider text-rose-500/70 uppercase">
+                                <div className="flex items-center gap-2 px-4 py-2 text-[10px] font-semibold tracking-[0.18em] text-slate-400 uppercase">
                                     <History className="h-3 w-3" />
                                     Recently Viewed
                                 </div>
@@ -143,19 +147,19 @@ export function ChaptersPanel({
                                                         selectedChapter ===
                                                         chapter.id
                                                     }
-                                                    className={`h-auto cursor-pointer py-2 ${
+                                                    className={`h-auto cursor-pointer rounded-2xl px-2 py-2 ${
                                                         selectedChapter ===
                                                         chapter.id
-                                                            ? 'bg-rose-500/10 text-rose-600'
-                                                            : 'hover:bg-rose-500/5'
+                                                            ? 'bg-stone-100 text-slate-900'
+                                                            : 'hover:bg-stone-50'
                                                     }`}
                                                 >
                                                     <div className="flex w-full items-center gap-3">
-                                                        <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md bg-rose-500/10 text-[10px] font-bold text-rose-600">
+                                                        <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-stone-200 text-[10px] font-semibold text-slate-700">
                                                             {chapter.number}
                                                         </div>
                                                         <div className="flex-1 text-left">
-                                                            <div className="truncate text-xs leading-none font-semibold">
+                                                            <div className="truncate text-xs leading-none font-semibold tracking-tight">
                                                                 {chapter.romanName ??
                                                                     chapter.englishName}
                                                             </div>
@@ -181,26 +185,26 @@ export function ChaptersPanel({
                                             isActive={
                                                 selectedChapter === chapter.id
                                             }
-                                            className={`h-auto cursor-pointer py-3 ${
+                                            className={`h-auto cursor-pointer rounded-2xl px-2 py-3 ${
                                                 selectedChapter === chapter.id
-                                                    ? 'bg-rose-500 text-black hover:bg-rose-800'
-                                                    : ''
+                                                    ? 'bg-stone-100 text-slate-950'
+                                                    : 'hover:bg-stone-50'
                                             }`}
                                         >
                                             <div className="flex w-full items-start gap-3">
                                                 <div
-                                                    className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[30%] text-sm font-semibold ${
+                                                    className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
                                                         selectedChapter ===
                                                         chapter.id
-                                                            ? 'border-2 border-rose-400/20 bg-rose-500/30'
-                                                            : 'bg-gray-400/20'
+                                                            ? 'bg-slate-900 text-white'
+                                                            : 'bg-stone-200 text-slate-700'
                                                     }`}
                                                 >
                                                     {chapter.number}
                                                 </div>
                                                 <div className="min-w-0 flex-1 text-left">
                                                     <div className="flex items-center justify-between gap-1">
-                                                        <div className="truncate text-sm font-semibold">
+                                                        <div className="truncate text-sm font-semibold tracking-tight">
                                                             {chapter.romanName ??
                                                                 chapter.englishName}
                                                         </div>
@@ -210,7 +214,7 @@ export function ChaptersPanel({
                                                             className={`text-xs ${
                                                                 selectedChapter ===
                                                                 chapter.id
-                                                                    ? 'text-black/80'
+                                                                    ? 'text-slate-600'
                                                                     : 'text-muted-foreground'
                                                             }`}
                                                             dir="rtl"
@@ -221,7 +225,7 @@ export function ChaptersPanel({
                                                             className={`text-[10px] font-medium ${
                                                                 selectedChapter ===
                                                                 chapter.id
-                                                                    ? 'text-black/60'
+                                                                    ? 'text-slate-500'
                                                                     : 'text-muted-foreground/60'
                                                             }`}
                                                         >

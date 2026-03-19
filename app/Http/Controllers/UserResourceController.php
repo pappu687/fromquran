@@ -33,12 +33,25 @@ class UserResourceController extends Controller
      */
     public function index(Request $request)
     {
-        $resources = UserVerseResource::where('user_id', $request->user()->id)
+        $userId = $request->user()->id;
+
+        $resources = UserVerseResource::where('user_id', $userId)
             ->with('verse:id,verse_key,chapter_id')
             ->latest()
             ->paginate(20);
 
-        return response()->json($resources);
+        $resourceTypeCounts = UserVerseResource::query()
+            ->where('user_id', $userId)
+            ->leftJoin('resource_types', 'user_verse_resources.resource_type_id', '=', 'resource_types.id')
+            ->selectRaw("COALESCE(resource_types.name, 'Unknown') as name, COUNT(*) as count")
+            ->groupBy('resource_types.name')
+            ->orderByDesc('count')
+            ->get();
+
+        return response()->json([
+            ...$resources->toArray(),
+            'resource_type_counts' => $resourceTypeCounts,
+        ]);
     }
 
     /**

@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button';
+import { RoleFormDialog } from '@/components/admin/role-form-dialog';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -10,17 +10,28 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import AdminLayout from '@/layouts/admin-layout';
-import { DataTable, type Column, type SortDirection } from '@/components/ui/data-table';
-import { RoleFormDialog } from '@/components/admin/role-form-dialog';
+import { Button } from '@/components/ui/button';
+import {
+    DataTable,
+    type Column,
+    type SortDirection,
+} from '@/components/ui/data-table';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import AdminLayout from '@/layouts/admin-layout';
 import { Head, router } from '@inertiajs/react';
-import { Loader2, MoreHorizontal, Pencil, Plus, Trash2, Shield } from 'lucide-react';
+import {
+    Loader2,
+    MoreHorizontal,
+    Pencil,
+    Plus,
+    Shield,
+    Trash2,
+} from 'lucide-react';
 import { useState } from 'react';
 
 interface Permission {
@@ -88,7 +99,7 @@ export default function AdminRoles({
             {
                 preserveState: true,
                 preserveScroll: true,
-            }
+            },
         );
     };
 
@@ -102,7 +113,7 @@ export default function AdminRoles({
             {
                 preserveState: true,
                 preserveScroll: true,
-            }
+            },
         );
     };
 
@@ -116,7 +127,7 @@ export default function AdminRoles({
             {
                 preserveState: true,
                 preserveScroll: true,
-            }
+            },
         );
     };
 
@@ -165,7 +176,11 @@ export default function AdminRoles({
             router.reload();
         } catch (error) {
             console.error('Failed to delete role:', error);
-            alert(error instanceof Error ? error.message : 'Failed to delete role');
+            alert(
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to delete role',
+            );
         } finally {
             setIsDeleting(false);
         }
@@ -180,7 +195,9 @@ export default function AdminRoles({
             key: 'id',
             title: 'ID',
             sortable: true,
-            cell: (role) => <span className="text-muted-foreground">#{role.id}</span>,
+            cell: (role) => (
+                <span className="text-muted-foreground">#{role.id}</span>
+            ),
         },
         {
             key: 'name',
@@ -201,11 +218,17 @@ export default function AdminRoles({
                 <div className="flex flex-wrap gap-1">
                     {role.permissions && role.permissions.length > 0 ? (
                         <>
-                            {role.permissions.slice(0, 3).map((permission, index) => (
-                                <Badge key={index} variant="secondary" className="text-xs">
-                                    {permission}
-                                </Badge>
-                            ))}
+                            {role.permissions
+                                .slice(0, 3)
+                                .map((permission, index) => (
+                                    <Badge
+                                        key={index}
+                                        variant="secondary"
+                                        className="text-xs"
+                                    >
+                                        {permission}
+                                    </Badge>
+                                ))}
                             {role.permissions.length > 3 && (
                                 <Badge variant="outline" className="text-xs">
                                     +{role.permissions.length - 3} more
@@ -213,7 +236,7 @@ export default function AdminRoles({
                             )}
                         </>
                     ) : (
-                        <span className="text-muted-foreground text-sm">
+                        <span className="text-sm text-muted-foreground">
                             No permissions
                         </span>
                     )}
@@ -226,7 +249,8 @@ export default function AdminRoles({
             sortable: true,
             cell: (role) => (
                 <Badge variant="outline">
-                    {role.users_count} {role.users_count === 1 ? 'user' : 'users'}
+                    {role.users_count}{' '}
+                    {role.users_count === 1 ? 'user' : 'users'}
                 </Badge>
             ),
         },
@@ -267,61 +291,56 @@ export default function AdminRoles({
         <>
             <Head title="Roles & Permissions - Admin - From Quran" />
             <AdminLayout title="Roles & Permissions">
-                <div className="space-y-4">
-                    {/* Stats Cards */}
-                    <div className="grid gap-4 md:grid-cols-3">
-                        <div className="rounded-lg border bg-card p-6 shadow-sm">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">
-                                        Total Roles
-                                    </p>
-                                    <p className="text-2xl font-bold">{stats.total}</p>
-                                </div>
-                                <Shield className="h-8 w-8 text-muted-foreground" />
+                <div className="space-y-6">
+                    <div className="rounded-2xl border border-border/60 bg-[linear-gradient(180deg,hsl(var(--background))_0%,hsl(var(--muted)/0.16)_100%)] px-5 py-6 shadow-sm shadow-black/[0.03] md:px-7">
+                        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                            <div className="max-w-3xl space-y-2">
+                                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                                    Roles management
+                                </h2>
+                                <p className="text-sm leading-6 text-muted-foreground md:text-base">
+                                    Manage roles, review permission coverage,
+                                    and keep assignments deliberate.
+                                </p>
                             </div>
-                        </div>
-                        <div className="rounded-lg border bg-card p-6 shadow-sm">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">
-                                        Roles with Users
-                                    </p>
-                                    <p className="text-2xl font-bold">{stats.with_users}</p>
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                                <div className="grid grid-cols-3 gap-3">
+                                    <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
+                                        <p className="text-lg font-semibold">
+                                            {stats.total}
+                                        </p>
+                                        <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+                                            Roles
+                                        </p>
+                                    </div>
+                                    <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
+                                        <p className="text-lg font-semibold">
+                                            {stats.with_users}
+                                        </p>
+                                        <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+                                            In Use
+                                        </p>
+                                    </div>
+                                    <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
+                                        <p className="text-lg font-semibold">
+                                            {stats.permissions}
+                                        </p>
+                                        <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+                                            Permissions
+                                        </p>
+                                    </div>
                                 </div>
-                                <Shield className="h-8 w-8 text-muted-foreground" />
-                            </div>
-                        </div>
-                        <div className="rounded-lg border bg-card p-6 shadow-sm">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">
-                                        Total Permissions
-                                    </p>
-                                    <p className="text-2xl font-bold">{stats.permissions}</p>
-                                </div>
-                                <Shield className="h-8 w-8 text-muted-foreground" />
+                                <Button
+                                    onClick={handleAddRole}
+                                    className="h-10 rounded-lg px-4 text-sm"
+                                >
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Create Role
+                                </Button>
                             </div>
                         </div>
                     </div>
 
-                    {/* Header */}
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h2 className="text-2xl font-bold tracking-tight">
-                                Roles Management
-                            </h2>
-                            <p className="text-muted-foreground">
-                                Manage roles and their permissions
-                            </p>
-                        </div>
-                        <Button onClick={handleAddRole}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Create Role
-                        </Button>
-                    </div>
-
-                    {/* DataTable */}
                     <DataTable
                         data={initialRoles.data}
                         columns={columns}
@@ -355,14 +374,18 @@ export default function AdminRoles({
                 />
 
                 {/* Delete Confirmation Dialog */}
-                <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialog
+                    open={deleteDialogOpen}
+                    onOpenChange={setDeleteDialogOpen}
+                >
                     <AlertDialogContent>
                         <AlertDialogHeader>
                             <AlertDialogTitle>Delete Role</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Are you sure you want to delete the role "{roleToDelete?.name}"?
-                                This action cannot be undone. Users with this role will lose
-                                their permissions.
+                                Are you sure you want to delete the role "
+                                {roleToDelete?.name}"? This action cannot be
+                                undone. Users with this role will lose their
+                                permissions.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>

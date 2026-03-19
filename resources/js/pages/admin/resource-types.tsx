@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button';
+import { ResourceTypeFormDialog } from '@/components/admin/resource-type-form-dialog';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -10,17 +10,28 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import AdminLayout from '@/layouts/admin-layout';
-import { DataTable, type Column, type SortDirection } from '@/components/ui/data-table';
-import { ResourceTypeFormDialog } from '@/components/admin/resource-type-form-dialog';
+import { Button } from '@/components/ui/button';
+import {
+    DataTable,
+    type Column,
+    type SortDirection,
+} from '@/components/ui/data-table';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import AdminLayout from '@/layouts/admin-layout';
 import { Head, router } from '@inertiajs/react';
-import { Loader2, MoreHorizontal, Pencil, Plus, Trash2, Tags } from 'lucide-react';
+import {
+    Loader2,
+    MoreHorizontal,
+    Pencil,
+    Plus,
+    Tags,
+    Trash2,
+} from 'lucide-react';
 import { useState } from 'react';
 
 interface ResourceType {
@@ -58,9 +69,11 @@ export default function AdminResourceTypes({
     filters,
 }: AdminResourceTypesProps) {
     const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
-    const [selectedResourceType, setSelectedResourceType] = useState<ResourceType | null>(null);
+    const [selectedResourceType, setSelectedResourceType] =
+        useState<ResourceType | null>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [resourceTypeToDelete, setResourceTypeToDelete] = useState<ResourceType | null>(null);
+    const [resourceTypeToDelete, setResourceTypeToDelete] =
+        useState<ResourceType | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
     const handleSort = (column: string, direction: SortDirection) => {
@@ -74,7 +87,7 @@ export default function AdminResourceTypes({
             {
                 preserveState: true,
                 preserveScroll: true,
-            }
+            },
         );
     };
 
@@ -88,7 +101,7 @@ export default function AdminResourceTypes({
             {
                 preserveState: true,
                 preserveScroll: true,
-            }
+            },
         );
     };
 
@@ -102,7 +115,7 @@ export default function AdminResourceTypes({
             {
                 preserveState: true,
                 preserveScroll: true,
-            }
+            },
         );
     };
 
@@ -139,12 +152,14 @@ export default function AdminResourceTypes({
                         'X-CSRF-TOKEN': csrfToken || '',
                     },
                     credentials: 'include',
-                }
+                },
             );
 
             if (!response.ok) {
                 const data = await response.json();
-                throw new Error(data.message || 'Failed to delete resource type');
+                throw new Error(
+                    data.message || 'Failed to delete resource type',
+                );
             }
 
             setDeleteDialogOpen(false);
@@ -154,7 +169,11 @@ export default function AdminResourceTypes({
             router.reload();
         } catch (error) {
             console.error('Failed to delete resource type:', error);
-            alert(error instanceof Error ? error.message : 'Failed to delete resource type');
+            alert(
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to delete resource type',
+            );
         } finally {
             setIsDeleting(false);
         }
@@ -170,7 +189,9 @@ export default function AdminResourceTypes({
             title: 'ID',
             sortable: true,
             cell: (resourceType) => (
-                <span className="text-muted-foreground">#{resourceType.id}</span>
+                <span className="text-muted-foreground">
+                    #{resourceType.id}
+                </span>
             ),
         },
         {
@@ -207,7 +228,13 @@ export default function AdminResourceTypes({
             title: 'Resources',
             sortable: true,
             cell: (resourceType) => (
-                <Badge variant={resourceType.user_verse_resources_count > 0 ? 'default' : 'secondary'}>
+                <Badge
+                    variant={
+                        resourceType.user_verse_resources_count > 0
+                            ? 'default'
+                            : 'secondary'
+                    }
+                >
                     {resourceType.user_verse_resources_count}
                 </Badge>
             ),
@@ -216,7 +243,8 @@ export default function AdminResourceTypes({
             key: 'created_at',
             title: 'Created',
             sortable: true,
-            cell: (resourceType) => new Date(resourceType.created_at).toLocaleDateString(),
+            cell: (resourceType) =>
+                new Date(resourceType.created_at).toLocaleDateString(),
         },
     ];
 
@@ -229,7 +257,9 @@ export default function AdminResourceTypes({
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => handleEditResourceType(resourceType)}>
+                <DropdownMenuItem
+                    onClick={() => handleEditResourceType(resourceType)}
+                >
                     <Pencil className="mr-2 h-4 w-4" />
                     Edit
                 </DropdownMenuItem>
@@ -249,24 +279,28 @@ export default function AdminResourceTypes({
         <>
             <Head title="Resource Types - Admin - From Quran" />
             <AdminLayout title="Resource Types">
-                <div className="space-y-4">
-                    {/* Header */}
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h2 className="text-2xl font-bold tracking-tight">
-                                Resource Types Management
-                            </h2>
-                            <p className="text-muted-foreground">
-                                Manage resource types for categorizing verse resources
-                            </p>
+                <div className="space-y-6">
+                    <div className="rounded-2xl border border-border/60 bg-[linear-gradient(180deg,hsl(var(--background))_0%,hsl(var(--muted)/0.16)_100%)] px-5 py-6 shadow-sm shadow-black/[0.03] md:px-7">
+                        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                            <div className="max-w-3xl space-y-2">
+                                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                                    Resource types management
+                                </h2>
+                                <p className="text-sm leading-6 text-muted-foreground md:text-base">
+                                    Manage the taxonomy used for categorizing
+                                    verse-linked resources.
+                                </p>
+                            </div>
+                            <Button
+                                onClick={handleAddResourceType}
+                                className="h-10 rounded-lg px-4 text-sm"
+                            >
+                                <Plus className="mr-2 h-4 w-4" />
+                                Create Type
+                            </Button>
                         </div>
-                        <Button onClick={handleAddResourceType}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Create Type
-                        </Button>
                     </div>
 
-                    {/* DataTable */}
                     <DataTable
                         data={initialResourceTypes.data}
                         columns={columns}
@@ -299,14 +333,25 @@ export default function AdminResourceTypes({
                 />
 
                 {/* Delete Confirmation Dialog */}
-                <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialog
+                    open={deleteDialogOpen}
+                    onOpenChange={setDeleteDialogOpen}
+                >
                     <AlertDialogContent>
                         <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Resource Type</AlertDialogTitle>
+                            <AlertDialogTitle>
+                                Delete Resource Type
+                            </AlertDialogTitle>
                             <AlertDialogDescription>
-                                Are you sure you want to delete the resource type "{resourceTypeToDelete?.name}"?
-                                {resourceTypeToDelete?.user_verse_resources_count > 0 && (
-                                    <> This action cannot be undone as it has associated resources.</>
+                                Are you sure you want to delete the resource
+                                type "{resourceTypeToDelete?.name}"?
+                                {resourceTypeToDelete?.user_verse_resources_count >
+                                    0 && (
+                                    <>
+                                        {' '}
+                                        This action cannot be undone as it has
+                                        associated resources.
+                                    </>
                                 )}
                             </AlertDialogDescription>
                         </AlertDialogHeader>

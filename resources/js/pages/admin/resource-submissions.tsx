@@ -1,10 +1,15 @@
-import AdminLayout from '@/layouts/admin-layout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import AdminLayout from '@/layouts/admin-layout';
 import { Head, Link, router } from '@inertiajs/react';
 import { Check, ExternalLink, Search, Trash2, X } from 'lucide-react';
 import { FormEvent, useState } from 'react';
@@ -195,16 +200,17 @@ export default function ResourceSubmissions({
     };
 
     const getStatusBadge = (status: string) => {
-        const variants: Record<
-            string,
-            'default' | 'secondary' | 'destructive'
-        > = {
-            pending: 'secondary',
-            approved: 'default',
-            rejected: 'destructive',
+        const classes: Record<string, string> = {
+            pending:
+                'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300',
+            approved:
+                'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+            rejected:
+                'border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-300',
         };
+
         return (
-            <Badge variant={variants[status] || 'default'}>
+            <Badge variant="outline" className={classes[status] || ''}>
                 {status.charAt(0).toUpperCase() + status.slice(1)}
             </Badge>
         );
@@ -214,153 +220,177 @@ export default function ResourceSubmissions({
         <>
             <Head title="Resource Submissions - Admin - From Quran" />
             <AdminLayout title="Resource Submissions">
-                {/* Stats Cards */}
-                <div className="grid gap-4 md:grid-cols-4">
-                    <Card>
-                        <CardHeader className="pb-3">
-                            <CardDescription>Total</CardDescription>
-                            <CardTitle className="text-3xl">
-                                {stats.total}
-                            </CardTitle>
-                        </CardHeader>
-                    </Card>
-                    <Card>
-                        <CardHeader className="pb-3">
-                            <CardDescription>Pending</CardDescription>
-                            <CardTitle className="text-3xl text-yellow-600">
-                                {stats.pending}
-                            </CardTitle>
-                        </CardHeader>
-                    </Card>
-                    <Card>
-                        <CardHeader className="pb-3">
-                            <CardDescription>Approved</CardDescription>
-                            <CardTitle className="text-3xl text-green-600">
-                                {stats.approved}
-                            </CardTitle>
-                        </CardHeader>
-                    </Card>
-                    <Card>
-                        <CardHeader className="pb-3">
-                            <CardDescription>Rejected</CardDescription>
-                            <CardTitle className="text-3xl text-red-600">
-                                {stats.rejected}
-                            </CardTitle>
-                        </CardHeader>
-                    </Card>
-                </div>
-
-                <Card>
-                    <CardHeader>
-                        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                            {/* Search */}
-                            <form
-                                onSubmit={handleSearch}
-                                className="flex flex-1 gap-2"
-                            >
-                                <div className="relative max-w-sm flex-1">
-                                    <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                    <Input
-                                        placeholder="Search by user, URL, or type..."
-                                        value={searchInput}
-                                        onChange={(e) =>
-                                            setSearchInput(e.target.value)
-                                        }
-                                        className="pl-9"
-                                    />
+                <div className="space-y-6">
+                    <div className="rounded-2xl border border-border/60 bg-[linear-gradient(180deg,hsl(var(--background))_0%,hsl(var(--muted)/0.2)_100%)] px-5 py-6 shadow-sm shadow-black/[0.03] md:px-7 md:py-7">
+                        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                            <div className="max-w-3xl space-y-3">
+                                <div className="space-y-2">
+                                    <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+                                        Resource submissions
+                                    </h1>
+                                    <p className="text-sm leading-6 text-muted-foreground md:text-base">
+                                        Review submitted resources, keep the
+                                        queue moving, and process approvals with
+                                        less noise.
+                                    </p>
                                 </div>
-                                <Button type="submit">Search</Button>
-                            </form>
+                            </div>
 
-                            {/* Filters */}
-                            <div className="flex gap-2">
-                                <Select
-                                    value={filters.status}
-                                    onValueChange={(value) =>
-                                        handleFilter('status', value)
-                                    }
-                                >
-                                    <SelectTrigger className="w-[140px]">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">
-                                            All Status
-                                        </SelectItem>
-                                        <SelectItem value="pending">
-                                            Pending
-                                        </SelectItem>
-                                        <SelectItem value="approved">
-                                            Approved
-                                        </SelectItem>
-                                        <SelectItem value="rejected">
-                                            Rejected
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
+                                    <p className="text-xl font-semibold text-foreground md:text-2xl">
+                                        {stats.total}
+                                    </p>
+                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+                                        Total
+                                    </p>
+                                </div>
+                                <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
+                                    <p className="text-xl font-semibold text-amber-700 md:text-2xl dark:text-amber-300">
+                                        {stats.pending}
+                                    </p>
+                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+                                        Pending
+                                    </p>
+                                </div>
+                                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
+                                    <p className="text-xl font-semibold text-emerald-700 md:text-2xl dark:text-emerald-300">
+                                        {stats.approved}
+                                    </p>
+                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+                                        Approved
+                                    </p>
+                                </div>
+                                <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
+                                    <p className="text-xl font-semibold text-red-700 md:text-2xl dark:text-red-300">
+                                        {stats.rejected}
+                                    </p>
+                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+                                        Rejected
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                                <Select
-                                    value={filters.resource_type_id}
-                                    onValueChange={(value) =>
-                                        handleFilter('resource_type_id', value)
-                                    }
+                    <div className="rounded-2xl border border-border/60 bg-background/96 shadow-sm shadow-black/[0.03]">
+                        <div className="border-b border-border/70 px-5 py-5 md:px-7">
+                            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                                <form
+                                    onSubmit={handleSearch}
+                                    className="flex w-full flex-col gap-3 sm:flex-row xl:max-w-xl"
                                 >
-                                    <SelectTrigger className="w-[180px]">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">
-                                            All Types
-                                        </SelectItem>
-                                        {Object.entries(resourceTypeLabels).map(
-                                            ([value, label]) => (
+                                    <div className="relative flex-1">
+                                        <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                        <Input
+                                            placeholder="Search by user, URL, or type..."
+                                            value={searchInput}
+                                            onChange={(e) =>
+                                                setSearchInput(e.target.value)
+                                            }
+                                            className="h-11 rounded-lg border-border/70 bg-background pl-9"
+                                        />
+                                    </div>
+                                    <Button
+                                        type="submit"
+                                        className="h-11 rounded-lg px-5 text-sm font-medium"
+                                    >
+                                        Search
+                                    </Button>
+                                </form>
+
+                                <div className="flex flex-col gap-3 sm:flex-row">
+                                    <Select
+                                        value={filters.status}
+                                        onValueChange={(value) =>
+                                            handleFilter('status', value)
+                                        }
+                                    >
+                                        <SelectTrigger className="h-11 w-full rounded-lg border-border/70 bg-background sm:w-[150px]">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">
+                                                All Status
+                                            </SelectItem>
+                                            <SelectItem value="pending">
+                                                Pending
+                                            </SelectItem>
+                                            <SelectItem value="approved">
+                                                Approved
+                                            </SelectItem>
+                                            <SelectItem value="rejected">
+                                                Rejected
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+
+                                    <Select
+                                        value={filters.resource_type_id}
+                                        onValueChange={(value) =>
+                                            handleFilter(
+                                                'resource_type_id',
+                                                value,
+                                            )
+                                        }
+                                    >
+                                        <SelectTrigger className="h-11 w-full rounded-lg border-border/70 bg-background sm:w-[190px]">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">
+                                                All Types
+                                            </SelectItem>
+                                            {Object.entries(
+                                                resourceTypeLabels,
+                                            ).map(([value, label]) => (
                                                 <SelectItem
                                                     key={value}
                                                     value={value}
                                                 >
                                                     {label}
                                                 </SelectItem>
-                                            ),
-                                        )}
-                                    </SelectContent>
-                                </Select>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
+
+                            {selectedIds.length > 0 && (
+                                <div className="mt-4 flex flex-col gap-3 rounded-lg border border-border/60 bg-muted/30 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <span className="text-sm font-medium text-foreground">
+                                        {selectedIds.length} selected
+                                    </span>
+                                    <div className="flex flex-wrap gap-2">
+                                        <Button
+                                            size="sm"
+                                            className="h-9 rounded-lg px-4 text-sm"
+                                            onClick={handleBulkApprove}
+                                            disabled={isProcessing}
+                                        >
+                                            <Check className="mr-1 h-4 w-4" />
+                                            Approve
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="destructive"
+                                            className="h-9 rounded-lg px-4 text-sm"
+                                            onClick={handleBulkReject}
+                                            disabled={isProcessing}
+                                        >
+                                            <X className="mr-1 h-4 w-4" />
+                                            Reject
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
-                        {/* Bulk Actions */}
-                        {selectedIds.length > 0 && (
-                            <div className="mt-4 flex items-center gap-2 rounded-md bg-muted p-3">
-                                <span className="text-sm font-medium">
-                                    {selectedIds.length} selected
-                                </span>
-                                <Button
-                                    size="sm"
-                                    onClick={handleBulkApprove}
-                                    disabled={isProcessing}
-                                >
-                                    <Check className="mr-1 h-4 w-4" />
-                                    Approve
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    onClick={handleBulkReject}
-                                    disabled={isProcessing}
-                                >
-                                    <X className="mr-1 h-4 w-4" />
-                                    Reject
-                                </Button>
-                            </div>
-                        )}
-                    </CardHeader>
-
-                    <CardContent>
-                        {/* Data Table */}
                         <div className="overflow-x-auto">
-                            <table className="w-full">
+                            <table className="min-w-full">
                                 <thead>
-                                    <tr className="border-b">
-                                        <th className="w-12 p-3 text-left">
+                                    <tr className="border-b border-border/70 bg-muted/20 text-left">
+                                        <th className="w-12 px-4 py-3 md:px-5">
                                             <Checkbox
                                                 checked={
                                                     submissions.data.length >
@@ -373,20 +403,28 @@ export default function ResourceSubmissions({
                                                 }
                                             />
                                         </th>
-                                        <th className="p-3 text-left">User</th>
-                                        <th className="p-3 text-left">Verse</th>
-                                        <th className="p-3 text-left">Type</th>
-                                        <th className="p-3 text-left">
+                                        <th className="px-4 py-3 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase md:px-5">
+                                            User
+                                        </th>
+                                        <th className="px-4 py-3 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase md:px-5">
+                                            Verse
+                                        </th>
+                                        <th className="px-4 py-3 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase md:px-5">
+                                            Type
+                                        </th>
+                                        <th className="px-4 py-3 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase md:px-5">
                                             Resource
                                         </th>
-                                        <th className="p-3 text-left">
+                                        <th className="px-4 py-3 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase md:px-5">
                                             Comment
                                         </th>
-                                        <th className="p-3 text-left">
+                                        <th className="px-4 py-3 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase md:px-5">
                                             Status
                                         </th>
-                                        <th className="p-3 text-left">Date</th>
-                                        <th className="p-3 text-right">
+                                        <th className="px-4 py-3 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase md:px-5">
+                                            Date
+                                        </th>
+                                        <th className="px-4 py-3 text-right text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase md:px-5">
                                             Actions
                                         </th>
                                     </tr>
@@ -396,18 +434,18 @@ export default function ResourceSubmissions({
                                         <tr>
                                             <td
                                                 colSpan={9}
-                                                className="p-8 text-center text-muted-foreground"
+                                                className="px-4 py-14 text-center text-sm text-muted-foreground md:px-5"
                                             >
-                                                No submissions found
+                                                No submissions found.
                                             </td>
                                         </tr>
                                     ) : (
                                         submissions.data.map((submission) => (
                                             <tr
                                                 key={submission.id}
-                                                className="border-b hover:bg-muted/50"
+                                                className="border-b border-border/60 align-top transition-colors hover:bg-muted/20"
                                             >
-                                                <td className="p-3">
+                                                <td className="px-4 py-4 md:px-5">
                                                     <Checkbox
                                                         checked={selectedIds.includes(
                                                             submission.id,
@@ -422,9 +460,9 @@ export default function ResourceSubmissions({
                                                         }
                                                     />
                                                 </td>
-                                                <td className="p-3">
-                                                    <div>
-                                                        <div className="font-medium">
+                                                <td className="px-4 py-4 md:px-5">
+                                                    <div className="space-y-1">
+                                                        <div className="font-medium text-foreground">
                                                             {
                                                                 submission.user
                                                                     .name
@@ -438,24 +476,27 @@ export default function ResourceSubmissions({
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="p-3">
-                                                    <Badge variant="outline">
+                                                <td className="px-4 py-4 md:px-5">
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="rounded-md border-border/70 bg-background"
+                                                    >
                                                         {
                                                             submission.verse
                                                                 .verse_key
                                                         }
                                                     </Badge>
                                                 </td>
-                                                <td className="p-3">
-                                                    <span className="text-sm">
+                                                <td className="px-4 py-4 md:px-5">
+                                                    <span className="text-sm text-foreground">
                                                         {submission
                                                             .resource_type
                                                             ?.name || 'N/A'}
                                                     </span>
                                                 </td>
-                                                <td className="p-3">
-                                                    <div className="flex flex-col gap-1">
-                                                        <span className="text-sm font-medium">
+                                                <td className="px-4 py-4 md:px-5">
+                                                    <div className="flex max-w-sm flex-col gap-1.5">
+                                                        <span className="text-sm font-medium text-foreground">
                                                             {submission.resource_title ||
                                                                 '-'}
                                                         </span>
@@ -465,9 +506,9 @@ export default function ResourceSubmissions({
                                                             }
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            className="inline-flex max-w-xs items-center gap-1 truncate text-xs text-primary hover:underline"
+                                                            className="inline-flex max-w-xs items-center gap-1.5 truncate text-xs text-primary hover:underline"
                                                         >
-                                                            <ExternalLink className="h-3 w-3" />
+                                                            <ExternalLink className="h-3.5 w-3.5 shrink-0" />
                                                             <span className="truncate">
                                                                 {
                                                                     submission.resource_url
@@ -476,32 +517,33 @@ export default function ResourceSubmissions({
                                                         </a>
                                                     </div>
                                                 </td>
-                                                <td className="p-3">
-                                                    <span className="block max-w-xs truncate text-sm text-muted-foreground">
+                                                <td className="px-4 py-4 md:px-5">
+                                                    <span className="block max-w-xs text-sm leading-6 text-muted-foreground">
                                                         {submission.comment ||
                                                             '-'}
                                                     </span>
                                                 </td>
-                                                <td className="p-3">
+                                                <td className="px-4 py-4 md:px-5">
                                                     {getStatusBadge(
                                                         submission.status,
                                                     )}
                                                 </td>
-                                                <td className="p-3">
+                                                <td className="px-4 py-4 md:px-5">
                                                     <span className="text-sm text-muted-foreground">
                                                         {new Date(
                                                             submission.created_at,
                                                         ).toLocaleDateString()}
                                                     </span>
                                                 </td>
-                                                <td className="p-3">
-                                                    <div className="flex justify-end gap-1">
+                                                <td className="px-4 py-4 md:px-5">
+                                                    <div className="flex justify-end gap-1.5">
                                                         {submission.status ===
                                                             'pending' && (
                                                             <>
                                                                 <Button
                                                                     size="sm"
                                                                     variant="ghost"
+                                                                    className="h-8 w-8 rounded-md p-0"
                                                                     onClick={() =>
                                                                         handleApprove(
                                                                             submission.id,
@@ -512,11 +554,12 @@ export default function ResourceSubmissions({
                                                                     }
                                                                     title="Approve"
                                                                 >
-                                                                    <Check className="h-4 w-4 text-green-600" />
+                                                                    <Check className="h-4 w-4 text-emerald-600" />
                                                                 </Button>
                                                                 <Button
                                                                     size="sm"
                                                                     variant="ghost"
+                                                                    className="h-8 w-8 rounded-md p-0"
                                                                     onClick={() =>
                                                                         handleReject(
                                                                             submission.id,
@@ -534,6 +577,7 @@ export default function ResourceSubmissions({
                                                         <Button
                                                             size="sm"
                                                             variant="ghost"
+                                                            className="h-8 w-8 rounded-md p-0"
                                                             onClick={() =>
                                                                 handleDelete(
                                                                     submission.id,
@@ -555,9 +599,8 @@ export default function ResourceSubmissions({
                             </table>
                         </div>
 
-                        {/* Pagination */}
                         {submissions.last_page > 1 && (
-                            <div className="mt-6 flex items-center justify-between">
+                            <div className="flex flex-col gap-4 border-t border-border/70 px-5 py-5 md:px-7 lg:flex-row lg:items-center lg:justify-between">
                                 <div className="text-sm text-muted-foreground">
                                     Showing{' '}
                                     {(submissions.current_page - 1) *
@@ -571,19 +614,19 @@ export default function ResourceSubmissions({
                                     )}{' '}
                                     of {submissions.total} results
                                 </div>
-                                <div className="flex gap-1">
+                                <div className="flex flex-wrap gap-2">
                                     {submissions.links.map((link, index) => (
                                         <Link
                                             key={index}
                                             href={link.url || '#'}
                                             preserveState
                                             preserveScroll
-                                            className={`rounded px-3 py-1 text-sm ${
+                                            className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
                                                 link.active
-                                                    ? 'bg-primary text-primary-foreground'
+                                                    ? 'bg-foreground text-background'
                                                     : link.url
-                                                      ? 'hover:bg-muted'
-                                                      : 'cursor-not-allowed opacity-50'
+                                                      ? 'text-foreground/70 hover:bg-muted hover:text-foreground'
+                                                      : 'cursor-not-allowed opacity-40'
                                             }`}
                                             dangerouslySetInnerHTML={{
                                                 __html: link.label,
@@ -593,8 +636,8 @@ export default function ResourceSubmissions({
                                 </div>
                             </div>
                         )}
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </AdminLayout>
         </>
     );

@@ -1,11 +1,24 @@
-import AdminLayout from '@/layouts/admin-layout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import AdminLayout from '@/layouts/admin-layout';
 import { Head, Link, router } from '@inertiajs/react';
-import { Check, ExternalLink, Globe, Lock, Search, Trash2, X } from 'lucide-react';
+import {
+    Check,
+    ExternalLink,
+    Globe,
+    Lock,
+    Search,
+    Trash2,
+    X,
+} from 'lucide-react';
 import { FormEvent, useState } from 'react';
 
 interface User {
@@ -115,17 +128,17 @@ export default function CollectionsAdminPage({
     };
 
     const getStatusBadge = (status: CollectionItem['status']) => {
-        const variants: Record<
-            CollectionItem['status'],
-            'default' | 'secondary' | 'destructive'
-        > = {
-            pending: 'secondary',
-            approved: 'default',
-            rejected: 'destructive',
+        const classes: Record<CollectionItem['status'], string> = {
+            pending:
+                'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300',
+            approved:
+                'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+            rejected:
+                'border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-300',
         };
 
         return (
-            <Badge variant={variants[status]}>
+            <Badge variant="outline" className={classes[status]}>
                 {status.charAt(0).toUpperCase() + status.slice(1)}
             </Badge>
         );
@@ -135,341 +148,380 @@ export default function CollectionsAdminPage({
         <>
             <Head title="Collections - Admin - From Quran" />
             <AdminLayout title="Collections">
-                <div className="grid gap-4 md:grid-cols-4">
-                    <Card>
-                        <CardHeader className="pb-3">
-                            <CardDescription>Total</CardDescription>
-                            <CardTitle className="text-3xl">
-                                {stats.total}
-                            </CardTitle>
-                        </CardHeader>
-                    </Card>
-                    <Card>
-                        <CardHeader className="pb-3">
-                            <CardDescription>Pending</CardDescription>
-                            <CardTitle className="text-3xl text-yellow-600">
-                                {stats.pending}
-                            </CardTitle>
-                        </CardHeader>
-                    </Card>
-                    <Card>
-                        <CardHeader className="pb-3">
-                            <CardDescription>Approved</CardDescription>
-                            <CardTitle className="text-3xl text-green-600">
-                                {stats.approved}
-                            </CardTitle>
-                        </CardHeader>
-                    </Card>
-                    <Card>
-                        <CardHeader className="pb-3">
-                            <CardDescription>Rejected</CardDescription>
-                            <CardTitle className="text-3xl text-red-600">
-                                {stats.rejected}
-                            </CardTitle>
-                        </CardHeader>
-                    </Card>
-                </div>
-
-                <Card>
-                    <CardHeader>
-                        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                            <form
-                                onSubmit={handleSearch}
-                                className="flex flex-1 gap-2"
-                            >
-                                <div className="relative max-w-sm flex-1">
-                                    <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                    <Input
-                                        placeholder="Search by collection or user..."
-                                        value={searchInput}
-                                        onChange={(e) =>
-                                            setSearchInput(e.target.value)
-                                        }
-                                        className="pl-9"
-                                    />
+                <div className="space-y-6">
+                    <div className="rounded-2xl border border-border/60 bg-[linear-gradient(180deg,hsl(var(--background))_0%,hsl(var(--muted)/0.16)_100%)] px-5 py-6 shadow-sm shadow-black/[0.03] md:px-7">
+                        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                            <div className="max-w-3xl space-y-2">
+                                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                                    Collections moderation
+                                </h2>
+                                <p className="text-sm leading-6 text-muted-foreground md:text-base">
+                                    Review public and private collections with a
+                                    cleaner moderation queue.
+                                </p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
+                                    <p className="text-lg font-semibold">
+                                        {stats.total}
+                                    </p>
+                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+                                        Total
+                                    </p>
                                 </div>
-                                <Button type="submit">Search</Button>
-                            </form>
-
-                            <div className="flex gap-2">
-                                <Select
-                                    value={filters.status}
-                                    onValueChange={(value) =>
-                                        handleFilter('status', value)
-                                    }
-                                >
-                                    <SelectTrigger className="w-[140px]">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">
-                                            All Status
-                                        </SelectItem>
-                                        <SelectItem value="pending">
-                                            Pending
-                                        </SelectItem>
-                                        <SelectItem value="approved">
-                                            Approved
-                                        </SelectItem>
-                                        <SelectItem value="rejected">
-                                            Rejected
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-
-                                <Select
-                                    value={filters.visibility}
-                                    onValueChange={(value) =>
-                                        handleFilter('visibility', value)
-                                    }
-                                >
-                                    <SelectTrigger className="w-[140px]">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">
-                                            All Visibility
-                                        </SelectItem>
-                                        <SelectItem value="public">
-                                            Public
-                                        </SelectItem>
-                                        <SelectItem value="private">
-                                            Private
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
+                                    <p className="text-lg font-semibold text-amber-700 dark:text-amber-300">
+                                        {stats.pending}
+                                    </p>
+                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+                                        Pending
+                                    </p>
+                                </div>
+                                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
+                                    <p className="text-lg font-semibold text-emerald-700 dark:text-emerald-300">
+                                        {stats.approved}
+                                    </p>
+                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+                                        Approved
+                                    </p>
+                                </div>
+                                <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
+                                    <p className="text-lg font-semibold text-red-700 dark:text-red-300">
+                                        {stats.rejected}
+                                    </p>
+                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+                                        Rejected
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    </CardHeader>
+                    </div>
 
-                    <CardContent>
+                    <div className="rounded-2xl border border-border/60 bg-background/96 shadow-sm shadow-black/[0.03]">
+                        <div className="border-b border-border/70 px-5 py-5 md:px-7">
+                            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                                <form
+                                    onSubmit={handleSearch}
+                                    className="flex flex-1 gap-2"
+                                >
+                                    <div className="relative max-w-sm flex-1">
+                                        <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                        <Input
+                                            placeholder="Search by collection or user..."
+                                            value={searchInput}
+                                            onChange={(e) =>
+                                                setSearchInput(e.target.value)
+                                            }
+                                            className="h-11 rounded-lg border-border/70 bg-background pl-9"
+                                        />
+                                    </div>
+                                    <Button
+                                        type="submit"
+                                        className="h-11 rounded-lg px-5 text-sm"
+                                    >
+                                        Search
+                                    </Button>
+                                </form>
+
+                                <div className="flex gap-2">
+                                    <Select
+                                        value={filters.status}
+                                        onValueChange={(value) =>
+                                            handleFilter('status', value)
+                                        }
+                                    >
+                                        <SelectTrigger className="h-11 w-[140px] rounded-lg border-border/70 bg-background">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">
+                                                All Status
+                                            </SelectItem>
+                                            <SelectItem value="pending">
+                                                Pending
+                                            </SelectItem>
+                                            <SelectItem value="approved">
+                                                Approved
+                                            </SelectItem>
+                                            <SelectItem value="rejected">
+                                                Rejected
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+
+                                    <Select
+                                        value={filters.visibility}
+                                        onValueChange={(value) =>
+                                            handleFilter('visibility', value)
+                                        }
+                                    >
+                                        <SelectTrigger className="h-11 w-[140px] rounded-lg border-border/70 bg-background">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">
+                                                All Visibility
+                                            </SelectItem>
+                                            <SelectItem value="public">
+                                                Public
+                                            </SelectItem>
+                                            <SelectItem value="private">
+                                                Private
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="border-b">
-                                        <th className="p-3 text-left">
-                                            Collection
-                                        </th>
-                                        <th className="p-3 text-left">User</th>
-                                        <th className="p-3 text-left">
-                                            Visibility
-                                        </th>
-                                        <th className="p-3 text-left">
-                                            Status
-                                        </th>
-                                        <th className="p-3 text-left">
-                                            Verses
-                                        </th>
-                                        <th className="p-3 text-left">Date</th>
-                                        <th className="p-3 text-right">
-                                            Actions
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {collections.data.length === 0 ? (
-                                        <tr>
-                                            <td
-                                                colSpan={7}
-                                                className="p-8 text-center text-muted-foreground"
-                                            >
-                                                No collections found
-                                            </td>
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="border-b border-border/70 bg-muted/20">
+                                            <th className="p-3 text-left text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
+                                                Collection
+                                            </th>
+                                            <th className="p-3 text-left text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
+                                                User
+                                            </th>
+                                            <th className="p-3 text-left text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
+                                                Visibility
+                                            </th>
+                                            <th className="p-3 text-left text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
+                                                Status
+                                            </th>
+                                            <th className="p-3 text-left text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
+                                                Verses
+                                            </th>
+                                            <th className="p-3 text-left text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
+                                                Date
+                                            </th>
+                                            <th className="p-3 text-right text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
+                                                Actions
+                                            </th>
                                         </tr>
-                                    ) : (
-                                        collections.data.map((collection) => (
-                                            <tr
-                                                key={collection.id}
-                                                className="border-b align-top hover:bg-muted/50"
-                                            >
-                                                <td className="p-3">
-                                                    <div className="space-y-1">
-                                                        <div className="flex items-center gap-2">
-                                                            <span
-                                                                className="h-3 w-3 rounded-full"
-                                                                style={{
-                                                                    backgroundColor:
-                                                                        collection.color,
-                                                                }}
-                                                            />
-                                                            <span className="font-medium">
-                                                                {
-                                                                    collection.name
-                                                                }
-                                                            </span>
-                                                            {collection.deleted_at && (
-                                                                <Badge variant="outline">
-                                                                    Deleted
-                                                                </Badge>
-                                                            )}
-                                                        </div>
-                                                        <div className="text-xs text-muted-foreground">
-                                                            {collection.slug}
-                                                        </div>
-                                                        {collection.description && (
-                                                            <p className="max-w-md text-sm text-muted-foreground">
-                                                                {
-                                                                    collection.description
-                                                                }
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                                <td className="p-3">
-                                                    <div className="space-y-1">
-                                                        <div className="font-medium">
-                                                            {
-                                                                collection.user
-                                                                    .name
-                                                            }
-                                                        </div>
-                                                        <div className="text-sm text-muted-foreground">
-                                                            {
-                                                                collection.user
-                                                                    .email
-                                                            }
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="p-3">
-                                                    <Badge
-                                                        variant="secondary"
-                                                        className="flex w-fit items-center gap-1"
-                                                    >
-                                                        {collection.is_public ? (
-                                                            <Globe className="h-3 w-3" />
-                                                        ) : (
-                                                            <Lock className="h-3 w-3" />
-                                                        )}
-                                                        {collection.is_public
-                                                            ? 'Public'
-                                                            : 'Private'}
-                                                    </Badge>
-                                                </td>
-                                                <td className="p-3">
-                                                    {getStatusBadge(
-                                                        collection.status,
-                                                    )}
-                                                </td>
-                                                <td className="p-3">
-                                                    {collection.verses_count}
-                                                </td>
-                                                <td className="p-3 text-sm text-muted-foreground">
-                                                    {new Date(
-                                                        collection.created_at,
-                                                    ).toLocaleDateString()}
-                                                </td>
-                                                <td className="p-3">
-                                                    <div className="flex justify-end gap-2">
-                                                        {collection.is_public &&
-                                                        collection.status ===
-                                                            'approved' &&
-                                                        !collection.deleted_at ? (
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                asChild
-                                                            >
-                                                                <Link
-                                                                    href={`/collections/${collection.slug}`}
-                                                                >
-                                                                    <ExternalLink className="mr-1 h-4 w-4" />
-                                                                    View
-                                                                </Link>
-                                                            </Button>
-                                                        ) : (
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                disabled
-                                                            >
-                                                                <ExternalLink className="mr-1 h-4 w-4" />
-                                                                View
-                                                            </Button>
-                                                        )}
-                                                        <Button
-                                                            size="sm"
-                                                            onClick={() =>
-                                                                handleApprove(
-                                                                    collection.slug,
-                                                                )
-                                                            }
-                                                            disabled={
-                                                                isProcessing ||
-                                                                collection.deleted_at !==
-                                                                    null
-                                                            }
-                                                        >
-                                                            <Check className="mr-1 h-4 w-4" />
-                                                            Approve
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="secondary"
-                                                            onClick={() =>
-                                                                handleReject(
-                                                                    collection.slug,
-                                                                )
-                                                            }
-                                                            disabled={
-                                                                isProcessing ||
-                                                                collection.deleted_at !==
-                                                                    null
-                                                            }
-                                                        >
-                                                            <X className="mr-1 h-4 w-4" />
-                                                            Reject
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="destructive"
-                                                            onClick={() =>
-                                                                handleDelete(
-                                                                    collection.slug,
-                                                                )
-                                                            }
-                                                            disabled={
-                                                                isProcessing ||
-                                                                collection.deleted_at !==
-                                                                    null
-                                                            }
-                                                        >
-                                                            <Trash2 className="mr-1 h-4 w-4" />
-                                                            Delete
-                                                        </Button>
-                                                    </div>
+                                    </thead>
+                                    <tbody>
+                                        {collections.data.length === 0 ? (
+                                            <tr>
+                                                <td
+                                                    colSpan={7}
+                                                    className="p-8 text-center text-muted-foreground"
+                                                >
+                                                    No collections found
                                                 </td>
                                             </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {collections.links.length > 3 && (
-                            <div className="mt-6 flex flex-wrap gap-2">
-                                {collections.links.map((link, index) => (
-                                    <Button
-                                        key={`${link.label}-${index}`}
-                                        variant={
-                                            link.active
-                                                ? 'default'
-                                                : 'outline'
-                                        }
-                                        size="sm"
-                                        disabled={!link.url}
-                                        onClick={() =>
-                                            link.url && router.visit(link.url)
-                                        }
-                                        dangerouslySetInnerHTML={{
-                                            __html: link.label,
-                                        }}
-                                    />
-                                ))}
+                                        ) : (
+                                            collections.data.map(
+                                                (collection) => (
+                                                    <tr
+                                                        key={collection.id}
+                                                        className="border-b border-border/60 align-top hover:bg-muted/20"
+                                                    >
+                                                        <td className="p-3">
+                                                            <div className="space-y-1">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span
+                                                                        className="h-3 w-3 rounded-full"
+                                                                        style={{
+                                                                            backgroundColor:
+                                                                                collection.color,
+                                                                        }}
+                                                                    />
+                                                                    <span className="font-medium">
+                                                                        {
+                                                                            collection.name
+                                                                        }
+                                                                    </span>
+                                                                    {collection.deleted_at && (
+                                                                        <Badge variant="outline">
+                                                                            Deleted
+                                                                        </Badge>
+                                                                    )}
+                                                                </div>
+                                                                <div className="text-xs text-muted-foreground">
+                                                                    {
+                                                                        collection.slug
+                                                                    }
+                                                                </div>
+                                                                {collection.description && (
+                                                                    <p className="max-w-md text-sm text-muted-foreground">
+                                                                        {
+                                                                            collection.description
+                                                                        }
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-3">
+                                                            <div className="space-y-1">
+                                                                <div className="font-medium">
+                                                                    {
+                                                                        collection
+                                                                            .user
+                                                                            .name
+                                                                    }
+                                                                </div>
+                                                                <div className="text-sm text-muted-foreground">
+                                                                    {
+                                                                        collection
+                                                                            .user
+                                                                            .email
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-3">
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="flex w-fit items-center gap-1 rounded-md border-border/70 bg-background"
+                                                            >
+                                                                {collection.is_public ? (
+                                                                    <Globe className="h-3 w-3" />
+                                                                ) : (
+                                                                    <Lock className="h-3 w-3" />
+                                                                )}
+                                                                {collection.is_public
+                                                                    ? 'Public'
+                                                                    : 'Private'}
+                                                            </Badge>
+                                                        </td>
+                                                        <td className="p-3">
+                                                            {getStatusBadge(
+                                                                collection.status,
+                                                            )}
+                                                        </td>
+                                                        <td className="p-3">
+                                                            {
+                                                                collection.verses_count
+                                                            }
+                                                        </td>
+                                                        <td className="p-3 text-sm text-muted-foreground">
+                                                            {new Date(
+                                                                collection.created_at,
+                                                            ).toLocaleDateString()}
+                                                        </td>
+                                                        <td className="p-3">
+                                                            <div className="flex justify-end gap-2">
+                                                                {collection.is_public &&
+                                                                collection.status ===
+                                                                    'approved' &&
+                                                                !collection.deleted_at ? (
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        className="rounded-lg"
+                                                                        asChild
+                                                                    >
+                                                                        <Link
+                                                                            href={`/collections/${collection.slug}`}
+                                                                        >
+                                                                            <ExternalLink className="mr-1 h-4 w-4" />
+                                                                            View
+                                                                        </Link>
+                                                                    </Button>
+                                                                ) : (
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        className="rounded-lg"
+                                                                        disabled
+                                                                    >
+                                                                        <ExternalLink className="mr-1 h-4 w-4" />
+                                                                        View
+                                                                    </Button>
+                                                                )}
+                                                                <Button
+                                                                    size="sm"
+                                                                    className="rounded-lg"
+                                                                    onClick={() =>
+                                                                        handleApprove(
+                                                                            collection.slug,
+                                                                        )
+                                                                    }
+                                                                    disabled={
+                                                                        isProcessing ||
+                                                                        collection.deleted_at !==
+                                                                            null
+                                                                    }
+                                                                >
+                                                                    <Check className="mr-1 h-4 w-4" />
+                                                                    Approve
+                                                                </Button>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="secondary"
+                                                                    className="rounded-lg"
+                                                                    onClick={() =>
+                                                                        handleReject(
+                                                                            collection.slug,
+                                                                        )
+                                                                    }
+                                                                    disabled={
+                                                                        isProcessing ||
+                                                                        collection.deleted_at !==
+                                                                            null
+                                                                    }
+                                                                >
+                                                                    <X className="mr-1 h-4 w-4" />
+                                                                    Reject
+                                                                </Button>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="destructive"
+                                                                    className="rounded-lg"
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            collection.slug,
+                                                                        )
+                                                                    }
+                                                                    disabled={
+                                                                        isProcessing ||
+                                                                        collection.deleted_at !==
+                                                                            null
+                                                                    }
+                                                                >
+                                                                    <Trash2 className="mr-1 h-4 w-4" />
+                                                                    Delete
+                                                                </Button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ),
+                                            )
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
-                        )}
-                    </CardContent>
-                </Card>
+
+                            {collections.links.length > 3 && (
+                                <div className="mt-6 flex flex-wrap gap-2 px-5 pb-5 md:px-7">
+                                    {collections.links.map((link, index) => (
+                                        <Button
+                                            key={`${link.label}-${index}`}
+                                            variant={
+                                                link.active
+                                                    ? 'default'
+                                                    : 'outline'
+                                            }
+                                            size="sm"
+                                            className="rounded-lg"
+                                            disabled={!link.url}
+                                            onClick={() =>
+                                                link.url &&
+                                                router.visit(link.url)
+                                            }
+                                            dangerouslySetInnerHTML={{
+                                                __html: link.label,
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
             </AdminLayout>
         </>
     );

@@ -1,15 +1,9 @@
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,
@@ -17,30 +11,16 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import {
-    ArrowLeft,
-    Edit,
-    Trash2,
-    Globe,
-    Lock,
-    Loader2,
-    Palette,
-    CheckCircle2,
-    GripVertical,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Head, router } from '@inertiajs/react';
-import { FormEvent, useEffect, useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
+import { cn } from '@/lib/utils';
 import {
-    DndContext,
     closestCenter,
+    DndContext,
+    DragEndEvent,
     KeyboardSensor,
     PointerSensor,
     useSensor,
     useSensors,
-    DragEndEvent,
 } from '@dnd-kit/core';
 import {
     arrayMove,
@@ -50,6 +30,19 @@ import {
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Head, router } from '@inertiajs/react';
+import {
+    ArrowLeft,
+    CheckCircle2,
+    Edit,
+    Globe,
+    GripVertical,
+    Loader2,
+    Lock,
+    Palette,
+    Trash2,
+} from 'lucide-react';
+import { FormEvent, useEffect, useState } from 'react';
 
 const colorOptions = [
     { value: '#3b82f6', label: 'Blue', bg: 'bg-blue-500' },
@@ -105,6 +98,13 @@ interface SortableVerseItemProps {
     onDelete: (verseId: number) => void;
 }
 
+interface ChapterVersesResponse {
+    data?: Array<{
+        verseNumber: number;
+        translation?: string;
+    }>;
+}
+
 function SortableVerseItem({ verse, onDelete }: SortableVerseItemProps) {
     const {
         attributes,
@@ -126,17 +126,17 @@ function SortableVerseItem({ verse, onDelete }: SortableVerseItemProps) {
             ref={setNodeRef}
             style={style}
             className={cn(
-                'group relative rounded-lg border bg-card p-4 transition-all',
-                isDragging && 'shadow-lg ring-2 ring-primary',
+                'group rounded-3xl border border-slate-200 bg-white p-5 shadow-none transition-colors',
+                isDragging && 'border-slate-300 shadow-sm',
             )}
         >
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-4">
                 <button
-                    className="mt-1 cursor-grab text-muted-foreground hover:text-foreground active:cursor-grabbing"
+                    className="mt-1 cursor-grab rounded-full p-1 text-slate-400 hover:text-slate-700 active:cursor-grabbing"
                     {...attributes}
                     {...listeners}
                 >
-                    <GripVertical className="h-5 w-5" />
+                    <GripVertical className="h-4 w-4" />
                 </button>
                 <div className="min-w-0 flex-1">
                     <button
@@ -146,28 +146,32 @@ function SortableVerseItem({ verse, onDelete }: SortableVerseItemProps) {
                                 `/${verse.chapter.chapter_number}/${verse.verse_number}`,
                             )
                         }
-                        className="mb-2 inline-flex items-center gap-2 rounded px-1 py-0.5 text-left transition-colors hover:bg-muted"
+                        className="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-left transition-colors hover:border-slate-300"
                     >
-                        <Badge variant="outline" className="font-mono text-xs">
+                        <Badge
+                            variant="outline"
+                            className="border-slate-200 font-mono text-xs text-slate-700"
+                        >
                             {verse.verse_key}
                         </Badge>
-                        <span className="text-sm text-muted-foreground">
-                            {verse.chapter.name_roman ?? verse.chapter.name_simple}
+                        <span className="text-sm text-slate-500">
+                            {verse.chapter.name_roman ??
+                                verse.chapter.name_simple}
                         </span>
                     </button>
                     <p
-                        className="mb-2 text-right font-arabic text-3xl leading-relaxed"
+                        className="font-arabic mb-3 text-right text-3xl leading-relaxed text-slate-950"
                         dir="rtl"
                     >
                         {verse.text_uthmani}
                     </p>
                     {verse.translation && (
-                        <p className="leading-relaxed text-blue-950/60 font-medium">
+                        <p className="text-sm leading-7 font-medium text-slate-700">
                             {verse.translation}
                         </p>
                     )}
                     {verse.text_imlaei_simple && (
-                        <p className="text-sm text-muted-foreground">
+                        <p className="mt-2 text-sm text-slate-400">
                             {verse.text_imlaei_simple}
                         </p>
                     )}
@@ -176,7 +180,7 @@ function SortableVerseItem({ verse, onDelete }: SortableVerseItemProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => onDelete(verse.id)}
-                    className="opacity-0 text-destructive transition-opacity group-hover:opacity-100 hover:text-destructive"
+                    className="rounded-full text-slate-400 opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
                 >
                     <Trash2 className="h-4 w-4" />
                 </Button>
@@ -304,9 +308,10 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
                             `/api/quran/chapters/${chapterNumber}/verses?${params.toString()}`,
                         );
                         if (!resp.ok) return;
-                        const payload = await resp.json();
+                        const payload =
+                            (await resp.json()) as ChapterVersesResponse;
                         const items = payload.data || [];
-                        items.forEach((item: any) => {
+                        items.forEach((item) => {
                             const key = `${chapterNumber}:${item.verseNumber}`;
                             if (item.translation) {
                                 translationMap[key] = item.translation;
@@ -477,7 +482,7 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
             setIsEditDialogOpen(false);
             setSuccessMessage('Collection updated successfully');
             setTimeout(() => setSuccessMessage(null), 3000);
-        } catch (error) {
+        } catch {
             setErrors({ general: 'Failed to update collection' });
         } finally {
             setIsSubmitting(false);
@@ -488,8 +493,10 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
         return (
             <AppLayout>
                 <Head title="Collection - From Quran" />
-                <div className="flex items-center justify-center py-20">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <div className="flex flex-1 flex-col bg-[#fafaf8]">
+                    <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center justify-center gap-4 px-4 py-10 sm:px-6">
+                        <Loader2 className="h-7 w-7 animate-spin text-slate-500" />
+                    </div>
                 </div>
             </AppLayout>
         );
@@ -502,248 +509,281 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
     return (
         <AppLayout>
             <Head title={`${collection.name} - From Quran`} />
-            <div className="container mx-auto px-4 py-8">
-                {/* Header */}
-                <div className="mb-8">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => router.visit('/my-collections')}
-                        className="mb-4"
-                    >
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back to Collections
-                    </Button>
-
-                    <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                            <div className="mb-2 flex items-center gap-3">
-                                <div
-                                    className="h-8 w-1.5 rounded-full"
-                                    style={{ backgroundColor: collection.color }}
-                                />
-                                <h1 className="text-3xl font-bold">
-                                    {collection.name}
-                                </h1>
-                                <Badge
-                                    variant="secondary"
-                                    className="flex items-center gap-1"
-                                >
-                                    {collection.is_public ? (
-                                        <Globe className="h-3 w-3" />
-                                    ) : (
-                                        <Lock className="h-3 w-3" />
-                                    )}
-                                    {collection.is_public ? 'Public' : 'Private'}
-                                </Badge>
-                                <Badge
-                                    variant="outline"
-                                    className={getStatusBadgeClasses(
-                                        collection.status,
-                                    )}
-                                >
-                                    {collection.status.charAt(0).toUpperCase() +
-                                        collection.status.slice(1)}
-                                </Badge>
-                            </div>
-                            {collection.description && (
-                                <p className="text-muted-foreground">
-                                    {collection.description}
-                                </p>
-                            )}
-                            <p className="mt-2 text-sm text-muted-foreground">
-                                {verses.length}{' '}
-                                {verses.length === 1 ? 'verse' : 'verses'}
-                            </p>
-                        </div>
-                        <Button onClick={handleEdit}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit Collection
-                        </Button>
-                    </div>
-                </div>
-
-                {successMessage && (
-                    <div className="mb-6 flex items-center gap-2 rounded-md bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400">
-                        <CheckCircle2 className="h-4 w-4" />
-                        {successMessage}
-                    </div>
-                )}
-
-                {errors.general && (
-                    <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">
-                        {errors.general}
-                    </div>
-                )}
-
-                {/* Verses List with Drag and Drop */}
-                {verses.length === 0 ? (
-                    <Card className="text-center">
-                        <CardContent className="py-16">
-                            <h2 className="mb-2 text-xl font-semibold">
-                                No verses yet
-                            </h2>
-                            <p className="mb-6 text-muted-foreground">
-                                Browse the Quran to add verses to this collection
-                            </p>
-                            <Button onClick={() => router.visit('/')}>
-                                Browse Quran
-                            </Button>
-                        </CardContent>
-                    </Card>
-                ) : (
-                    <DndContext
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragEnd={handleDragEnd}
-                    >
-                        <SortableContext
-                            items={verses.map((v) => v.id)}
-                            strategy={verticalListSortingStrategy}
+            <div className="flex flex-1 flex-col bg-[#fafaf8]">
+                <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10">
+                    <section className="border-b border-slate-200 pb-6">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => router.visit('/my-collections')}
+                            className="mb-5 rounded-full px-3 text-slate-600"
                         >
-                            <div className="space-y-3">
-                                {verses.map((verse) => (
-                                    <SortableVerseItem
-                                        key={verse.id}
-                                        verse={verse}
-                                        onDelete={handleDeleteVerse}
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back to Collections
+                        </Button>
+
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="flex-1">
+                                <div className="mb-3 flex items-center gap-3">
+                                    <div
+                                        className="h-3 w-3 rounded-full"
+                                        style={{
+                                            backgroundColor: collection.color,
+                                        }}
                                     />
-                                ))}
-                            </div>
-                        </SortableContext>
-                    </DndContext>
-                )}
-
-                {/* Edit Dialog */}
-                <Dialog
-                    open={isEditDialogOpen}
-                    onOpenChange={setIsEditDialogOpen}
-                >
-                    <DialogContent className="sm:max-w-[500px]">
-                        <DialogHeader>
-                            <DialogTitle>Edit Collection</DialogTitle>
-                        </DialogHeader>
-
-                        <form onSubmit={handleUpdate} className="space-y-4">
-                            {errors.general && (
-                                <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-                                    {errors.general}
+                                    <h1 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-4xl">
+                                        {collection.name}
+                                    </h1>
                                 </div>
-                            )}
-
-                            <div className="space-y-2">
-                                <Label htmlFor="edit-name">
-                                    Name <span className="text-red-500">*</span>
-                                </Label>
-                                <Input
-                                    id="edit-name"
-                                    value={editForm.name}
-                                    onChange={(e) =>
-                                        setEditForm({
-                                            ...editForm,
-                                            name: e.target.value,
-                                        })
-                                    }
-                                    disabled={isSubmitting}
-                                />
-                                {errors.name && (
-                                    <p className="text-sm text-destructive">
-                                        {errors.name}
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <Badge
+                                        variant="secondary"
+                                        className="rounded-full bg-stone-100 px-2.5 py-1 text-slate-600"
+                                    >
+                                        {collection.is_public ? (
+                                            <Globe className="mr-1 h-3 w-3" />
+                                        ) : (
+                                            <Lock className="mr-1 h-3 w-3" />
+                                        )}
+                                        {collection.is_public
+                                            ? 'Public'
+                                            : 'Private'}
+                                    </Badge>
+                                    <Badge
+                                        variant="secondary"
+                                        className="rounded-full bg-stone-100 px-2.5 py-1 text-slate-600"
+                                    >
+                                        {verses.length}{' '}
+                                        {verses.length === 1
+                                            ? 'verse'
+                                            : 'verses'}
+                                    </Badge>
+                                    <Badge
+                                        variant="outline"
+                                        className={cn(
+                                            'rounded-full px-2.5 py-1',
+                                            getStatusBadgeClasses(
+                                                collection.status,
+                                            ),
+                                        )}
+                                    >
+                                        {collection.status
+                                            .charAt(0)
+                                            .toUpperCase() +
+                                            collection.status.slice(1)}
+                                    </Badge>
+                                </div>
+                                {collection.description && (
+                                    <p className="max-w-2xl text-sm leading-7 text-slate-500 sm:text-base">
+                                        {collection.description}
                                     </p>
                                 )}
                             </div>
+                            <Button
+                                onClick={handleEdit}
+                                className="rounded-full px-5"
+                            >
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit Collection
+                            </Button>
+                        </div>
+                    </section>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="edit-description">
-                                    Description
-                                </Label>
-                                <Textarea
-                                    id="edit-description"
-                                    value={editForm.description}
-                                    onChange={(e) =>
-                                        setEditForm({
-                                            ...editForm,
-                                            description: e.target.value,
-                                        })
-                                    }
-                                    maxLength={500}
-                                    disabled={isSubmitting}
-                                />
-                            </div>
+                    {successMessage && (
+                        <div className="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                            <CheckCircle2 className="h-4 w-4" />
+                            {successMessage}
+                        </div>
+                    )}
 
-                            <div className="space-y-2">
-                                <Label className="flex items-center gap-2">
-                                    <Palette className="h-4 w-4" />
-                                    Color
-                                </Label>
-                                <div className="flex flex-wrap gap-2">
-                                    {colorOptions.map((color) => (
-                                        <button
-                                            key={color.value}
-                                            type="button"
-                                            className={cn(
-                                                'h-8 w-8 rounded-full transition-all hover:scale-110',
-                                                color.bg,
-                                                editForm.color === color.value &&
-                                                    'ring-2 ring-ring ring-offset-2',
-                                            )}
-                                            onClick={() =>
-                                                setEditForm({
-                                                    ...editForm,
-                                                    color: color.value,
-                                                })
-                                            }
-                                            title={color.label}
+                    {errors.general && (
+                        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                            {errors.general}
+                        </div>
+                    )}
+
+                    {verses.length === 0 ? (
+                        <Card className="rounded-3xl border-slate-200 bg-white shadow-none">
+                            <CardContent className="py-16">
+                                <h2 className="mb-2 text-xl font-semibold text-slate-950">
+                                    No verses yet
+                                </h2>
+                                <p className="mb-6 text-sm leading-7 text-slate-500">
+                                    Browse the Quran to add verses to this
+                                    collection
+                                </p>
+                                <Button
+                                    onClick={() => router.visit('/')}
+                                    className="rounded-full px-5"
+                                >
+                                    Browse Quran
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={handleDragEnd}
+                        >
+                            <SortableContext
+                                items={verses.map((v) => v.id)}
+                                strategy={verticalListSortingStrategy}
+                            >
+                                <div className="space-y-4">
+                                    {verses.map((verse) => (
+                                        <SortableVerseItem
+                                            key={verse.id}
+                                            verse={verse}
+                                            onDelete={handleDeleteVerse}
                                         />
                                     ))}
                                 </div>
-                            </div>
+                            </SortableContext>
+                        </DndContext>
+                    )}
 
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    id="edit-is-public"
-                                    checked={editForm.is_public}
-                                    onChange={(e) =>
-                                        setEditForm({
-                                            ...editForm,
-                                            is_public: e.target.checked,
-                                        })
-                                    }
-                                    disabled={isSubmitting}
-                                    className="h-4 w-4 rounded border-gray-300"
-                                />
-                                <Label
-                                    htmlFor="edit-is-public"
-                                    className="cursor-pointer"
-                                >
-                                    Make this collection public
-                                </Label>
-                            </div>
+                    <Dialog
+                        open={isEditDialogOpen}
+                        onOpenChange={setIsEditDialogOpen}
+                    >
+                        <DialogContent className="rounded-3xl border-slate-200 sm:max-w-[500px]">
+                            <DialogHeader>
+                                <DialogTitle>Edit Collection</DialogTitle>
+                            </DialogHeader>
 
-                            <DialogFooter>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => setIsEditDialogOpen(false)}
-                                    disabled={isSubmitting}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button type="submit" disabled={isSubmitting}>
-                                    {isSubmitting ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Saving...
-                                        </>
-                                    ) : (
-                                        'Save Changes'
+                            <form onSubmit={handleUpdate} className="space-y-4">
+                                {errors.general && (
+                                    <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                                        {errors.general}
+                                    </div>
+                                )}
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-name">
+                                        Name{' '}
+                                        <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Input
+                                        id="edit-name"
+                                        value={editForm.name}
+                                        onChange={(e) =>
+                                            setEditForm({
+                                                ...editForm,
+                                                name: e.target.value,
+                                            })
+                                        }
+                                        disabled={isSubmitting}
+                                        className="rounded-2xl border-slate-200 bg-white shadow-none"
+                                    />
+                                    {errors.name && (
+                                        <p className="text-sm text-destructive">
+                                            {errors.name}
+                                        </p>
                                     )}
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    </DialogContent>
-                </Dialog>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-description">
+                                        Description
+                                    </Label>
+                                    <Textarea
+                                        id="edit-description"
+                                        value={editForm.description}
+                                        onChange={(e) =>
+                                            setEditForm({
+                                                ...editForm,
+                                                description: e.target.value,
+                                            })
+                                        }
+                                        maxLength={500}
+                                        disabled={isSubmitting}
+                                        className="rounded-2xl border-slate-200 bg-white shadow-none"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label className="flex items-center gap-2">
+                                        <Palette className="h-4 w-4" />
+                                        Color
+                                    </Label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {colorOptions.map((color) => (
+                                            <button
+                                                key={color.value}
+                                                type="button"
+                                                className={cn(
+                                                    'h-8 w-8 rounded-full transition-all hover:scale-110',
+                                                    color.bg,
+                                                    editForm.color ===
+                                                        color.value &&
+                                                        'ring-2 ring-slate-950 ring-offset-2',
+                                                )}
+                                                onClick={() =>
+                                                    setEditForm({
+                                                        ...editForm,
+                                                        color: color.value,
+                                                    })
+                                                }
+                                                title={color.label}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="checkbox"
+                                        id="edit-is-public"
+                                        checked={editForm.is_public}
+                                        onChange={(e) =>
+                                            setEditForm({
+                                                ...editForm,
+                                                is_public: e.target.checked,
+                                            })
+                                        }
+                                        disabled={isSubmitting}
+                                        className="h-4 w-4 rounded border-gray-300"
+                                    />
+                                    <Label
+                                        htmlFor="edit-is-public"
+                                        className="cursor-pointer"
+                                    >
+                                        Make this collection public
+                                    </Label>
+                                </div>
+
+                                <DialogFooter>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="rounded-full"
+                                        onClick={() =>
+                                            setIsEditDialogOpen(false)
+                                        }
+                                        disabled={isSubmitting}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        type="submit"
+                                        disabled={isSubmitting}
+                                        className="rounded-full"
+                                    >
+                                        {isSubmitting ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Saving...
+                                            </>
+                                        ) : (
+                                            'Save Changes'
+                                        )}
+                                    </Button>
+                                </DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
+                </div>
             </div>
         </AppLayout>
     );

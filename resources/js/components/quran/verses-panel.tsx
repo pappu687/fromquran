@@ -11,8 +11,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useReadingMode } from '@/contexts/reading-mode-context';
 import { useReaderSettings } from '@/contexts/reader-settings-context';
+import { useReadingMode } from '@/contexts/reading-mode-context';
 import { useVersesPanel } from '@/hooks/use-verses-panel';
 import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
@@ -46,7 +46,7 @@ interface Chapter {
 interface VersesPanelProps {
     chapter?: Chapter;
     initialVerses?: {
-        data: any[];
+        data: Verse[];
         total: number;
         has_more: boolean;
     };
@@ -104,8 +104,10 @@ export function VersesPanel({
 
     if (!chapter) {
         return (
-            <div className="flex h-full items-center justify-center text-muted-foreground">
-                <p>Select a chapter to start reading</p>
+            <div className="flex h-full items-center justify-center px-4 py-12">
+                <div className="rounded-3xl border border-slate-200 bg-white px-6 py-8 text-center text-slate-500 shadow-none">
+                    <p>Select a chapter to start reading</p>
+                </div>
             </div>
         );
     }
@@ -127,13 +129,15 @@ export function VersesPanel({
             <div>
                 <div className="px-0 py-4 md:p-4">
                     {error && (
-                        <div className="mb-4 rounded-lg bg-destructive/10 p-4 text-destructive">
-                            <p>Error: {error}</p>
+                        <div className="mb-4 rounded-3xl border border-red-200 bg-red-50 px-5 py-4 text-red-700">
+                            <p className="text-sm font-medium">
+                                Error: {error}
+                            </p>
                             <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={retry}
-                                className="mt-2"
+                                className="mt-3 rounded-full border-red-200 bg-white text-red-700 shadow-none hover:bg-red-100"
                             >
                                 Retry
                             </Button>
@@ -141,7 +145,7 @@ export function VersesPanel({
                     )}
 
                     {verses.length === 0 && !loading && !error && (
-                        <div className="py-8 text-center text-muted-foreground">
+                        <div className="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center text-slate-500 shadow-none">
                             <p>No verses found</p>
                         </div>
                     )}
@@ -167,7 +171,7 @@ export function VersesPanel({
                             {Array.from({ length: 5 }).map((_, index) => (
                                 <div
                                     key={index}
-                                    className="rounded-2xl border border-border/40 bg-background/70 px-4 py-5 md:px-5"
+                                    className="rounded-3xl border border-slate-200 bg-white px-4 py-5 md:px-5"
                                 >
                                     <div className="mb-5 flex items-center justify-between">
                                         <Skeleton className="h-8 w-8 rounded-[40%]" />
@@ -228,32 +232,32 @@ export function VersesPanel({
                         !fromVerse &&
                         !toVerse &&
                         hasMore && (
-                        <div className="mt-6 flex justify-center">
-                            <Button
-                                variant="outline"
-                                onClick={loadMore}
-                                disabled={loading}
-                                className="min-w-32"
-                            >
-                                {loading ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Loading...
-                                    </>
-                                ) : (
-                                    'Load More Verses'
-                                )}
-                            </Button>
-                        </div>
-                    )}
+                            <div className="mt-6 flex justify-center">
+                                <Button
+                                    variant="outline"
+                                    onClick={loadMore}
+                                    disabled={loading}
+                                    className="min-w-36 rounded-full border-slate-200 bg-white px-5 shadow-none"
+                                >
+                                    {loading ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Loading...
+                                        </>
+                                    ) : (
+                                        'Load More Verses'
+                                    )}
+                                </Button>
+                            </div>
+                        )}
 
                     {/* End Message */}
                     {!fromVerse &&
                         !toVerse &&
                         !hasMore &&
                         verses.length > 0 && (
-                            <div className="py-8 text-center text-muted-foreground">
-                                <Separator className="mb-4" />
+                            <div className="py-8 text-center text-slate-500">
+                                <Separator className="mb-4 bg-slate-200" />
                                 <p>You've reached the end of this chapter</p>
                             </div>
                         )}
@@ -263,7 +267,7 @@ export function VersesPanel({
                         <div className="mt-6 flex justify-center">
                             <Button
                                 variant="outline"
-                                className="min-w-32 border-2 border-amber-400 text-amber-900"
+                                className="min-w-36 rounded-full border-amber-200 bg-amber-50 px-5 text-amber-900 shadow-none hover:bg-amber-100"
                                 onClick={() =>
                                     router.visit(
                                         `/${chapter.number}?start-verse=${fromVerse}`,

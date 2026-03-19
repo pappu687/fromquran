@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button';
+import { UserFormDialog } from '@/components/admin/user-form-dialog';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -10,15 +10,19 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import AdminLayout from '@/layouts/admin-layout';
-import { DataTable, type Column, type SortDirection } from '@/components/ui/data-table';
-import { UserFormDialog } from '@/components/admin/user-form-dialog';
+import { Button } from '@/components/ui/button';
+import {
+    DataTable,
+    type Column,
+    type SortDirection,
+} from '@/components/ui/data-table';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import AdminLayout from '@/layouts/admin-layout';
 import { Head, router } from '@inertiajs/react';
 import { Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
@@ -30,11 +34,6 @@ interface User {
     email_verified_at: string | null;
     created_at: string;
     roles: Array<{ id: number; name: string }>;
-}
-
-interface Role {
-    id: number;
-    name: string;
 }
 
 interface PaginationData {
@@ -63,12 +62,15 @@ interface Filters {
 
 interface AdminUsersProps {
     users: PaginationData;
-    roles: Role[];
     stats: Stats;
     filters: Filters;
 }
 
-export default function AdminUsers({ users: initialUsers, roles, stats, filters }: AdminUsersProps) {
+export default function AdminUsers({
+    users: initialUsers,
+    stats,
+    filters,
+}: AdminUsersProps) {
     const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -86,7 +88,7 @@ export default function AdminUsers({ users: initialUsers, roles, stats, filters 
             {
                 preserveState: true,
                 preserveScroll: true,
-            }
+            },
         );
     };
 
@@ -100,7 +102,7 @@ export default function AdminUsers({ users: initialUsers, roles, stats, filters 
             {
                 preserveState: true,
                 preserveScroll: true,
-            }
+            },
         );
     };
 
@@ -114,7 +116,7 @@ export default function AdminUsers({ users: initialUsers, roles, stats, filters 
             {
                 preserveState: true,
                 preserveScroll: true,
-            }
+            },
         );
     };
 
@@ -142,14 +144,17 @@ export default function AdminUsers({ users: initialUsers, roles, stats, filters 
                 .querySelector('meta[name="csrf-token"]')
                 ?.getAttribute('content');
 
-            const response = await fetch(`/api/admin/users/${userToDelete.id}`, {
-                method: 'DELETE',
-                headers: {
-                    Accept: 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || '',
+            const response = await fetch(
+                `/api/admin/users/${userToDelete.id}`,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        Accept: 'application/json',
+                        'X-CSRF-TOKEN': csrfToken || '',
+                    },
+                    credentials: 'include',
                 },
-                credentials: 'include',
-            });
+            );
 
             if (!response.ok) {
                 const data = await response.json();
@@ -158,12 +163,16 @@ export default function AdminUsers({ users: initialUsers, roles, stats, filters 
 
             setDeleteDialogOpen(false);
             setUserToDelete(null);
-            
+
             // Reload the page data
             router.reload();
         } catch (error) {
             console.error('Failed to delete user:', error);
-            alert(error instanceof Error ? error.message : 'Failed to delete user');
+            alert(
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to delete user',
+            );
         } finally {
             setIsDeleting(false);
         }
@@ -178,7 +187,9 @@ export default function AdminUsers({ users: initialUsers, roles, stats, filters 
             key: 'id',
             title: 'ID',
             sortable: true,
-            cell: (user) => <span className="text-muted-foreground">#{user.id}</span>,
+            cell: (user) => (
+                <span className="text-muted-foreground">#{user.id}</span>
+            ),
         },
         {
             key: 'name',
@@ -205,7 +216,9 @@ export default function AdminUsers({ users: initialUsers, roles, stats, filters 
                             </Badge>
                         ))
                     ) : (
-                        <span className="text-muted-foreground text-sm">No roles</span>
+                        <span className="text-sm text-muted-foreground">
+                            No roles
+                        </span>
                     )}
                 </div>
             ),
@@ -246,24 +259,56 @@ export default function AdminUsers({ users: initialUsers, roles, stats, filters 
         <>
             <Head title="Users - Admin - From Quran" />
             <AdminLayout title="Users">
-                <div className="space-y-4">
-                    {/* Header */}
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h2 className="text-2xl font-bold tracking-tight">
-                                User Management
-                            </h2>
-                            <p className="text-muted-foreground">
-                                Manage users and their roles
-                            </p>
+                <div className="space-y-6">
+                    <div className="rounded-2xl border border-border/60 bg-[linear-gradient(180deg,hsl(var(--background))_0%,hsl(var(--muted)/0.16)_100%)] px-5 py-6 shadow-sm shadow-black/[0.03] md:px-7">
+                        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                            <div className="max-w-3xl space-y-2">
+                                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                                    User management
+                                </h2>
+                                <p className="text-sm leading-6 text-muted-foreground md:text-base">
+                                    Manage accounts, assign roles, and keep the
+                                    admin user base tidy.
+                                </p>
+                            </div>
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                                <div className="grid grid-cols-3 gap-3">
+                                    <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
+                                        <p className="text-lg font-semibold">
+                                            {stats.total}
+                                        </p>
+                                        <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+                                            Total
+                                        </p>
+                                    </div>
+                                    <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
+                                        <p className="text-lg font-semibold">
+                                            {stats.admins}
+                                        </p>
+                                        <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+                                            Admins
+                                        </p>
+                                    </div>
+                                    <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
+                                        <p className="text-lg font-semibold">
+                                            {stats.reviewers + stats.moderators}
+                                        </p>
+                                        <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+                                            Staff
+                                        </p>
+                                    </div>
+                                </div>
+                                <Button
+                                    onClick={handleAddUser}
+                                    className="h-10 rounded-lg px-4 text-sm"
+                                >
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Add User
+                                </Button>
+                            </div>
                         </div>
-                        <Button onClick={handleAddUser}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add User
-                        </Button>
                     </div>
 
-                    {/* DataTable */}
                     <DataTable
                         data={initialUsers.data}
                         columns={columns}
@@ -296,14 +341,18 @@ export default function AdminUsers({ users: initialUsers, roles, stats, filters 
                 />
 
                 {/* Delete Confirmation Dialog */}
-                <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialog
+                    open={deleteDialogOpen}
+                    onOpenChange={setDeleteDialogOpen}
+                >
                     <AlertDialogContent>
                         <AlertDialogHeader>
                             <AlertDialogTitle>Delete User</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Are you sure you want to delete the user "{userToDelete?.name}"?
-                                This action cannot be undone and will remove all of the
-                                user's data including bookmarks and collections.
+                                Are you sure you want to delete the user "
+                                {userToDelete?.name}"? This action cannot be
+                                undone and will remove all of the user's data
+                                including bookmarks and collections.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>

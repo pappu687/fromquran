@@ -1,12 +1,10 @@
 import { VerseCard } from '@/components/quran/verse-card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import QuranReaderLayout from '@/layouts/quran-reader-layout';
 import { Head, router, usePage } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { ChevronLeft, ExternalLink, Tags } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface Verse {
     id: number;
@@ -58,6 +56,18 @@ interface TopicDetailProps {
     topicId: number;
 }
 
+interface TopicDetailResponse {
+    topic: Topic;
+    related_topics?: RelatedTopic[];
+    verses: {
+        data: Verse[];
+        current_page: number;
+        last_page: number;
+        per_page: number;
+        total: number;
+    };
+}
+
 export default function TopicDetail({ topicId }: TopicDetailProps) {
     const [topic, setTopic] = useState<Topic | null>(null);
     const [verses, setVerses] = useState<Verse[]>([]);
@@ -72,8 +82,6 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
         per_page: 10,
         total: 0,
     });
-
-    // Fetch chapters for sidebar
     const [chapters, setChapters] = useState<Chapter[]>([]);
 
     const inertiaPage = usePage<{ appUrl?: string; siteName?: string }>();
@@ -99,49 +107,54 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
         : fallbackDescription;
     const pageTitle = `${topicName} - Quran Topic`;
 
-    const fetchTopicData = async (pageNum: number = 1) => {
-        if (pageNum === 1) {
-            setLoading(true);
-        } else {
-            setLoadingVerses(true);
-        }
-        setError(null);
-
-        try {
-            const response = await fetch(
-                `/api/topics/${topicId}?page=${pageNum}`,
-            );
-            if (!response.ok) {
-                throw new Error('Failed to fetch topic');
-            }
-
-            const data = await response.json();
-
+    const fetchTopicData = useCallback(
+        async (pageNum: number = 1) => {
             if (pageNum === 1) {
-                setTopic(data.topic);
-                setRelatedTopics(data.related_topics || []);
+                setLoading(true);
+            } else {
+                setLoadingVerses(true);
             }
 
-            setVerses(data.verses.data || []);
-            setPagination({
-                current_page: data.verses.current_page,
-                last_page: data.verses.last_page,
-                per_page: data.verses.per_page,
-                total: data.verses.total,
-            });
-            setPage(pageNum);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'An error occurred');
-        } finally {
-            setLoading(false);
-            setLoadingVerses(false);
-        }
-    };
+            setError(null);
+
+            try {
+                const response = await fetch(
+                    `/api/topics/${topicId}?page=${pageNum}`,
+                );
+                if (!response.ok) {
+                    throw new Error('Failed to fetch topic');
+                }
+
+                const data = (await response.json()) as TopicDetailResponse;
+
+                if (pageNum === 1) {
+                    setTopic(data.topic);
+                    setRelatedTopics(data.related_topics || []);
+                }
+
+                setVerses(data.verses.data || []);
+                setPagination({
+                    current_page: data.verses.current_page,
+                    last_page: data.verses.last_page,
+                    per_page: data.verses.per_page,
+                    total: data.verses.total,
+                });
+                setPage(pageNum);
+            } catch (err) {
+                setError(
+                    err instanceof Error ? err.message : 'An error occurred',
+                );
+            } finally {
+                setLoading(false);
+                setLoadingVerses(false);
+            }
+        },
+        [topicId],
+    );
 
     useEffect(() => {
         fetchTopicData(1);
 
-        // Fetch chapters for sidebar
         const fetchChapters = async () => {
             try {
                 const response = await fetch('/api/quran/chapters');
@@ -155,7 +168,7 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
         };
 
         fetchChapters();
-    }, [topicId]);
+    }, [fetchTopicData, topicId]);
 
     const handlePageChange = (newPage: number) => {
         if (newPage >= 1 && newPage <= pagination.last_page) {
@@ -174,26 +187,38 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
 
     const handleChapterSelect = (chapterId: number) => {
         const chapter = chapters.find((ch) => ch.id === chapterId);
-        if (!chapter) return;
+        if (!chapter) {
+            return;
+        }
 
         router.visit(`/${chapter.number}`);
     };
 
-    // Get random color for badges
-    const getRandomColor = (id: number): string => {
-        const colors = [
-            'bg-red-100 text-red-800 hover:bg-red-200',
-            'bg-blue-100 text-blue-800 hover:bg-blue-200',
-            'bg-green-100 text-green-800 hover:bg-green-200',
-            'bg-yellow-100 text-yellow-800 hover:bg-yellow-200',
-            'bg-purple-100 text-purple-800 hover:bg-purple-200',
-            'bg-pink-100 text-pink-800 hover:bg-pink-200',
-            'bg-indigo-100 text-indigo-800 hover:bg-indigo-200',
-            'bg-orange-100 text-orange-800 hover:bg-orange-200',
-            'bg-teal-100 text-teal-800 hover:bg-teal-200',
-            'bg-cyan-100 text-cyan-800 hover:bg-cyan-200',
-        ];
-        return colors[id % colors.length];
+    const getVisiblePages = () => {
+        const maxVisiblePages = 5;
+
+        if (pagination.last_page <= maxVisiblePages) {
+            return Array.from(
+                { length: pagination.last_page },
+                (_, index) => index + 1,
+            );
+        }
+
+        if (page <= 3) {
+            return [1, 2, 3, 4, pagination.last_page];
+        }
+
+        if (page >= pagination.last_page - 2) {
+            return [
+                1,
+                pagination.last_page - 3,
+                pagination.last_page - 2,
+                pagination.last_page - 1,
+                pagination.last_page,
+            ];
+        }
+
+        return [1, page - 1, page, page + 1, pagination.last_page];
     };
 
     const content = (
@@ -218,137 +243,159 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
                 <meta name="twitter:description" content={pageDescription} />
                 <meta name="twitter:image" content={ogImage} />
             </Head>
-            <div className="flex h-full flex-col px-4 py-5">
-                <div className="mx-auto h-full w-full max-w-3xl rounded-xl">
+
+            <div className="flex h-full flex-col bg-[#fafaf8] px-4 py-5">
+                <div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-8 py-4 sm:gap-10 sm:py-6">
                     {loading ? (
-                        <div className="space-y-6">
-                            <Skeleton className="h-8 w-48" />
-                            <Skeleton className="h-6 w-32" />
-                            <Skeleton className="h-32 w-full" />
+                        <div className="space-y-8">
+                            <div className="space-y-3 border-b border-slate-200 pb-8">
+                                <Skeleton className="h-4 w-20 rounded-full" />
+                                <Skeleton className="h-10 w-72 rounded-2xl" />
+                                <Skeleton className="h-20 w-full rounded-3xl" />
+                            </div>
                             <div className="space-y-4">
-                                <Skeleton className="h-32 w-full" />
-                                <Skeleton className="h-32 w-full" />
-                                <Skeleton className="h-32 w-full" />
+                                <Skeleton className="h-32 w-full rounded-3xl" />
+                                <Skeleton className="h-32 w-full rounded-3xl" />
+                                <Skeleton className="h-32 w-full rounded-3xl" />
                             </div>
                         </div>
                     ) : error || !topic ? (
-                        <div className="flex flex-col items-center justify-center py-12">
-                            <p className="mb-4 text-destructive">
+                        <div className="rounded-3xl border border-red-200 bg-red-50 px-6 py-10 text-center">
+                            <p className="mb-4 text-sm text-red-700">
                                 {error || 'Topic not found'}
                             </p>
-                            <Button onClick={() => router.visit('/')}>
-                                Go Home
+                            <Button
+                                onClick={() => router.visit('/topics')}
+                                className="rounded-full px-5"
+                            >
+                                Browse Topics
                             </Button>
                         </div>
                     ) : (
                         <>
-                            {/* Back Button */}
-                            <Button
-                                variant="ghost"
-                                onClick={() => window.history.back()}
-                                className="mb-6"
-                            >
-                                <ChevronLeft className="mr-2 h-4 w-4" />
-                                Back
-                            </Button>
+                            <section className="border-b border-slate-200 pb-6 sm:pb-8">
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => window.history.back()}
+                                    className="mb-5 rounded-full px-3 text-slate-600"
+                                >
+                                    <ChevronLeft className="mr-2 h-4 w-4" />
+                                    Back
+                                </Button>
 
-                            {/* Topic Header */}
-                            <div className="mb-8 rounded-lg border bg-card p-6">
-                                <div className="mb-4 flex items-center gap-2">
-                                    <h1 className="text-2xl font-bold">
-                                        {topic.name}
-                                    </h1>
-                                    {topic.arabic_name && (
-                                        <span className="font-arabic text-xl text-muted-foreground">
-                                            {topic.arabic_name}
-                                        </span>
-                                    )}
-                                </div>
+                                <div className="max-w-3xl">
+                                    <div className="flex items-center gap-2 text-slate-400">
+                                        <Tags className="h-4 w-4" />
+                                        <p className="text-xs font-semibold tracking-[0.18em] uppercase">
+                                            Topic
+                                        </p>
+                                    </div>
 
-                                {topic.parent && (
-                                    <div className="mb-4">
-                                        <span className="text-sm text-muted-foreground">
-                                            Parent:{' '}
+                                    <div className="mt-3 flex flex-wrap items-center gap-3">
+                                        <h1 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-4xl">
+                                            {topic.name}
+                                        </h1>
+                                        {topic.arabic_name && (
+                                            <span className="font-arabic text-2xl text-slate-400 sm:text-3xl">
+                                                {topic.arabic_name}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                                        {topic.parent && (
                                             <button
+                                                type="button"
                                                 onClick={() =>
                                                     handleTopicClick(
                                                         topic.parent!.topic_id,
                                                     )
                                                 }
-                                                className="font-semibold text-primary hover:underline"
+                                                className="rounded-full bg-stone-100 px-3 py-1.5 text-sm text-slate-700 ring-1 ring-stone-200 transition-colors hover:bg-stone-200 hover:text-slate-950"
                                             >
-                                                {topic.parent!.name}
+                                                Parent: {topic.parent.name}
                                             </button>
-                                        </span>
+                                        )}
+                                        <div className="rounded-full bg-amber-50 px-3 py-1.5 text-sm text-amber-800 ring-1 ring-amber-200">
+                                            {pagination.total} verses
+                                        </div>
                                     </div>
-                                )}
 
-                                {topic.description && (
-                                    <div
-                                        className="prose prose-sm mb-4 max-w-none text-foreground"
-                                        dangerouslySetInnerHTML={{
-                                            __html: topic.description,
-                                        }}
-                                    />
-                                )}
+                                    {topic.description && (
+                                        <div
+                                            className="prose prose-sm mt-5 max-w-none text-slate-600"
+                                            dangerouslySetInnerHTML={{
+                                                __html: topic.description,
+                                            }}
+                                        />
+                                    )}
 
-                                {topic.wiki_link && (
-                                    <a
-                                        href={`https://${topic.wiki_link}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center text-sm text-primary hover:underline"
-                                    >
-                                        <ExternalLink className="mr-1 h-4 w-4" />
-                                        Read more on Wikipedia
-                                    </a>
-                                )}
-                            </div>
+                                    {topic.wiki_link && (
+                                        <a
+                                            href={`https://${topic.wiki_link}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-slate-900 hover:text-slate-600"
+                                        >
+                                            <ExternalLink className="h-4 w-4" />
+                                            Read more on Wikipedia
+                                        </a>
+                                    )}
+                                </div>
+                            </section>
 
-                            {/* Related Topics */}
                             {relatedTopics.length > 0 && (
-                                <div className="mb-6">
-                                    <h2 className="mb-4 text-xl font-semibold">
-                                        Related Topics
-                                    </h2>
-                                    <div className="flex flex-wrap gap-2">
+                                <section>
+                                    <div className="mb-4">
+                                        <p className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">
+                                            Related Topics
+                                        </p>
+                                        <h2 className="mt-2 text-xl font-semibold tracking-tight text-slate-950">
+                                            Explore nearby themes
+                                        </h2>
+                                    </div>
+
+                                    <div className="flex flex-wrap gap-2.5">
                                         {relatedTopics.map((related) => (
-                                            <Badge
+                                            <button
                                                 key={related.topic_id}
-                                                variant="secondary"
-                                                className={`cursor-pointer ${getRandomColor(
-                                                    related.topic_id,
-                                                )}`}
+                                                type="button"
+                                                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:text-slate-950"
                                                 onClick={() =>
                                                     handleTopicClick(
                                                         related.topic_id,
                                                     )
                                                 }
                                             >
-                                                {related.name}
+                                                <span>{related.name}</span>
                                                 {related.arabic_name && (
-                                                    <span className="font-arabic ml-1">
-                                                        ({related.arabic_name})
+                                                    <span className="font-arabic ml-2 text-slate-400">
+                                                        {related.arabic_name}
                                                     </span>
                                                 )}
-                                            </Badge>
+                                            </button>
                                         ))}
                                     </div>
-                                </div>
+                                </section>
                             )}
 
-                            {/* Child Topics */}
-                            {topic.children && topic.children.length > 0 && (
-                                <div className="mb-6">
-                                    <h2 className="mb-4 text-xl font-semibold">
-                                        Sub-topics
-                                    </h2>
-                                    <div className="flex flex-wrap gap-2">
+                            {topic.children.length > 0 && (
+                                <section>
+                                    <div className="mb-4">
+                                        <p className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">
+                                            Sub-topics
+                                        </p>
+                                        <h2 className="mt-2 text-xl font-semibold tracking-tight text-slate-950">
+                                            Narrow the scope
+                                        </h2>
+                                    </div>
+
+                                    <div className="flex flex-wrap gap-2.5">
                                         {topic.children.map((child) => (
-                                            <Badge
+                                            <button
                                                 key={child.topic_id}
-                                                variant="outline"
-                                                className="cursor-pointer border-amber-500/50 bg-amber-400/20"
+                                                type="button"
+                                                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-left text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:text-slate-950"
                                                 onClick={() =>
                                                     handleTopicClick(
                                                         child.topic_id,
@@ -356,114 +403,190 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
                                                 }
                                             >
                                                 {child.name}
-                                            </Badge>
+                                            </button>
                                         ))}
                                     </div>
-                                </div>
+                                </section>
                             )}
 
-                            <Separator className="my-6" />
-
-                            {/* Verses */}
-                            <div>
-                                <div className="mb-4 flex items-center justify-between">
-                                    <h2 className="text-xl font-semibold">
-                                        Verses ({pagination.total})
-                                    </h2>
+                            <section className="pt-2">
+                                <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                                    <div>
+                                        <p className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">
+                                            Verses
+                                        </p>
+                                        <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+                                            Ayat connected to this topic
+                                        </h2>
+                                    </div>
                                     {pagination.total > 0 && (
-                                        <span className="text-sm text-muted-foreground">
+                                        <div className="rounded-full bg-white px-3 py-1.5 text-sm text-slate-600 ring-1 ring-slate-200">
                                             Page {pagination.current_page} of{' '}
                                             {pagination.last_page}
-                                        </span>
+                                        </div>
                                     )}
                                 </div>
 
                                 {loadingVerses ? (
                                     <div className="space-y-4">
-                                        <Skeleton className="h-32 w-full" />
-                                        <Skeleton className="h-32 w-full" />
-                                        <Skeleton className="h-32 w-full" />
+                                        <Skeleton className="h-32 w-full rounded-3xl" />
+                                        <Skeleton className="h-32 w-full rounded-3xl" />
+                                        <Skeleton className="h-32 w-full rounded-3xl" />
                                     </div>
                                 ) : verses.length === 0 ? (
-                                    <div className="py-8 text-center text-muted-foreground">
-                                        <p>No verses found for this topic</p>
+                                    <div className="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center shadow-none">
+                                        <p className="text-sm leading-7 text-slate-500">
+                                            No verses found for this topic.
+                                        </p>
                                     </div>
                                 ) : (
                                     <>
-                                        {verses.map((verse) => (
-                                            <div
-                                                key={verse.id}
-                                                className="mb-4 cursor-pointer rounded-lg border transition-colors hover:bg-muted/50"
-                                                onClick={() =>
-                                                    handleVerseClick(
-                                                        verse.chapter_number,
-                                                        verse.verse_number,
-                                                    )
-                                                }
-                                            >
-                                                <VerseCard
-                                                    verse={{
-                                                        id: verse.id,
-                                                        chapterId:
-                                                            verse.chapter_id,
-                                                        chapterNumber:
-                                                            verse.chapter_number,
-                                                        verseNumber:
-                                                            verse.verse_number,
-                                                        text: verse.text_uthmani,
-                                                        translation:
-                                                            verse.translation,
-                                                        juzNumber: 0,
-                                                        pageNumber: 0,
-                                                    }}
-                                                    showTranslation
-                                                    hideHeaderActions
-                                                    className="border-0 bg-white/70 px-3 py-2 shadow-none"
-                                                />
-                                            </div>
-                                        ))}
+                                        <div className="space-y-5">
+                                            {verses.map((verse) => (
+                                                <div
+                                                    key={verse.id}
+                                                    className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-none"
+                                                >
+                                                    <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-4">
+                                                        <span className="rounded-full bg-stone-100 px-3 py-1 text-[11px] font-semibold tracking-[0.16em] text-slate-600 uppercase">
+                                                            {verse.chapter_name_roman ||
+                                                                verse.chapter_name}
+                                                        </span>
+                                                        <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-200">
+                                                            Ayah{' '}
+                                                            {verse.verse_number}
+                                                        </span>
+                                                    </div>
 
-                                        {/* Pagination */}
+                                                    <div
+                                                        className="cursor-pointer"
+                                                        onClick={() =>
+                                                            handleVerseClick(
+                                                                verse.chapter_number,
+                                                                verse.verse_number,
+                                                            )
+                                                        }
+                                                    >
+                                                        <VerseCard
+                                                            verse={{
+                                                                id: verse.id,
+                                                                chapterId:
+                                                                    verse.chapter_id,
+                                                                chapterNumber:
+                                                                    verse.chapter_number,
+                                                                verseNumber:
+                                                                    verse.verse_number,
+                                                                text: verse.text_uthmani,
+                                                                translation:
+                                                                    verse.translation,
+                                                                juzNumber: 0,
+                                                                pageNumber: 0,
+                                                            }}
+                                                            showTranslation
+                                                            hideHeaderActions
+                                                            className="border-0 bg-transparent px-5 py-3 shadow-none"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+
                                         {pagination.last_page > 1 && (
-                                            <div className="mt-8 flex items-center justify-center gap-2">
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        handlePageChange(
-                                                            page - 1,
-                                                        )
-                                                    }
-                                                    disabled={page === 1}
-                                                >
-                                                    <ChevronLeft className="h-4 w-4" />
-                                                    Previous
-                                                </Button>
-                                                <span className="text-sm text-muted-foreground">
-                                                    Page {page} of{' '}
+                                            <div className="mt-8 flex flex-col gap-4 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                                                <p className="text-sm text-slate-500">
+                                                    Showing page {page} of{' '}
                                                     {pagination.last_page}
-                                                </span>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        handlePageChange(
-                                                            page + 1,
-                                                        )
-                                                    }
-                                                    disabled={
-                                                        page ===
-                                                        pagination.last_page
-                                                    }
-                                                >
-                                                    Next
-                                                    <ChevronRight className="h-4 w-4" />
-                                                </Button>
+                                                </p>
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            handlePageChange(
+                                                                page - 1,
+                                                            )
+                                                        }
+                                                        disabled={page === 1}
+                                                        className="rounded-full shadow-none"
+                                                    >
+                                                        Previous
+                                                    </Button>
+
+                                                    {getVisiblePages().map(
+                                                        (
+                                                            visiblePage,
+                                                            index,
+                                                            pages,
+                                                        ) => {
+                                                            const previousPage =
+                                                                pages[
+                                                                    index - 1
+                                                                ];
+                                                            const shouldShowGap =
+                                                                previousPage !==
+                                                                    undefined &&
+                                                                visiblePage -
+                                                                    previousPage >
+                                                                    1;
+
+                                                            return (
+                                                                <div
+                                                                    key={
+                                                                        visiblePage
+                                                                    }
+                                                                    className="flex items-center gap-2"
+                                                                >
+                                                                    {shouldShowGap && (
+                                                                        <span className="px-1 text-sm text-slate-400">
+                                                                            ...
+                                                                        </span>
+                                                                    )}
+                                                                    <Button
+                                                                        variant={
+                                                                            visiblePage ===
+                                                                            page
+                                                                                ? 'default'
+                                                                                : 'outline'
+                                                                        }
+                                                                        size="sm"
+                                                                        onClick={() =>
+                                                                            handlePageChange(
+                                                                                visiblePage,
+                                                                            )
+                                                                        }
+                                                                        className="min-w-10 rounded-full shadow-none"
+                                                                    >
+                                                                        {
+                                                                            visiblePage
+                                                                        }
+                                                                    </Button>
+                                                                </div>
+                                                            );
+                                                        },
+                                                    )}
+
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            handlePageChange(
+                                                                page + 1,
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            page ===
+                                                            pagination.last_page
+                                                        }
+                                                        className="rounded-full shadow-none"
+                                                    >
+                                                        Next
+                                                    </Button>
+                                                </div>
                                             </div>
                                         )}
                                     </>
                                 )}
-                            </div>
+                            </section>
                         </>
                     )}
                 </div>

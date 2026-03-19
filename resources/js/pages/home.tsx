@@ -1,22 +1,16 @@
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
 import LandingLayout from '@/layouts/landing-layout';
 import { router } from '@inertiajs/react';
 import {
     ArrowRight,
+    Bookmark,
     BookOpen,
-    Sparkles,
-    Network,
+    ChevronRight,
     Globe,
     Link2,
-    Bookmark,
+    Network,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 
 interface Chapter {
     id: number;
@@ -30,71 +24,116 @@ interface Chapter {
 }
 
 interface FeatureProps {
-    icon: React.ReactNode;
+    icon: ReactNode;
     title: string;
     description: string;
 }
 
-const FeatureCard = ({ icon, title, description }: FeatureProps) => (
-    <Card className="border border-border/50 bg-card shadow-sm transition-all duration-300 hover:shadow-md">
-        <CardHeader className="p-6">
-            <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-foreground">
+const featureItems: FeatureProps[] = [
+    {
+        icon: <Network className="h-5 w-5" />,
+        title: 'Knowledge graphs',
+        description:
+            'See how verses, tafseer, hadith, and supporting materials connect without the page feeling overloaded.',
+    },
+    {
+        icon: <Globe className="h-5 w-5" />,
+        title: 'Curated resources',
+        description:
+            'Move from a verse into lectures, articles, and commentary with a cleaner reading flow.',
+    },
+    {
+        icon: <Link2 className="h-5 w-5" />,
+        title: 'Cross references',
+        description:
+            'Jump between related verses and ideas when you want to study a theme in more depth.',
+    },
+    {
+        icon: <Bookmark className="h-5 w-5" />,
+        title: 'Personal collections',
+        description:
+            'Save verses and organize them into collections for reflection, revision, and teaching.',
+    },
+];
+
+function FeatureRow({ icon, title, description }: FeatureProps) {
+    return (
+        <div className="flex items-start gap-4 border-t border-slate-200 py-4 first:border-t-0 first:pt-0 last:pb-0">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-stone-100 text-slate-700">
                 {icon}
             </div>
-            <CardTitle className="mb-2 text-base font-semibold text-foreground">
-                {title}
-            </CardTitle>
-            <CardDescription className="text-sm leading-relaxed text-muted-foreground">
-                {description}
-            </CardDescription>
-        </CardHeader>
-    </Card>
-);
+            <div>
+                <h3 className="text-base font-semibold tracking-tight text-slate-950">
+                    {title}
+                </h3>
+                <p className="mt-1 text-sm leading-7 text-slate-500">
+                    {description}
+                </p>
+            </div>
+        </div>
+    );
+}
 
-const ChapterCard = ({ chapter }: { chapter: Chapter }) => (
-    <Card
-        key={chapter.id}
-        className="group cursor-pointer border-2 border-transparent shadow-none transition-all duration-200 hover:border-gray-200 hover:bg-muted/70"
-        onClick={() => router.visit(`/${chapter.number}`)}
-    >
-        <CardHeader className="pb-3">
-            <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
-                    <div className="mb-1 flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                            {chapter.number}
-                        </div>
-                        <CardTitle className="text-lg transition-colors group-hover:text-primary">
-                            {chapter.romanName}
-                        </CardTitle>
-                    </div>
+function ChapterRow({ chapter }: { chapter: Chapter }) {
+    return (
+        <button
+            type="button"
+            className="group flex w-full min-w-0 items-center justify-between gap-3 border-t border-slate-200 py-4 text-left first:border-t-0 first:pt-0 last:pb-0"
+            onClick={() => router.visit(`/${chapter.number}`)}
+        >
+            <div className="flex min-w-0 items-center gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-stone-100 text-sm font-semibold text-slate-700">
+                    {chapter.number}
                 </div>
-                <div className="text-right text-sm">
-                    <div className="text-muted-foreground">
-                        {chapter.verses} verses
+                <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                        <h3 className="truncate text-base font-semibold tracking-tight text-slate-950">
+                            {chapter.romanName}
+                        </h3>
+                        <span className="font-arabic text-xl text-slate-400">
+                            {chapter.name}
+                        </span>
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                        {chapter.revelationType}
-                    </div>
+                    <p className="mt-1 text-sm text-slate-500">
+                        {chapter.englishName}
+                    </p>
                 </div>
             </div>
-        </CardHeader>
-    </Card>
-);
+            <div className="flex shrink-0 items-start gap-2 sm:items-center sm:gap-3">
+                <div className="text-right">
+                    <p className="text-sm text-slate-600">
+                        {chapter.verses} verses
+                    </p>
+                    <p className="text-xs text-slate-400">
+                        {chapter.revelationType}
+                    </p>
+                </div>
+                <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5 sm:mt-0" />
+            </div>
+        </button>
+    );
+}
 
 export default function HomePage() {
     const [chapters, setChapters] = useState<Chapter[]>([]);
     const [loading, setLoading] = useState(true);
+    const [hasError, setHasError] = useState(false);
 
     useEffect(() => {
         const fetchChapters = async () => {
             try {
                 const response = await fetch('/api/quran/chapters');
-                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error('Failed to load chapters');
+                }
+
+                const data = (await response.json()) as Chapter[];
                 setChapters(data);
-                setLoading(false);
+                setHasError(false);
             } catch (err) {
                 console.error('Failed to load chapters:', err);
+                setHasError(true);
+            } finally {
                 setLoading(false);
             }
         };
@@ -108,152 +147,144 @@ export default function HomePage() {
         });
     };
 
-    const scrollToFeatures = () => {
-        document.getElementById('features-section')?.scrollIntoView({
-            behavior: 'smooth',
-        });
-    };
-
     return (
         <LandingLayout title="From Quran - Explore the Quran Like Never Before">
-            {/* Hero & Features Section */}
-            <section className="relative overflow-hidden bg-background py-20 md:py-32">
-                <div className="bg-grid-pattern absolute inset-0 opacity-[0.02]" />
+            <section className="border-b border-slate-200 bg-[#fafaf8]">
+                <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 sm:py-18 lg:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)] lg:gap-16 lg:py-24">
+                    <div className="max-w-3xl">
+                        <p className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">
+                            From Quran
+                        </p>
+                        <h1 className="font-young mt-4 text-[2.8rem] leading-[0.95] tracking-[-0.05em] text-slate-950 sm:text-[4rem] lg:text-[5.2rem]">
+                            Read the Qur&apos;an
+                            <br />
+                            with context.
+                        </h1>
+                        <p className="mt-5 max-w-2xl text-base leading-8 text-slate-500 sm:text-lg">
+                            Explore verses, related topics, tafseer, and saved
+                            collections in one reading experience designed to
+                            stay calm, clear, and highly readable.
+                        </p>
 
-                <div className="relative container mx-auto max-w-7xl px-4">
-                    <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-8 xl:gap-16">
-                        <div className="max-w-xl">
-                            <div className="mb-6 text-sm font-semibold tracking-wider text-muted-foreground uppercase">
-                                A New Way to Explore the Quran
-                            </div>
-
-                            <h1 className="font-young mb-6 text-4xl leading-tight font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl">
-                                Explore the Quran
-                                <br />
-                                Like Never Before
-                            </h1>
-
-                            <p className="mb-8 text-lg leading-relaxed text-muted-foreground">
-                                Every Islamic resource, connected. Discover
-                                tafseer, hadith, and scholarly discussions
-                                visualized through interactive knowledge
-                                graphs—all rooted in the Quran.
-                            </p>
-
-                            <div className="mb-10 flex flex-wrap items-center gap-4">
-                                <Button
-                                    size="lg"
-                                    onClick={scrollToChapters}
-                                    className="gap-2 text-base shadow-sm"
-                                >
-                                    Start Reading
-                                    <ArrowRight className="h-4 w-4" />
-                                </Button>                               
-                            </div>
-
-                            <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                                <div className="flex items-center gap-2">
-                                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                                    114 Chapters
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                                    Authentic Resources
-                                </div>
-                            </div>
+                        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                            <Button
+                                size="lg"
+                                onClick={scrollToChapters}
+                                className="h-12 rounded-full px-6"
+                            >
+                                Start reading
+                                <ArrowRight className="h-4 w-4" />
+                            </Button>
+                            <Button
+                                size="lg"
+                                variant="outline"
+                                onClick={() => router.visit('/topics')}
+                                className="h-12 rounded-full border-slate-200 bg-white px-6 shadow-none"
+                            >
+                                Explore topics
+                            </Button>
                         </div>
 
-                        <div
-                            id="features-section"
-                            className="grid gap-4 sm:grid-cols-2"
-                        >
-                            <FeatureCard
-                                icon={
-                                    <Network className="h-5 w-5 opacity-70" />
-                                }
-                                title="Knowledge Graphs"
-                                description="Visualize connections between Quran verses, hadith, tafseer, and scholarly resources."
-                            />
-                            <FeatureCard
-                                icon={<Globe className="h-5 w-5 opacity-70" />}
-                                title="Rich Resources"
-                                description="Access tagged YouTube tafseer, podcasts, articles, and discussions."
-                            />
-                            <FeatureCard
-                                icon={<Link2 className="h-5 w-5 opacity-70" />}
-                                title="Cross-References"
-                                description="Explore related verses, hadith, and fiqh rulings for any ayah."
-                            />
-                            <FeatureCard
-                                icon={
-                                    <Bookmark className="h-5 w-5 opacity-70" />
-                                }
-                                title="Personal Collections"
-                                description="Save, organize, and share your favorite verses and reflections."
-                            />
+                        <div className="mt-10 grid grid-cols-2 gap-3 sm:max-w-md">
+                            <div className="rounded-3xl bg-white px-4 py-4 ring-1 ring-slate-200">
+                                <div className="text-2xl font-semibold tracking-tight text-slate-950">
+                                    114
+                                </div>
+                                <p className="mt-1 text-sm leading-6 text-slate-500">
+                                    chapters ready to open
+                                </p>
+                            </div>
+                            <div className="rounded-3xl bg-white px-4 py-4 ring-1 ring-slate-200">
+                                <div className="text-2xl font-semibold tracking-tight text-slate-950">
+                                    1 place
+                                </div>
+                                <p className="mt-1 text-sm leading-6 text-slate-500">
+                                    for reading and references
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="rounded-[2rem] bg-white px-5 py-5 ring-1 ring-slate-200 sm:px-6">
+                        <p className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">
+                            Why it feels better
+                        </p>
+                        <div className="mt-4">
+                            {featureItems.map((feature) => (
+                                <FeatureRow key={feature.title} {...feature} />
+                            ))}
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* Chapters Grid Section */}
-            <section id="chapters-section" className="py-16 md:py-24">
-                <div className="container mx-auto max-w-7xl px-4">
-                    <div className="mb-10 text-center">
-                        <h2 className="font-young mb-4 text-3xl font-bold md:text-4xl">
-                            All 114 Chapters
+            <section
+                id="chapters-section"
+                className="bg-[#fafaf8] py-14 sm:py-18 lg:py-24"
+            >
+                <div className="mx-auto max-w-7xl px-4 sm:px-6">
+                    <div className="mb-8 max-w-2xl sm:mb-10">
+                        <p className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">
+                            Chapters
+                        </p>
+                        <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-4xl">
+                            All 114 chapters
                         </h2>
-                        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-                            Begin your journey through the Quran, from
-                            Al-Fatihah to An-Nas. Click on any chapter to start
-                            reading.
+                        <p className="mt-3 text-sm leading-7 text-slate-500 sm:text-base">
+                            Open any surah directly and continue reading from a
+                            calmer, more connected experience.
                         </p>
                     </div>
 
                     {loading ? (
-                        <div className="flex justify-center py-20">
-                            <div className="text-center">
-                                <div className="mx-auto mb-4 h-12 w-12 animate-pulse rounded-full bg-primary/20" />
-                                <p className="text-muted-foreground">
-                                    Loading chapters...
-                                </p>
-                            </div>
+                        <div className="rounded-[2rem] bg-white px-6 py-14 text-center ring-1 ring-slate-200">
+                            <div className="mx-auto h-12 w-12 animate-pulse rounded-full bg-slate-200" />
+                            <p className="mt-4 text-sm text-slate-500">
+                                Loading chapters...
+                            </p>
+                        </div>
+                    ) : hasError ? (
+                        <div className="rounded-[2rem] border border-red-200 bg-red-50 px-6 py-10 text-center">
+                            <h3 className="text-lg font-semibold text-red-900">
+                                Chapters could not be loaded
+                            </h3>
+                            <p className="mt-2 text-sm leading-6 text-red-700">
+                                Refresh the page and try again.
+                            </p>
                         </div>
                     ) : (
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                            {chapters.map((chapter) => (
-                                <ChapterCard
-                                    key={chapter.id}
-                                    chapter={chapter}
-                                />
-                            ))}
+                        <div className="rounded-[2rem] bg-white px-5 py-5 ring-1 ring-slate-200 sm:px-6">
+                            <div className="grid gap-x-8 gap-y-2 lg:grid-cols-2">
+                                {chapters.map((chapter) => (
+                                    <ChapterRow
+                                        key={chapter.id}
+                                        chapter={chapter}
+                                    />
+                                ))}
+                            </div>
                         </div>
                     )}
                 </div>
             </section>
 
-            {/* CTA Section */}
-            <section className="bg-muted/30 py-16 md:py-24">
-                <div className="container mx-auto max-w-7xl px-4">
-                    <div className="mx-auto max-w-3xl text-center">
-                        <h2 className="font-young mb-4 text-3xl font-bold md:text-4xl">
-                            Ready to Explore?
-                        </h2>
-                        <p className="mb-8 text-lg text-muted-foreground">
-                            Dive deep into the Quran with interconnected
-                            knowledge, visualized relationships, and
-                            comprehensive resources—all in one place.
-                        </p>
-                        <Button
-                            size="lg"
-                            onClick={scrollToChapters}
-                            className="gap-2 text-base shadow-md"
-                        >
-                            <BookOpen className="h-5 w-5" />
-                            Start Your Journey
-                            <ArrowRight className="h-5 w-5" />
-                        </Button>
-                    </div>
+            <section className="border-t border-slate-200 bg-[#fafaf8] py-14 sm:py-18">
+                <div className="mx-auto max-w-4xl px-4 text-center sm:px-6">
+                    <h2 className="font-young text-3xl tracking-[-0.03em] text-slate-950 sm:text-4xl">
+                        Everything stays centered on the text.
+                    </h2>
+                    <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-slate-500 sm:text-base">
+                        Start with a chapter, follow a topic, or save verses
+                        into a collection. The structure stays simple so the
+                        reading stays primary.
+                    </p>
+                    <Button
+                        size="lg"
+                        onClick={scrollToChapters}
+                        className="mt-8 h-12 rounded-full px-6"
+                    >
+                        <BookOpen className="h-5 w-5" />
+                        Browse chapters
+                    </Button>
                 </div>
             </section>
         </LandingLayout>

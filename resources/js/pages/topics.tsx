@@ -1,4 +1,3 @@
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import QuranReaderLayout from '@/layouts/quran-reader-layout';
@@ -10,6 +9,13 @@ interface Topic {
     topic_id: number;
     name: string;
     arabic_name: string;
+}
+
+interface TopicNode {
+    topic_id: number;
+    name: string;
+    arabic_name: string;
+    children?: TopicNode[];
 }
 
 interface Chapter {
@@ -27,8 +33,6 @@ export default function Topics() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
-
-    // Fetch chapters for sidebar
     const [chapters, setChapters] = useState<Chapter[]>([]);
 
     const page = usePage<{ appUrl?: string; siteName?: string }>();
@@ -51,37 +55,37 @@ export default function Topics() {
         const fetchTopics = async () => {
             try {
                 const response = await fetch('/api/topics');
-                if (response.ok) {
-                    const data = await response.json();
-                    // Flatten the hierarchical structure to get all topics
-                    const allTopics: Topic[] = [];
-
-                    const flattenTopics = (topicList: any[]) => {
-                        for (const topic of topicList) {
-                            allTopics.push({
-                                topic_id: topic.topic_id,
-                                name: topic.name,
-                                arabic_name: topic.arabic_name,
-                            });
-                            if (topic.children) {
-                                flattenTopics(topic.children);
-                            }
-                        }
-                    };
-
-                    flattenTopics(data);
-                    setTopics(allTopics);
+                if (!response.ok) {
+                    throw new Error('Failed to load topics');
                 }
-            } catch (err) {
+
+                const data = (await response.json()) as TopicNode[];
+                const allTopics: Topic[] = [];
+
+                const flattenTopics = (topicList: TopicNode[]) => {
+                    for (const topic of topicList) {
+                        allTopics.push({
+                            topic_id: topic.topic_id,
+                            name: topic.name,
+                            arabic_name: topic.arabic_name,
+                        });
+
+                        if (topic.children?.length) {
+                            flattenTopics(topic.children);
+                        }
+                    }
+                };
+
+                flattenTopics(data);
+                setTopics(allTopics);
+                setError(null);
+            } catch {
                 setError('Failed to load topics');
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchTopics();
-
-        // Fetch chapters for sidebar
         const fetchChapters = async () => {
             try {
                 const response = await fetch('/api/quran/chapters');
@@ -94,54 +98,50 @@ export default function Topics() {
             }
         };
 
+        fetchTopics();
         fetchChapters();
     }, []);
 
     const handleChapterSelect = (chapterId: number) => {
-        const chapter = chapters.find((ch) => ch.id === chapterId);
-        if (!chapter) return;
+        const chapter = chapters.find((item) => item.id === chapterId);
+        if (!chapter) {
+            return;
+        }
 
         router.visit(`/${chapter.number}`);
     };
 
-    // Filter topics by search query
     const filteredTopics = topics.filter(
         (topic) =>
             topic.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             topic.arabic_name?.includes(searchQuery),
     );
 
-    // Group topics by first letter (sanitized)
     const groupedTopics = filteredTopics.reduce(
         (acc, topic) => {
-            // Remove leading non-alphabetic characters (quotes, dashes, etc)
             const sanitized = topic.name.replace(/^[^a-zA-Z]+/, '');
-            let firstLetter = sanitized
+            const firstLetter = sanitized
                 ? sanitized.charAt(0).toUpperCase()
-                : '#';
+                : '';
 
-            // Group any remaining numbers or non-A-Z starting topics under '#'
             if (!/^[A-Z]$/.test(firstLetter)) {
-                firstLetter = '#';
+                return acc;
             }
 
             if (!acc[firstLetter]) {
                 acc[firstLetter] = [];
             }
+
             acc[firstLetter].push(topic);
             return acc;
         },
         {} as Record<string, Topic[]>,
     );
 
-    // Sort the letters alphabetically, ensuring '#' comes last or first. We'll put it first.
-    const sortedLetters = Object.keys(groupedTopics).sort((a, b) => {
-        if (a === '#') return -1;
-        if (b === '#') return 1;
-        return a.localeCompare(b);
-    });
+    const sortedLetters = Object.keys(groupedTopics).sort((a, b) =>
+        a.localeCompare(b),
+    );
 
-    // Sort topics within each letter group
     for (const letter in groupedTopics) {
         groupedTopics[letter].sort((a, b) => a.name.localeCompare(b.name));
     }
@@ -168,42 +168,53 @@ export default function Topics() {
                 <meta name="twitter:description" content={pageDescription} />
                 <meta name="twitter:image" content={ogImage} />
             </Head>
-            <div className="flex h-full flex-col px-4 py-5">
-                <div className="mx-auto h-full w-full max-w-4xl rounded-xl">
-                    <div className="mb-8">
-                        <div className="mb-2 flex items-center gap-2">
-                            <Tags className="h-6 w-6" />
-                            <h1 className="text-3xl font-bold">Quran Topics</h1>
-                        </div>
-                        <p className="text-muted-foreground">
-                            Browse all topics mentioned in the Quran, organized
-                            alphabetically.
-                        </p>
-                    </div>
 
-                    {!loading && !error && topics.length > 0 && (
-                        <div className="relative mb-8 max-w-md">
-                            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                                placeholder="Filter topics by name..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="h-11 bg-background pl-9 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                            />
+            <div className="flex h-full flex-col bg-[#fafaf8] px-4 py-5">
+                <div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-8 py-4 sm:gap-10 sm:py-6">
+                    <section className="border-b border-slate-200 pb-6 sm:pb-8">
+                        <div className="max-w-3xl">
+                            <div className="flex items-center gap-2 text-slate-400">
+                                <Tags className="h-4 w-4" />
+                                <p className="text-xs font-semibold tracking-[0.18em] uppercase">
+                                    Quran Topics
+                                </p>
+                            </div>
+                            <h1 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-4xl">
+                                Browse themes and topics
+                            </h1>
+                            <p className="mt-3 text-sm leading-7 text-slate-500 sm:text-base">
+                                Explore Quranic topics organized alphabetically
+                                and jump directly into a tagged topic detail
+                                page.
+                            </p>
                         </div>
-                    )}
+
+                        {!loading && !error && topics.length > 0 && (
+                            <div className="relative mt-6 max-w-3xl sm:mt-7">
+                                <Search className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                                <Input
+                                    placeholder="Filter topics by name or Arabic"
+                                    value={searchQuery}
+                                    onChange={(e) =>
+                                        setSearchQuery(e.target.value)
+                                    }
+                                    className="h-12 rounded-full border-slate-200 bg-white pr-4 pl-11 text-base shadow-none focus-visible:ring-1 focus-visible:ring-slate-900"
+                                />
+                            </div>
+                        )}
+                    </section>
 
                     {loading ? (
                         <div className="space-y-8">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                                <div key={i} className="space-y-2">
-                                    <Skeleton className="h-6 w-12" />
+                            {Array.from({ length: 5 }).map((_, index) => (
+                                <div key={index} className="space-y-3">
+                                    <Skeleton className="h-6 w-10 rounded-full" />
                                     <div className="flex flex-wrap gap-2">
-                                        {Array.from({ length: 5 }).map(
-                                            (_, j) => (
+                                        {Array.from({ length: 6 }).map(
+                                            (_, itemIndex) => (
                                                 <Skeleton
-                                                    key={j}
-                                                    className="h-8 w-24"
+                                                    key={itemIndex}
+                                                    className="h-10 w-28 rounded-full"
                                                 />
                                             ),
                                         )}
@@ -212,53 +223,58 @@ export default function Topics() {
                             ))}
                         </div>
                     ) : error ? (
-                        <div className="flex items-center justify-center py-12">
-                            <p className="text-destructive">{error}</p>
+                        <div className="rounded-3xl border border-red-200 bg-red-50 px-6 py-10 text-center text-sm text-red-700">
+                            {error}
                         </div>
-                    ) : groupedTopics &&
-                      Object.keys(groupedTopics).length === 0 ? (
-                        <div className="flex items-center justify-center py-12">
-                            <p className="text-muted-foreground">
+                    ) : sortedLetters.length === 0 ? (
+                        <div className="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center shadow-none">
+                            <p className="text-sm leading-7 text-slate-500">
                                 No topics match your filter.
                             </p>
                         </div>
                     ) : (
-                        <div className="space-y-8">
+                        <div className="space-y-10">
                             {sortedLetters.map((letter) => (
-                                <div key={letter}>
-                                    <h2 className="mb-4 text-2xl font-bold text-primary">
-                                        {letter}
-                                    </h2>
+                                <section
+                                    key={letter}
+                                    className="border-t border-slate-200 pt-5 first:border-t-0 first:pt-0"
+                                >
+                                    <div className="mb-4 flex items-center gap-3">
+                                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+                                            {letter}
+                                        </div>
+                                        <div className="h-px flex-1 bg-slate-200" />
+                                    </div>
+
                                     <div className="flex flex-wrap gap-2.5">
                                         {groupedTopics[letter].map((topic) => (
-                                            <Badge
+                                            <button
                                                 key={topic.topic_id}
-                                                variant="outline"
-                                                className="cursor-pointer border-border/60 bg-background px-3.5 py-1.5 text-sm font-medium shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+                                                type="button"
+                                                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-left text-sm font-medium text-slate-700 shadow-none transition-colors hover:border-slate-300 hover:text-slate-950"
                                                 onClick={() =>
                                                     router.visit(
                                                         `/topic/${topic.topic_id}`,
                                                     )
                                                 }
                                             >
-                                                {topic.name}
+                                                <span>{topic.name}</span>
                                                 {topic.arabic_name && (
-                                                    <span className="font-arabic ml-1.5 text-muted-foreground">
-                                                        ({topic.arabic_name})
+                                                    <span className="font-arabic ml-2 text-slate-400">
+                                                        {topic.arabic_name}
                                                     </span>
                                                 )}
-                                            </Badge>
+                                            </button>
                                         ))}
                                     </div>
-                                </div>
+                                </section>
                             ))}
                         </div>
                     )}
 
-                    {/* Topic Count */}
                     {!loading && !error && topics.length > 0 && (
-                        <div className="mt-12 text-center text-sm text-muted-foreground">
-                            Total Topics: {topics.length}
+                        <div className="border-t border-slate-200 pt-5 text-sm text-slate-500">
+                            Total topics: {topics.length}
                         </div>
                     )}
                 </div>

@@ -1,7 +1,10 @@
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import AdminLayout from '@/layouts/admin-layout';
-import { DataTable, type Column, type SortDirection } from '@/components/ui/data-table';
+import { Button } from '@/components/ui/button';
+import {
+    DataTable,
+    type Column,
+    type SortDirection,
+} from '@/components/ui/data-table';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -15,6 +18,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import AdminLayout from '@/layouts/admin-layout';
 import { Head, router } from '@inertiajs/react';
 import { Eye, MoreHorizontal } from 'lucide-react';
 import { useState } from 'react';
@@ -108,8 +112,12 @@ export default function AdminTranslations({
     filters,
 }: AdminTranslationsProps) {
     const [selectedChapter, setSelectedChapter] = useState(filters.chapter_id);
-    const [selectedLanguage, setSelectedLanguage] = useState(filters.language_id);
-    const [selectedResource, setSelectedResource] = useState(filters.resource_id);
+    const [selectedLanguage, setSelectedLanguage] = useState(
+        filters.language_id,
+    );
+    const [selectedResource, setSelectedResource] = useState(
+        filters.resource_id,
+    );
 
     const handleSort = (column: string, direction: SortDirection) => {
         router.get(
@@ -122,7 +130,7 @@ export default function AdminTranslations({
             {
                 preserveState: true,
                 preserveScroll: true,
-            }
+            },
         );
     };
 
@@ -136,7 +144,7 @@ export default function AdminTranslations({
             {
                 preserveState: true,
                 preserveScroll: true,
-            }
+            },
         );
     };
 
@@ -150,7 +158,7 @@ export default function AdminTranslations({
             {
                 preserveState: true,
                 preserveScroll: true,
-            }
+            },
         );
     };
 
@@ -165,7 +173,7 @@ export default function AdminTranslations({
             {
                 preserveState: true,
                 preserveScroll: true,
-            }
+            },
         );
     };
 
@@ -180,7 +188,7 @@ export default function AdminTranslations({
             {
                 preserveState: true,
                 preserveScroll: true,
-            }
+            },
         );
     };
 
@@ -195,7 +203,7 @@ export default function AdminTranslations({
             {
                 preserveState: true,
                 preserveScroll: true,
-            }
+            },
         );
     };
 
@@ -212,7 +220,7 @@ export default function AdminTranslations({
             title: 'Verse Key',
             sortable: true,
             cell: (translation) => (
-                <span className="font-medium font-mono text-sm">
+                <span className="font-mono text-sm font-medium">
                     {translation.verse_key}
                 </span>
             ),
@@ -238,9 +246,7 @@ export default function AdminTranslations({
             sortable: false,
             cell: (translation) => (
                 <div className="max-w-md">
-                    <p className="text-sm line-clamp-2">
-                        {translation.text}
-                    </p>
+                    <p className="line-clamp-2 text-sm">{translation.text}</p>
                 </div>
             ),
         },
@@ -249,9 +255,7 @@ export default function AdminTranslations({
             title: 'Language',
             sortable: true,
             cell: (translation) => (
-                <Badge variant="outline">
-                    {translation.language_name}
-                </Badge>
+                <Badge variant="outline">{translation.language_name}</Badge>
             ),
         },
         {
@@ -271,9 +275,7 @@ export default function AdminTranslations({
             title: 'Priority',
             sortable: false,
             cell: (translation) => (
-                <Badge variant="secondary">
-                    {translation.priority || 0}
-                </Badge>
+                <Badge variant="secondary">{translation.priority || 0}</Badge>
             ),
         },
     ];
@@ -287,7 +289,9 @@ export default function AdminTranslations({
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => handleViewTranslation(translation)}>
+                <DropdownMenuItem
+                    onClick={() => handleViewTranslation(translation)}
+                >
                     <Eye className="mr-2 h-4 w-4" />
                     View in Reader
                 </DropdownMenuItem>
@@ -299,68 +303,117 @@ export default function AdminTranslations({
         <>
             <Head title="Translations - Admin - From Quran" />
             <AdminLayout title="Translations">
-                <div className="space-y-4">
-                    {/* Header */}
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h2 className="text-2xl font-bold tracking-tight">
-                                Translation Management
-                            </h2>
-                            <p className="text-muted-foreground">
-                                Browse and manage Quran translations
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-sm">
-                                {stats.total_translations.toLocaleString()} translations
-                            </Badge>
-                            <Badge variant="outline" className="text-sm">
-                                {stats.total_languages} languages
-                            </Badge>
-                            <Badge variant="outline" className="text-sm">
-                                Avg {stats.avg_translations_per_verse} per verse
-                            </Badge>
+                <div className="space-y-6">
+                    <div className="rounded-2xl border border-border/60 bg-[linear-gradient(180deg,hsl(var(--background))_0%,hsl(var(--muted)/0.16)_100%)] px-5 py-6 shadow-sm shadow-black/[0.03] md:px-7">
+                        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                            <div className="max-w-3xl space-y-2">
+                                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                                    Translation management
+                                </h2>
+                                <p className="text-sm leading-6 text-muted-foreground md:text-base">
+                                    Review translation coverage across chapters,
+                                    languages, and source resources.
+                                </p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
+                                    <p className="text-lg font-semibold">
+                                        {stats.total_translations.toLocaleString()}
+                                    </p>
+                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+                                        Translations
+                                    </p>
+                                </div>
+                                <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
+                                    <p className="text-lg font-semibold">
+                                        {stats.total_languages}
+                                    </p>
+                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+                                        Languages
+                                    </p>
+                                </div>
+                                <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
+                                    <p className="text-lg font-semibold">
+                                        {stats.total_resources}
+                                    </p>
+                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+                                        Resources
+                                    </p>
+                                </div>
+                                <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
+                                    <p className="text-lg font-semibold">
+                                        {stats.avg_translations_per_verse}
+                                    </p>
+                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+                                        Avg / Verse
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Filters */}
-                    <div className="flex gap-2 flex-wrap">
-                        <Select value={selectedChapter} onValueChange={handleChapterFilter}>
-                            <SelectTrigger className="w-[200px]">
+                    <div className="flex flex-wrap gap-3 rounded-xl border border-border/60 bg-background/96 px-4 py-4 shadow-sm shadow-black/[0.02]">
+                        <Select
+                            value={selectedChapter}
+                            onValueChange={handleChapterFilter}
+                        >
+                            <SelectTrigger className="h-10 w-[200px] rounded-lg border-border/70 bg-background">
                                 <SelectValue placeholder="Filter by chapter" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Chapters</SelectItem>
+                                <SelectItem value="all">
+                                    All Chapters
+                                </SelectItem>
                                 {chapters.map((chapter) => (
-                                    <SelectItem key={chapter.id} value={chapter.id.toString()}>
-                                        {chapter.chapter_number}. {chapter.name_simple}
+                                    <SelectItem
+                                        key={chapter.id}
+                                        value={chapter.id.toString()}
+                                    >
+                                        {chapter.chapter_number}.{' '}
+                                        {chapter.name_simple}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
 
-                        <Select value={selectedLanguage} onValueChange={handleLanguageFilter}>
-                            <SelectTrigger className="w-[180px]">
+                        <Select
+                            value={selectedLanguage}
+                            onValueChange={handleLanguageFilter}
+                        >
+                            <SelectTrigger className="h-10 w-[180px] rounded-lg border-border/70 bg-background">
                                 <SelectValue placeholder="Filter by language" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Languages</SelectItem>
+                                <SelectItem value="all">
+                                    All Languages
+                                </SelectItem>
                                 {languages.map((language) => (
-                                    <SelectItem key={language.id} value={language.id.toString()}>
+                                    <SelectItem
+                                        key={language.id}
+                                        value={language.id.toString()}
+                                    >
                                         {language.name}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
 
-                        <Select value={selectedResource} onValueChange={handleResourceFilter}>
-                            <SelectTrigger className="w-[200px]">
+                        <Select
+                            value={selectedResource}
+                            onValueChange={handleResourceFilter}
+                        >
+                            <SelectTrigger className="h-10 w-[200px] rounded-lg border-border/70 bg-background">
                                 <SelectValue placeholder="Filter by resource" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Resources</SelectItem>
+                                <SelectItem value="all">
+                                    All Resources
+                                </SelectItem>
                                 {resources.map((resource) => (
-                                    <SelectItem key={resource.id} value={resource.resource_id.toString()}>
+                                    <SelectItem
+                                        key={resource.id}
+                                        value={resource.resource_id.toString()}
+                                    >
                                         {resource.name}
                                     </SelectItem>
                                 ))}
@@ -368,7 +421,6 @@ export default function AdminTranslations({
                         </Select>
                     </div>
 
-                    {/* DataTable */}
                     <DataTable
                         data={initialTranslations.data}
                         columns={columns}

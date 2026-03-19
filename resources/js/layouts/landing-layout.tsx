@@ -1,6 +1,5 @@
 import AppLogo from '@/components/app-logo';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -52,15 +51,23 @@ export default function LandingLayout({
                             >
                                 Contact
                             </Link>
+                            {!auth?.user && (
+                                <Link
+                                    href="/login"
+                                    className="text-foreground/60 transition-colors hover:text-foreground/80"
+                                >
+                                    Log in
+                                </Link>
+                            )}
                         </nav>
 
                         <div className="flex items-center gap-4">
                             {auth?.user ? (
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            className="relative h-9 w-9 rounded-full p-0"
+                                        <button
+                                            type="button"
+                                            className="relative flex h-9 w-9 items-center justify-center rounded-full"
                                         >
                                             <Avatar className="h-8 w-8">
                                                 <AvatarImage
@@ -73,7 +80,7 @@ export default function LandingLayout({
                                                     )}
                                                 </AvatarFallback>
                                             </Avatar>
-                                        </Button>
+                                        </button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent
                                         className="w-56"
@@ -82,13 +89,7 @@ export default function LandingLayout({
                                         <UserMenuContent user={auth.user} />
                                     </DropdownMenuContent>
                                 </DropdownMenu>
-                            ) : (
-                                <>
-                                    <Button variant="ghost" asChild>
-                                        <Link href="/login">Log in</Link>
-                                    </Button>
-                                </>
-                            )}
+                            ) : null}
                         </div>
                     </div>
                 </header>
