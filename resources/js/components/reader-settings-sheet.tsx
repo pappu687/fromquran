@@ -4,7 +4,6 @@ import { Label } from '@/components/ui/label';
 import {
     Sheet,
     SheetContent,
-    SheetDescription,
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
@@ -79,7 +78,10 @@ function ToggleRow({
     return (
         <label
             htmlFor={id}
-            className="flex cursor-pointer items-start justify-between gap-4 rounded-2xl px-1 py-2 transition-colors"
+            className={cn(
+                'flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-transparent px-3 py-3 transition-colors hover:bg-white/80',
+                checked && 'border-2 border-slate-300 bg-white hover:bg-white',
+            )}
         >
             <div className="min-w-0">
                 <div className="text-sm font-medium text-slate-950">
@@ -166,11 +168,7 @@ export function ReaderSettingsSheet({
             setSelectedTranslations(nextTranslations);
             updateSettings({ selectedTranslations: nextTranslations });
         }
-    }, [
-        availableTranslations,
-        settings.selectedTranslations,
-        updateSettings,
-    ]);
+    }, [availableTranslations, settings.selectedTranslations, updateSettings]);
 
     useLayoutEffect(() => {
         if (open) {
@@ -319,10 +317,9 @@ export function ReaderSettingsSheet({
                                                     )
                                                 }
                                                 className={cn(
-                                                    'flex items-center justify-between rounded-2xl px-3 py-3 text-left transition-colors',
-                                                    isSelected
-                                                        ? 'bg-white ring-1 ring-slate-900'
-                                                        : 'hover:bg-white/80',
+                                                    'flex items-center justify-between rounded-2xl border border-transparent px-3 py-3 text-left transition-colors hover:bg-white/80',
+                                                    isSelected &&
+                                                        'border-2 border-slate-300 bg-white hover:bg-white',
                                                 )}
                                             >
                                                 <div>
@@ -335,10 +332,9 @@ export function ReaderSettingsSheet({
                                                 </div>
                                                 <div
                                                     className={cn(
-                                                        'flex h-6 w-6 items-center justify-center rounded-full border',
-                                                        isSelected
-                                                            ? 'border-slate-900 bg-slate-900 text-white'
-                                                            : 'border-slate-300 bg-white text-transparent',
+                                                        'flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 bg-white text-transparent',
+                                                        isSelected &&
+                                                            'border-slate-900 bg-slate-900 text-white',
                                                     )}
                                                 >
                                                     <Check className="h-3.5 w-3.5" />
@@ -382,10 +378,9 @@ export function ReaderSettingsSheet({
                                                 key={translation.id}
                                                 htmlFor={`translation-${translation.id}`}
                                                 className={cn(
-                                                    'flex cursor-pointer items-start justify-between gap-4 rounded-2xl px-3 py-3 transition-colors',
-                                                    isSelected
-                                                        ? 'bg-white ring-1 ring-slate-900'
-                                                        : 'border border-transparent hover:bg-white/80',
+                                                    'flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-transparent px-3 py-3 transition-colors hover:bg-white/80',
+                                                    isSelected &&
+                                                        'border-2 border-slate-300 bg-white hover:bg-white',
                                                 )}
                                             >
                                                 <div className="min-w-0">

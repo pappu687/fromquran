@@ -95,6 +95,80 @@ export default function LandingLayout({
                 </header>
 
                 <main className="flex-1">{children}</main>
+
+                <footer className="mt-10 border-t border-border/40 bg-background/80">
+                    <div className="container mx-auto max-w-7xl px-4 py-10 md:py-12">
+                        <div className="flex flex-col items-start gap-8 sm:flex-row sm:items-start">
+                            <div className="max-w-xs sm:flex-[1]">
+                                <div className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+                                    FromQuran
+                                </div>
+                            </div>
+
+                            <div className="flex w-full flex-col gap-6 text-sm text-foreground/70 sm:flex-[3] sm:flex-row sm:justify-end sm:gap-10">
+                                <div className="space-y-2">
+                                    <h2 className="text-xs font-semibold tracking-wide text-foreground/60 uppercase">
+                                        Connect
+                                    </h2>
+                                    <div className="flex flex-col space-y-1">
+                                        <Link
+                                            href="/contact"
+                                            className="transition-colors hover:text-foreground"
+                                        >
+                                            Contact
+                                        </Link>
+                                        <Link
+                                            href="/about"
+                                            className="transition-colors hover:text-foreground"
+                                        >
+                                            About
+                                        </Link>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <h2 className="text-xs font-semibold tracking-wide text-foreground/60 uppercase">
+                                        Product
+                                    </h2>
+                                    <div className="flex flex-col space-y-1">
+                                        <Link
+                                            href="/roadmap"
+                                            className="transition-colors hover:text-foreground"
+                                        >
+                                            Roadmap
+                                        </Link>
+                                        <Link
+                                            href="/support"
+                                            className="transition-colors hover:text-foreground"
+                                        >
+                                            Support us
+                                        </Link>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <h2 className="text-xs font-semibold tracking-wide text-foreground/60 uppercase">
+                                        Explore
+                                    </h2>
+                                    <div className="flex flex-col space-y-1">
+                                        <Link
+                                            href="/topics"
+                                            className="transition-colors hover:text-foreground"
+                                        >
+                                            Topics index
+                                        </Link>
+                                        <Link
+                                            href="/collections"
+                                            className="transition-colors hover:text-foreground"
+                                        >
+                                            Collections
+                                        </Link>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
             </div>
         </>
     );
