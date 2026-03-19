@@ -1,5 +1,12 @@
 import { Link, usePage } from '@inertiajs/react';
-import { ChevronUp, HeartHandshake, Info, Map, MenuSquare } from 'lucide-react';
+import {
+    ChevronUp,
+    HeartHandshake,
+    Info,
+    Map,
+    ListChecks,
+    MenuSquare,
+} from 'lucide-react';
 
 import {
     DropdownMenu,
@@ -16,6 +23,11 @@ import {
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const footerLinks = [
+    {
+        title: 'Quran Topic Index',
+        href: '/topics',
+        icon: ListChecks,
+    },
     {
         title: 'About Us',
         href: '/about',

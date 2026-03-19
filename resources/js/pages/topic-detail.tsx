@@ -274,14 +274,24 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
                     ) : (
                         <>
                             <section className="border-b border-slate-200 pb-6 sm:pb-8">
-                                <Button
-                                    variant="ghost"
-                                    onClick={() => window.history.back()}
-                                    className="mb-5 rounded-full px-3 text-slate-600"
-                                >
-                                    <ChevronLeft className="mr-2 h-4 w-4" />
-                                    Back
-                                </Button>
+                                <div className="mb-5 flex items-center justify-between">
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() => window.history.back()}
+                                        className="rounded-full px-3 text-slate-600"
+                                    >
+                                        <ChevronLeft className="mr-2 h-4 w-4" />
+                                        Back
+                                    </Button>
+
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => router.visit('/topics')}
+                                        className="rounded-full border-slate-200 px-4 text-slate-600 shadow-none hover:bg-slate-100 hover:text-slate-900"
+                                    >
+                                        All Topics
+                                    </Button>
+                                </div>
 
                                 <div className="max-w-3xl">
                                     <div className="flex items-center gap-2 text-slate-400">
