@@ -1,4 +1,5 @@
 import { AuthProvider } from '@/contexts/auth-context';
+import { type SharedData } from '@/types';
 import { createInertiaApp } from '@inertiajs/react';
 import createServer from '@inertiajs/react/server';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
@@ -19,9 +20,7 @@ createServer((page) =>
                 import.meta.glob('./pages/**/*.tsx'),
             ),
         setup: ({ App, props }) => {
-            const { auth } = props.initialPage.props as {
-                auth?: { user?: any };
-            };
+            const { auth } = props.initialPage.props as Partial<SharedData>;
             const user = auth?.user || null;
 
             return (

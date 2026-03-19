@@ -9,7 +9,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
@@ -32,6 +31,14 @@ interface UserFormDialogProps {
     onOpenChange: (open: boolean) => void;
     user?: User | null;
     onSuccess?: () => void;
+}
+
+interface UserFormPayload {
+    name: string;
+    email: string;
+    roles: number[];
+    password?: string;
+    password_confirmation?: string;
 }
 
 export function UserFormDialog({
@@ -111,7 +118,7 @@ export function UserFormDialog({
             .querySelector('meta[name="csrf-token"]')
             ?.getAttribute('content');
 
-        const payload: any = {
+        const payload: UserFormPayload = {
             name,
             email,
             roles: selectedRoles,
@@ -157,7 +164,7 @@ export function UserFormDialog({
             // Success
             onOpenChange(false);
             onSuccess?.();
-        } catch (error) {
+        } catch {
             setErrors({ general: 'Network error. Please try again.' });
             setIsSubmitting(false);
         }

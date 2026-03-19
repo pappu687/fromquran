@@ -12,24 +12,16 @@ import {
     useSidebar,
 } from '@/components/ui/sidebar';
 import { useReaderSettings } from '@/contexts/reader-settings-context';
+import { type ChapterSummary } from '@/types/quran';
 import { History, Search } from 'lucide-react';
-import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
-import { useState } from 'react';
-
-interface Chapter {
-    id: number;
-    number: number;
-    name: string;
-    englishName: string;
-    romanName?: string;
-    englishNameTranslation: string;
-    revelationType: 'Meccan' | 'Medinan';
-    verses: number;
-    startJuz?: number;
-}
+import {
+    OverlayScrollbarsComponent,
+    type OverlayScrollbarsComponentRef,
+} from 'overlayscrollbars-react';
+import { useEffect, useRef, useState } from 'react';
 
 interface ChaptersPanelProps {
-    chapters: Chapter[];
+    chapters: ChapterSummary[];
     selectedChapter?: number;
     onChapterSelect: (chapterId: number) => void;
 }
@@ -41,6 +33,12 @@ export function ChaptersPanel({
 }: ChaptersPanelProps) {
     const { settings } = useReaderSettings();
     const [searchTerm, setSearchTerm] = useState('');
+    const scrollAreaRef = useRef<OverlayScrollbarsComponentRef<'div'> | null>(
+        null,
+    );
+    const chapterButtonRefs = useRef<Record<number, HTMLButtonElement | null>>(
+        {},
+    );
     const [recentlyViewed, setRecentlyViewed] = useState<number[]>(() => {
         if (typeof window === 'undefined') {
             return [];
@@ -97,6 +95,51 @@ export function ChaptersPanel({
                 recentlyViewed.indexOf(a.id) - recentlyViewed.indexOf(b.id),
         );
 
+    useEffect(() => {
+        if (!selectedChapter || searchTerm) {
+            return;
+        }
+
+        let frameId = 0;
+        let attempts = 0;
+
+        const alignSelectedChapter = () => {
+            const viewport =
+                scrollAreaRef.current?.osInstance()?.elements().viewport;
+            const selectedButton = chapterButtonRefs.current[selectedChapter];
+
+            if (!viewport || !selectedButton) {
+                if (attempts < 10) {
+                    attempts += 1;
+                    frameId = window.requestAnimationFrame(
+                        alignSelectedChapter,
+                    );
+                }
+
+                return;
+            }
+
+            const viewportRect = viewport.getBoundingClientRect();
+            const buttonRect = selectedButton.getBoundingClientRect();
+            const targetTop =
+                viewport.scrollTop +
+                (buttonRect.top - viewportRect.top) -
+                12;
+            const maxScrollTop = viewport.scrollHeight - viewport.clientHeight;
+
+            viewport.scrollTo({
+                top: Math.max(0, Math.min(targetTop, maxScrollTop)),
+                behavior: 'auto',
+            });
+        };
+
+        frameId = window.requestAnimationFrame(alignSelectedChapter);
+
+        return () => {
+            window.cancelAnimationFrame(frameId);
+        };
+    }, [searchTerm, selectedChapter]);
+
     return (
         <>
             <SidebarHeader className="shrink-0">
@@ -113,6 +156,7 @@ export function ChaptersPanel({
 
             <SidebarContent className="overflow-hidden">
                 <OverlayScrollbarsComponent
+                    ref={scrollAreaRef}
                     element="div"
                     className="h-full w-full"
                     options={{
@@ -179,6 +223,11 @@ export function ChaptersPanel({
                                 {filteredChapters.map((chapter) => (
                                     <SidebarMenuItem key={chapter.id}>
                                         <SidebarMenuButton
+                                            ref={(element) => {
+                                                chapterButtonRefs.current[
+                                                    chapter.id
+                                                ] = element;
+                                            }}
                                             onClick={() =>
                                                 handleChapterClick(chapter.id)
                                             }

@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
+import {
+    type ResourceGraphApiResponse,
+    type ResourceGraphNode,
+} from '@/types/quran';
 import { buildGraphData } from './buildGraphData';
 
 interface VerseResourceGraphProps {
     verseKey: string;
-    data: any;
-    onNodeClick?: (node: any) => void;
+    data: ResourceGraphApiResponse | null;
+    onNodeClick?: (node: ResourceGraphNode) => void;
 }
 
 export function VerseResourceGraph({
@@ -38,24 +42,27 @@ export function VerseResourceGraph({
         return () => observer.disconnect();
     }, []);
 
-    const handleNodeLabel = useCallback((node: any) => {
-        return node.label || node.id;
+    const handleNodeLabel = useCallback((node: object) => {
+        const graphNode = node as ResourceGraphNode;
+        return graphNode.label || graphNode.id;
     }, []);
 
     const handleNodeCanvasObject = useCallback(
-        (node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
-            const label = node.label || node.id;
+        (node: object, ctx: CanvasRenderingContext2D, globalScale: number) => {
+            const graphNode = node as ResourceGraphNode;
+            const label = graphNode.label || graphNode.id;
 
             // Make text scale explicitly with zoom
             const fontSize = 14 / globalScale;
             ctx.font = `${fontSize}px Sans-Serif`;
-            ctx.fillStyle = node.type === 'verse' ? '#f97316' : '#0ea5e9'; // orange-500 : sky-500
+            ctx.fillStyle =
+                graphNode.type === 'verse' ? '#f97316' : '#0ea5e9'; // orange-500 : sky-500
 
             ctx.beginPath();
             ctx.arc(
-                node.x,
-                node.y,
-                node.type === 'verse' ? 8 : 5,
+                graphNode.x ?? 0,
+                graphNode.y ?? 0,
+                graphNode.type === 'verse' ? 8 : 5,
                 0,
                 2 * Math.PI,
             );
@@ -64,7 +71,11 @@ export function VerseResourceGraph({
             ctx.fillStyle = '#334155'; // slate-700, force light theme
 
             // Offset text position dynamically based on font size
-            ctx.fillText(label, node.x + 8, node.y + fontSize / 3);
+            ctx.fillText(
+                label,
+                (graphNode.x ?? 0) + 8,
+                (graphNode.y ?? 0) + fontSize / 3,
+            );
         },
         [],
     );

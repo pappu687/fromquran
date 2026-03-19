@@ -14,6 +14,7 @@ import {
     Settings,
     User,
 } from 'lucide-react';
+import { type LucideIcon } from 'lucide-react';
 import * as React from 'react';
 
 import { CommandPalette } from '@/components/command-palette';
@@ -47,11 +48,12 @@ import {
 } from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/auth-context';
 import { useReadingMode } from '@/contexts/reading-mode-context';
+import { type User as AuthUser } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 
 interface MenuItem {
     label: string;
-    icon: any;
+    icon: LucideIcon;
     href: string;
     method?: 'post';
 }
@@ -94,7 +96,7 @@ interface MobileMenuProps {
     onOpenChange: (open: boolean) => void;
     mode: 'list' | 'reading';
     onModeChange: (mode: 'list' | 'reading') => void;
-    user: any;
+    user: AuthUser | null;
     onNavigate: (href: string) => void;
     onMenuItemClick: (item: MenuItem) => void;
     onReaderSettingsOpen: () => void;

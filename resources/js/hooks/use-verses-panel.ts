@@ -1,38 +1,16 @@
 import { useAuth } from '@/contexts/auth-context';
 import { useReaderSettings } from '@/contexts/reader-settings-context';
+import {
+    type BookmarkListItem,
+    type ChapterSummary,
+    type PaginatedVersesResponse,
+    type VerseListItem,
+} from '@/types/quran';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-interface Verse {
-    id: number;
-    chapterId: number;
-    chapterNumber?: number;
-    verseNumber: number;
-    text: string;
-    translation?: string;
-    translations?: { resource_id: number; text: string }[];
-    audioUrl?: string;
-    juzNumber: number;
-    pageNumber: number;
-    hasResources?: boolean;
-    resourceCount?: number;
-}
-
-interface Chapter {
-    id: number;
-    number: number;
-    name: string;
-    englishName: string;
-    englishNameTranslation: string;
-    verses?: number;
-}
-
 interface UseVersesPanelOptions {
-    chapter?: Chapter;
-    initialVerses?: {
-        data: any[];
-        total: number;
-        has_more: boolean;
-    };
+    chapter?: ChapterSummary;
+    initialVerses?: PaginatedVersesResponse;
     apiUrl?: string;
     pageSize?: number;
     fromVerse?: number;
@@ -42,7 +20,7 @@ interface UseVersesPanelOptions {
 
 interface UseVersesPanelReturn {
     // State
-    verses: Verse[];
+    verses: VerseListItem[];
     loading: boolean;
     error: string | null;
     hasMore: boolean;
@@ -58,7 +36,7 @@ interface UseVersesPanelReturn {
 
     // Actions
     loadMore: () => void;
-    handleBookmarkToggle: (verse: Verse) => void;
+    handleBookmarkToggle: (verse: VerseListItem) => void;
     handleCopy: (verseId: number, text: string) => Promise<void>;
     handlePlayAudio: (audioUrl: string) => void;
     toggleAutoScroll: () => void;
@@ -82,9 +60,12 @@ export const useVersesPanel = ({
     const { user } = useAuth();
     const hasScrolledToStartRef = useRef(false);
     const currentChapterIdRef = useRef<number | null>(chapter?.id || null);
+    const lastTranslationIdsRef = useRef('');
 
     // Core state
-    const [verses, setVerses] = useState<Verse[]>(initialVerses?.data || []);
+    const [verses, setVerses] = useState<VerseListItem[]>(
+        initialVerses?.data || [],
+    );
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [page, setPage] = useState(1);
@@ -140,7 +121,7 @@ export const useVersesPanel = ({
                     throw new Error('Failed to fetch verses');
                 }
 
-                const data = await response.json();
+                const data = (await response.json()) as PaginatedVersesResponse;
 
                 if (reset) {
                     setVerses(data.data || []);
@@ -169,10 +150,10 @@ export const useVersesPanel = ({
         const currentTranslationIds = settings.selectedTranslations.join(',');
         if (
             chapter.id !== currentChapterIdRef.current ||
-            (window as any)._lastTranslationIds !== currentTranslationIds
+            lastTranslationIdsRef.current !== currentTranslationIds
         ) {
             currentChapterIdRef.current = chapter.id;
-            (window as any)._lastTranslationIds = currentTranslationIds;
+            lastTranslationIdsRef.current = currentTranslationIds;
             setVerses([]);
             setHasMore(true);
             hasScrolledToStartRef.current = false;
@@ -233,9 +214,11 @@ export const useVersesPanel = ({
             );
 
             if (response.ok) {
-                const data = await response.json();
+                const data = (await response.json()) as {
+                    data: BookmarkListItem[];
+                };
                 const bookmarkedIds = new Set<string>(
-                    data.data.map((b: any) => String(b.verse_id)),
+                    data.data.map((bookmark) => String(bookmark.verse_id)),
                 );
                 setBookmarkedVerses(bookmarkedIds);
             }
@@ -251,7 +234,7 @@ export const useVersesPanel = ({
     }, [loading, hasMore, page, fetchVerses]);
 
     const handleBookmarkToggle = useCallback(
-        async (verse: Verse) => {
+        async (verse: VerseListItem) => {
             if (!user) {
                 setShowLoginAlert(true);
                 return;

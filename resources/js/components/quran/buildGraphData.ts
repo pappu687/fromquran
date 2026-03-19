@@ -1,6 +1,15 @@
-export function buildGraphData(verseKey: string, apiData: any) {
-    const nodes: any[] = [];
-    const links: any[] = [];
+import {
+    type ResourceGraphApiResponse,
+    type ResourceGraphLink,
+    type ResourceGraphNode,
+} from '@/types/quran';
+
+export function buildGraphData(
+    verseKey: string,
+    apiData: ResourceGraphApiResponse | null,
+): { nodes: ResourceGraphNode[]; links: ResourceGraphLink[] } {
+    const nodes: ResourceGraphNode[] = [];
+    const links: ResourceGraphLink[] = [];
 
     // Center verse node
     nodes.push({

@@ -1,23 +1,13 @@
 import * as React from 'react';
 import { ChaptersPanel } from '@/components/quran/chapters-panel';
+import { type ChapterSummary } from '@/types/quran';
 import {
     Sidebar,
     SidebarRail,
 } from '@/components/ui/sidebar';
 
-interface Chapter {
-    id: number;
-    number: number;
-    name: string;
-    englishName: string;
-    romanName?: string;
-    englishNameTranslation: string;
-    revelationType: 'Meccan' | 'Medinan';
-    verses: number;
-}
-
 interface QuranSidebarProps extends React.ComponentProps<typeof Sidebar> {
-    chapters: Chapter[];
+    chapters: ChapterSummary[];
     selectedChapter?: number;
     onChapterSelect: (chapterId: number) => void;
 }

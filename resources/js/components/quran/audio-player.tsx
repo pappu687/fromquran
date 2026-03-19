@@ -116,11 +116,15 @@ export function AudioPlayer() {
     };
 
     const handlePrevious = () => {
+        const restartTime = currentVerseTiming?.timestamp_from
+            ? currentVerseTiming.timestamp_from / 1000
+            : 0;
+
         // If more than 3 seconds into the verse, restart it
         if (audioRef.current && audioRef.current.currentTime > 3) {
-            seek(currentVerse?.timestamp_from || 0);
+            seek(restartTime);
             if (audioRef.current) {
-                audioRef.current.currentTime = (currentVerse?.timestamp_from || 0) / 1000;
+                audioRef.current.currentTime = restartTime;
             }
         } else {
             playPreviousVerse();

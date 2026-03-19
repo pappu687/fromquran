@@ -61,7 +61,7 @@ export function LoginForm({
         >
             {({ processing, errors }) => (
                 <div className="grid gap-6 md:grid-cols-[minmax(0,0.95fr)_1px_minmax(0,1.05fr)] md:gap-8">
-                    <div className="hidden flex-col justify-center md:flex md:py-2">
+                    <div className="hidden flex-col justify-center px-6 py-6 md:flex md:px-8 md:py-8">
                         <Badge
                             variant="outline"
                             className="w-fit rounded-full border-border/70 bg-background/80 px-3 py-1 text-[11px] font-medium tracking-[0.22em] text-muted-foreground uppercase"

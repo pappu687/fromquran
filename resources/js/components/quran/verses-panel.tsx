@@ -15,41 +15,15 @@ import { useReaderSettings } from '@/contexts/reader-settings-context';
 import { useReadingMode } from '@/contexts/reading-mode-context';
 import { useVersesPanel } from '@/hooks/use-verses-panel';
 import { cn } from '@/lib/utils';
+import { type ChapterSummary, type PaginatedVersesResponse, type VerseListItem } from '@/types/quran';
 import { router } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
 import { VerseCard } from './verse-card';
 import { VerseReading } from './verse-reading';
 
-interface Verse {
-    id: number;
-    chapterId: number;
-    chapterNumber?: number;
-    verseNumber: number;
-    text: string;
-    translation?: string;
-    audioUrl?: string;
-    juzNumber: number;
-    pageNumber: number;
-    hasResources?: boolean;
-    resourceCount?: number;
-}
-
-interface Chapter {
-    id: number;
-    number: number;
-    name: string;
-    englishName: string;
-    englishNameTranslation: string;
-    verses?: number;
-}
-
 interface VersesPanelProps {
-    chapter?: Chapter;
-    initialVerses?: {
-        data: Verse[];
-        total: number;
-        has_more: boolean;
-    };
+    chapter?: ChapterSummary;
+    initialVerses?: PaginatedVersesResponse;
     apiUrl?: string;
     pageSize?: number;
     showTranslation?: boolean;
@@ -216,7 +190,7 @@ export function VersesPanel({
                                 hasResources={verse.hasResources || false}
                                 resourceCount={verse.resourceCount || 0}
                                 onBookmarkToggle={() =>
-                                    handleBookmarkToggle(verse as Verse)
+                                    handleBookmarkToggle(verse as VerseListItem)
                                 }
                                 onCopy={handleCopy}
                                 onPlayAudio={handlePlayAudio}

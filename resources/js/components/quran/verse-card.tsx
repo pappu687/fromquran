@@ -15,6 +15,7 @@ import {
 import { useReaderSettings } from '@/contexts/reader-settings-context';
 import { cn } from '@/lib/utils';
 import { useAudioPlayer } from '@/store/use-audio-player';
+import { type VerseListItem } from '@/types/quran';
 import {
     Bookmark,
     BookmarkCheck,
@@ -36,22 +37,8 @@ import { ResourcesSheet } from './resources-sheet';
 import { TafsirModal } from './tafsir-modal';
 import { VerseGraphModal } from './verse-graph-modal';
 
-interface Verse {
-    id: number;
-    chapterId: number;
-    chapterNumber?: number;
-    verseNumber: number;
-    text: string;
-    translation?: string;
-    translations?: { resource_id: number; text: string }[];
-    audioUrl?: string;
-    juzNumber: number;
-    pageNumber: number;
-    resourceCount?: number;
-}
-
 interface VerseCardProps {
-    verse: Verse;
+    verse: VerseListItem;
     totalVerses?: number;
     isBookmarked?: boolean;
     hasResources?: boolean;
@@ -87,10 +74,9 @@ export function VerseCard({
     >(undefined);
     const [isCollectionsModalOpen, setIsCollectionsModalOpen] = useState(false);
     const [isTafsirModalOpen, setIsTafsirModalOpen] = useState(false);
-    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
     const [shareUrl, setShareUrl] = useState<string | null>(null);
     const { settings } = useReaderSettings();
-    const { playVerse, currentVerse, audioData, isPlaying } = useAudioPlayer();
+    const { playVerse, currentVerse, isPlaying } = useAudioPlayer();
 
     const handleBookmark = () => {
         onBookmarkToggle?.(verse.id);
@@ -135,7 +121,6 @@ export function VerseCard({
         const url = buildVerseUrl();
         if (!url) return;
         setShareUrl(url);
-        setIsShareModalOpen(true);
     };
 
     const verseLabel = verse.chapterNumber

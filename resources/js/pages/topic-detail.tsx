@@ -316,11 +316,15 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
                                         {topic.parent && (
                                             <button
                                                 type="button"
-                                                onClick={() =>
+                                                onClick={() => {
+                                                    if (!topic.parent) {
+                                                        return;
+                                                    }
+
                                                     handleTopicClick(
-                                                        topic.parent!.topic_id,
-                                                    )
-                                                }
+                                                        topic.parent.topic_id,
+                                                    );
+                                                }}
                                                 className="rounded-full bg-stone-100 px-3 py-1.5 text-sm text-slate-700 ring-1 ring-stone-200 transition-colors hover:bg-stone-200 hover:text-slate-950"
                                             >
                                                 Parent: {topic.parent.name}

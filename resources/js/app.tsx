@@ -3,6 +3,7 @@ import '../css/app.css';
 
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/contexts/auth-context';
+import { type SharedData } from '@/types';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { StrictMode } from 'react';
@@ -21,7 +22,7 @@ createInertiaApp({
             import.meta.glob('./pages/**/*.tsx'),
         ),
     setup({ el, App, props }) {
-        const { auth } = props.initialPage.props as { auth?: { user?: any } };
+        const { auth } = props.initialPage.props as Partial<SharedData>;
         const user = auth?.user || null;
 
         const content = (

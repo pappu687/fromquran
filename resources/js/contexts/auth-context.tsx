@@ -1,6 +1,7 @@
 import { User } from '@/types';
 import { router } from '@inertiajs/react';
-import React, { createContext, ReactNode, useContext } from 'react';
+import { type Page } from '@inertiajs/core';
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 interface AuthContextType {
     user: User | null;
@@ -20,11 +21,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     children,
     user,
 }) => {
-    const isAuthenticated = !!user;
+    const [currentUser, setCurrentUser] = useState<User | null>(user);
+
+    useEffect(() => {
+        setCurrentUser(user);
+    }, [user]);
+
+    useEffect(() => {
+        return router.on('navigate', (event) => {
+            const page = event.detail.page as Page;
+            const nextUser = (page.props as { auth?: { user?: User | null } })
+                .auth?.user;
+            setCurrentUser(nextUser ?? null);
+        });
+    }, []);
+
+    const isAuthenticated = !!currentUser;
 
     const hasRole = (role: string): boolean => {
-        if (!user || !user.roles) return false;
-        return user.roles.includes(role);
+        if (!currentUser || !currentUser.roles) return false;
+        return currentUser.roles.includes(role);
     };
 
     const logout = () => {
@@ -32,7 +48,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     };
 
     const value: AuthContextType = {
-        user,
+        user: currentUser,
         isAuthenticated,
         hasRole,
         logout,

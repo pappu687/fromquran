@@ -1,5 +1,6 @@
 import { NavActions } from '@/components/nav-actions';
 import { QuranSidebar } from '@/components/quran/quran-sidebar';
+import { type ChapterSummary } from '@/types/quran';
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -13,20 +14,9 @@ import { Info } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { ChapterInfoSheet } from '@/components/quran/chapter-info-sheet';
 
-interface Chapter {
-    id: number;
-    number: number;
-    name: string;
-    englishName: string;
-    romanName?: string;
-    englishNameTranslation: string;
-    revelationType: 'Meccan' | 'Medinan';
-    verses: number;
-}
-
 interface QuranReaderLayoutProps {
     children: ReactNode;
-    chapters: Chapter[];
+    chapters: ChapterSummary[];
     selectedChapter?: number;
     onChapterSelect: (chapterId: number) => void;
 }

@@ -345,7 +345,8 @@ export default function AdminResourceTypes({
                             <AlertDialogDescription>
                                 Are you sure you want to delete the resource
                                 type "{resourceTypeToDelete?.name}"?
-                                {resourceTypeToDelete?.user_verse_resources_count >
+                                {(resourceTypeToDelete?.user_verse_resources_count ??
+                                    0) >
                                     0 && (
                                     <>
                                         {' '}

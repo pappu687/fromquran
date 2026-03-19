@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import { type ResourceGraphApiResponse, type ResourceGraphNode } from '@/types/quran';
 import { lazy, Suspense, useEffect, useState } from 'react';
 
 const VerseResourceGraph = lazy(() => import('./verse-resource-graph'));
@@ -18,7 +19,7 @@ export function VerseGraphModal({
     verseKey,
     onSectionSelect,
 }: VerseGraphModalProps) {
-    const [data, setData] = useState<any>(null);
+    const [data, setData] = useState<ResourceGraphApiResponse | null>(null);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -36,7 +37,8 @@ export function VerseGraphModal({
                 `/api/verses/${verseId}/resources?limit=5`,
             );
             if (response.ok) {
-                const json = await response.json();
+                const json =
+                    (await response.json()) as ResourceGraphApiResponse;
                 setData(json);
             }
         } catch (error) {
@@ -48,12 +50,15 @@ export function VerseGraphModal({
 
     if (!open) return null;
 
-    const handleNodeClick = (node: any) => {
+    const handleNodeClick = (node: ResourceGraphNode) => {
         if (
             node.type === 'resource' ||
             node.type === 'topic' ||
             node.type === 'similar'
         ) {
+            if (!node.originalName) {
+                return;
+            }
             onSectionSelect(node.originalName);
             onOpenChange(false);
         }

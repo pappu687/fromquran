@@ -1,30 +1,16 @@
 import { VersesPanel } from '@/components/quran/verses-panel';
 import QuranReaderLayout from '@/layouts/quran-reader-layout';
+import { type ChapterSummary, type PaginatedVersesResponse } from '@/types/quran';
 import { Head, router, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-
-interface Chapter {
-    id: number;
-    number: number;
-    name: string;
-    englishName: string;
-    romanName?: string;
-    englishNameTranslation: string;
-    revelationType: 'Meccan' | 'Medinan';
-    verses: number;
-}
 
 interface QuranReaderProps {
     chapterNumber?: number;
     fromVerse?: number | null;
     toVerse?: number | null;
-    chapter?: Chapter; // Chapter provided by SSR
-    chapters?: Chapter[]; // Chapters provided by SSR for sidebar
-    initialVerses?: {
-        data: any[];
-        total: number;
-        has_more: boolean;
-    };
+    chapter?: ChapterSummary; // Chapter provided by SSR
+    chapters?: ChapterSummary[]; // Chapters provided by SSR for sidebar
+    initialVerses?: PaginatedVersesResponse;
 }
 
 export default function QuranReader({
@@ -35,8 +21,12 @@ export default function QuranReader({
     chapters: initialChapters,
     initialVerses,
 }: QuranReaderProps) {
-    const [chapters, setChapters] = useState<Chapter[]>(initialChapters ?? []);
-    const [selectedChapter, setSelectedChapter] = useState<Chapter | undefined>(
+    const [chapters, setChapters] = useState<ChapterSummary[]>(
+        initialChapters ?? [],
+    );
+    const [selectedChapter, setSelectedChapter] = useState<
+        ChapterSummary | undefined
+    >(
         initialChapter,
     );
     const [loading, setLoading] = useState(!initialChapter);
@@ -97,12 +87,12 @@ export default function QuranReader({
         const fetchChapters = async () => {
             try {
                 const response = await fetch('/api/quran/chapters');
-                const data = await response.json();
+                const data = (await response.json()) as ChapterSummary[];
                 setChapters(data);
                 if (!initialChapter) {
                     setLoading(false);
                 }
-            } catch (err) {
+            } catch {
                 if (!initialChapter) {
                     setError('Failed to load chapters');
                     setLoading(false);

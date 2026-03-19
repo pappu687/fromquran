@@ -1,18 +1,9 @@
 import { useReaderSettings } from '@/contexts/reader-settings-context';
 import { cn } from '@/lib/utils';
-
-interface Verse {
-    id: number;
-    verseNumber: number;
-    text: string;
-    translation?: string;
-    audioUrl?: string;
-    juzNumber: number;
-    pageNumber: number;
-}
+import { type VerseListItem } from '@/types/quran';
 
 interface VerseReadingProps {
-    verses: Verse[];
+    verses: VerseListItem[];
     className?: string;
 }
 
@@ -32,7 +23,7 @@ export function VerseReading({ verses, className }: VerseReadingProps) {
             acc[page].push(verse);
             return acc;
         },
-        {} as Record<number, Verse[]>,
+        {} as Record<number, VerseListItem[]>,
     );
 
     const pages = Object.keys(versesByPage)

@@ -345,7 +345,7 @@ export default function ContributionsPage() {
                                                                 const key =
                                                                     contribution
                                                                         .verse
-                                                                        .verse_key;
+                                                                        ?.verse_key;
                                                                 if (!key) {
                                                                     return;
                                                                 }

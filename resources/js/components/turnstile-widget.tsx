@@ -19,15 +19,15 @@ export function TurnstileWidget({
             return;
         }
 
-        (window as any).onTurnstileSuccess = (token: string) => {
+        window.onTurnstileSuccess = (token: string) => {
             if (inputRef.current) {
                 inputRef.current.value = token;
             }
         };
 
         return () => {
-            if ((window as any).onTurnstileSuccess) {
-                (window as any).onTurnstileSuccess = undefined;
+            if (window.onTurnstileSuccess) {
+                window.onTurnstileSuccess = undefined;
             }
         };
     }, [turnstile?.enabled, turnstile?.siteKey]);

@@ -64,6 +64,16 @@ interface CollectionsModalProps {
     totalVerses?: number;
 }
 
+interface CollectionTogglePayload {
+    collection_ids: number[];
+    verse_id?: number;
+    range?: {
+        chapter_id: number;
+        from: number;
+        to: number;
+    };
+}
+
 export function CollectionsModal({
     open,
     onOpenChange,
@@ -234,7 +244,7 @@ export function CollectionsModal({
 
             setSuccessMessage('Collection created successfully!');
             setTimeout(() => setSuccessMessage(null), 3000);
-        } catch (error) {
+        } catch {
             setErrors({ general: 'Network error. Please try again.' });
         } finally {
             setIsSubmitting(false);
@@ -255,7 +265,7 @@ export function CollectionsModal({
             ?.getAttribute('content');
 
         try {
-            const body: any = {
+            const body: CollectionTogglePayload = {
                 collection_ids: selectedCollectionIds,
             };
 
@@ -303,7 +313,7 @@ export function CollectionsModal({
                 setSuccessMessage(null);
                 onOpenChange(false);
             }, 1500);
-        } catch (error) {
+        } catch {
             setErrors({ general: 'Network error. Please try again.' });
         } finally {
             setIsLoading(false);

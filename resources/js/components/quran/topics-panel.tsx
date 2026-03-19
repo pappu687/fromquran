@@ -111,7 +111,8 @@ export function TopicsPanel({ onTopicSelect, className }: TopicsPanelProps) {
     const filteredTopics = filterTopics(topics);
 
     const renderTopic = (topic: Topic, level: number = 0): React.ReactNode => {
-        const hasChildren = topic.children && topic.children.length > 0;
+        const children = topic.children ?? [];
+        const hasChildren = children.length > 0;
         const isExpanded = expandedTopics.has(topic.topic_id);
         const colorClass = getRandomColor(topic.topic_id);
 
@@ -164,7 +165,7 @@ export function TopicsPanel({ onTopicSelect, className }: TopicsPanelProps) {
                 </SidebarMenuItem>
                 {hasChildren && isExpanded && (
                     <div className="mt-1">
-                        {topic.children!.map((child) =>
+                        {children.map((child) =>
                             renderTopic(child, level + 1),
                         )}
                     </div>
@@ -174,7 +175,7 @@ export function TopicsPanel({ onTopicSelect, className }: TopicsPanelProps) {
     };
 
     return (
-        <div className="flex h-full flex-col">
+        <div className={cn('flex h-full flex-col', className)}>
             <div className="shrink-0 px-2 pb-2">
                 <input
                     type="text"
