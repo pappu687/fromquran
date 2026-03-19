@@ -2,19 +2,17 @@ import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
-    CardDescription,
     CardFooter,
     CardHeader,
-    CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
+    ChevronRight,
     Folder,
     FolderPlus,
     Globe,
     Lock,
     Loader2,
-    Eye,
 } from 'lucide-react';
 import { Head, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
@@ -30,6 +28,21 @@ interface Collection {
     verses_count: number;
     slug: string;
     created_at: string;
+}
+
+function formatDate(date: string) {
+    return new Date(date).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+    });
+}
+
+function truncateDescription(description?: string, maxLength: number = 120) {
+    if (!description) return null;
+    if (description.length <= maxLength) return description;
+
+    return `${description.slice(0, maxLength).trimEnd()}...`;
 }
 
 export default function CollectionsPage() {
@@ -85,118 +98,218 @@ export default function CollectionsPage() {
         return (
             <PublicLayout>
                 <Head title="Public Collections - From Quran" />
-                <div className="flex items-center justify-center py-20">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
+                <section className="border-b border-slate-200 bg-[#fafaf8]">
+                    <div className="mx-auto flex min-h-[60vh] max-w-7xl items-center justify-center px-4 py-16 sm:px-6">
+                        <div className="rounded-[2rem] bg-white px-8 py-10 text-center ring-1 ring-slate-200">
+                            <Loader2 className="mx-auto h-8 w-8 animate-spin text-slate-400" />
+                            <p className="mt-4 text-sm text-slate-500">
+                                Loading public collections...
+                            </p>
+                        </div>
+                    </div>
+                </section>
             </PublicLayout>
         );
     }
 
     return (
         <PublicLayout>
-             <Head title="Public Collections - From Quran" />
-            <div className="container mx-auto px-4 py-8">
-                <div className="mb-8 flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold">Public Collections</h1>
-                        <p className="text-muted-foreground">
-                            Explore collections created by the community
+            <Head title="Public Collections - From Quran" />
+
+            <section className="border-b border-slate-200 bg-[#fafaf8]">
+                <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
+                    <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                        <div className="max-w-3xl">
+                        <p className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">
+                            Public Collections
                         </p>
-                    </div>
-                    <Button onClick={() => router.visit('/my-collections')}>
-                        <Folder className="mr-2 h-4 w-4" />
-                        My Collections
-                    </Button>
-                </div>
+                        <h1 className="font-young mt-3 text-[2.3rem] leading-[0.98] tracking-[-0.05em] text-slate-950 sm:text-[3.25rem]">
+                            Community-curated verse sets.
+                        </h1>
+                        <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-500 sm:text-base">
+                            Browse how others organize ayat into themes for
+                            reflection, teaching, memorization, and study.
+                        </p>
+                        </div>
 
-                {errors.general && (
-                    <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">
-                        {errors.general}
-                    </div>
-                )}
-
-                {collections.length === 0 ? (
-                    <Card className="text-center">
-                        <CardContent className="py-16">
-                            <Globe className="mx-auto mb-4 h-16 w-16 text-muted-foreground opacity-50" />
-                            <h2 className="mb-2 text-xl font-semibold">
-                                No public collections yet
-                            </h2>
-                            <p className="mb-6 text-muted-foreground">
-                                Be the first to share a collection with the community!
-                            </p>
-                            <Button onClick={() => router.visit('/my-collections')}>
-                                <FolderPlus className="mr-2 h-4 w-4" />
-                                Create a Collection
-                            </Button>
-                        </CardContent>
-                    </Card>
-                ) : (
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {collections.map((collection) => (
-                            <Card
-                                key={collection.id}
-                                className="group relative transition-all hover:shadow-md"
+                        <div className="flex flex-col gap-3 sm:flex-row">
+                            <Button
+                                onClick={() => router.visit('/my-collections')}
+                                className="h-11 rounded-full px-5"
                             >
-                                <div
-                                    className="absolute left-0 top-0 h-full w-1.5 rounded-l-lg"
-                                    style={{ backgroundColor: collection.color }}
-                                />
-                                <CardHeader>
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex-1">
-                                            <CardTitle className="mb-1">
-                                                {collection.name}
-                                            </CardTitle>
-                                            {collection.description && (
-                                                <CardDescription className="line-clamp-2">
-                                                    {collection.description}
-                                                </CardDescription>
-                                            )}
-                                        </div>
-                                        <Badge
-                                            variant="secondary"
-                                            className="ml-2 flex items-center gap-1"
-                                        >
-                                            {collection.is_public ? (
-                                                <Globe className="h-3 w-3" />
-                                            ) : (
-                                                <Lock className="h-3 w-3" />
-                                            )}
-                                            {collection.is_public
-                                                ? 'Public'
-                                                : 'Private'}
-                                        </Badge>
-                                    </div>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                                        <span>{collection.verses_count} verses</span>
-                                        <span>
-                                            {new Date(
-                                                collection.created_at
-                                            ).toLocaleDateString()}
-                                        </span>
-                                    </div>
-                                </CardContent>
-                                <CardFooter>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() =>
-                                            handleViewCollection(collection.slug)
-                                        }
-                                        className="w-full"
-                                    >
-                                        <Eye className="mr-2 h-4 w-4" />
-                                        View Collection
-                                    </Button>
-                                </CardFooter>
-                            </Card>
-                        ))}
+                                <Folder className="h-4 w-4" />
+                                My Collections
+                            </Button>
+                        </div>
                     </div>
-                )}
-            </div>
+
+                    <div className="mt-6 grid gap-3 sm:max-w-md sm:grid-cols-2">
+                            <div className="rounded-3xl bg-white px-4 py-4 ring-1 ring-slate-200">
+                                <div className="text-2xl font-semibold tracking-tight text-slate-950">
+                                    {collections.length}
+                                </div>
+                                <p className="mt-1 text-sm leading-6 text-slate-500">
+                                    public collections available
+                                </p>
+                            </div>
+                            <div className="rounded-3xl bg-white px-4 py-4 ring-1 ring-slate-200">
+                                <div className="text-2xl font-semibold tracking-tight text-slate-950">
+                                    {collections.reduce(
+                                        (sum, collection) =>
+                                            sum + collection.verses_count,
+                                        0,
+                                    )}
+                                </div>
+                                <p className="mt-1 text-sm leading-6 text-slate-500">
+                                    verses gathered across lists
+                                </p>
+                            </div>
+                    </div>
+                </div>
+            </section>
+
+            <section className="bg-[#fafaf8] py-10 sm:py-12 lg:py-14">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6">
+                    {errors.general && (
+                        <div className="mb-6 rounded-[1.5rem] border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+                            {errors.general}
+                        </div>
+                    )}
+
+                    {collections.length === 0 ? (
+                        <Card className="rounded-[2rem] border-0 bg-white text-center shadow-none ring-1 ring-slate-200">
+                            <CardContent className="py-16">
+                                <Globe className="mx-auto mb-4 h-16 w-16 text-slate-300" />
+                                <h2 className="mb-2 text-xl font-semibold text-slate-950">
+                                    No public collections yet
+                                </h2>
+                                <p className="mx-auto mb-6 max-w-md text-slate-500">
+                                    Be the first to share a collection with the
+                                    community.
+                                </p>
+                                <Button
+                                    onClick={() =>
+                                        router.visit('/my-collections')
+                                    }
+                                    className="rounded-full px-6"
+                                >
+                                    <FolderPlus className="mr-2 h-4 w-4" />
+                                    Create a Collection
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                            {collections.map((collection) => {
+                                const shortDescription = truncateDescription(
+                                    collection.description,
+                                    132,
+                                );
+
+                                return (
+                                    <Card
+                                        key={collection.id}
+                                        className="group relative flex h-full flex-col overflow-hidden rounded-[2rem] border-0 bg-white shadow-none ring-1 ring-slate-200 transition-all duration-200 hover:-translate-y-0.5 hover:ring-slate-300"
+                                    >
+                                        <div
+                                            className="absolute inset-x-0 top-0 h-1.5"
+                                            style={{
+                                                backgroundColor:
+                                                    collection.color,
+                                            }}
+                                        />
+
+                                        <CardHeader className="pb-4">
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span
+                                                            className="h-3 w-3 rounded-full"
+                                                            style={{
+                                                                backgroundColor:
+                                                                    collection.color,
+                                                            }}
+                                                        />
+                                                        <p className="text-[11px] font-semibold tracking-[0.18em] text-slate-400 uppercase">
+                                                            Collection
+                                                        </p>
+                                                    </div>
+                                                    <h3 className="mt-3 line-clamp-2 text-xl font-semibold tracking-tight text-slate-950">
+                                                        {collection.name}
+                                                    </h3>
+                                                </div>
+
+                                                <Badge
+                                                    variant="secondary"
+                                                    className="shrink-0 rounded-full border border-slate-200 bg-slate-50 text-slate-700"
+                                                >
+                                                    {collection.is_public ? (
+                                                        <Globe className="mr-1 h-3 w-3" />
+                                                    ) : (
+                                                        <Lock className="mr-1 h-3 w-3" />
+                                                    )}
+                                                    {collection.is_public
+                                                        ? 'Public'
+                                                        : 'Private'}
+                                                </Badge>
+                                            </div>
+                                        </CardHeader>
+
+                                        <CardContent className="flex flex-1 flex-col pt-0">
+                                            <div className="min-h-[4.5rem] text-sm leading-7 text-slate-500">
+                                                {shortDescription ? (
+                                                    <p>{shortDescription}</p>
+                                                ) : (
+                                                    <p className="italic text-slate-400">
+                                                        No description
+                                                        provided.
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            <div className="mt-6 grid grid-cols-2 gap-3">
+                                                <div className="rounded-2xl bg-stone-50 px-4 py-3">
+                                                    <p className="text-xl font-semibold tracking-tight text-slate-950">
+                                                        {collection.verses_count}
+                                                    </p>
+                                                    <p className="mt-1 text-xs tracking-[0.14em] text-slate-400 uppercase">
+                                                        Verses
+                                                    </p>
+                                                </div>
+                                                <div className="rounded-2xl bg-stone-50 px-4 py-3">
+                                                    <p className="text-sm font-semibold text-slate-950">
+                                                        {formatDate(
+                                                            collection.created_at,
+                                                        )}
+                                                    </p>
+                                                    <p className="mt-1 text-xs tracking-[0.14em] text-slate-400 uppercase">
+                                                        Added
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+
+                                        <CardFooter className="pt-0">
+                                            <Button
+                                                variant="outline"
+                                                onClick={() =>
+                                                    handleViewCollection(
+                                                        collection.slug,
+                                                    )
+                                                }
+                                                className="h-11 w-full justify-between rounded-full border-slate-200 bg-white px-5 text-sm font-medium shadow-none"
+                                            >
+                                                <span>View Collection</span>
+                                                <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                                            </Button>
+                                        </CardFooter>
+                                    </Card>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            </section>
         </PublicLayout>
     );
 }

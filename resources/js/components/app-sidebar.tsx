@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import * as React from 'react';
 
+import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import {
@@ -73,19 +74,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return (
         <Sidebar className="border-r-0" {...props}>
             <SidebarHeader className="border-b p-3">
-                <div className="flex min-w-0 items-center gap-2">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                        <BookOpen className="h-4 w-4" />
-                    </div>
-                    <div className="flex min-w-0 flex-1 flex-col">
-                        <span className="truncate text-sm font-semibold">
-                            From Quran
-                        </span>
-                        <span className="truncate text-xs text-muted-foreground">
-                            Explore & Learn
-                        </span>
-                    </div>
-                </div>
+                <Link href="/" className="flex min-w-0 items-center space-x-2">
+                    <AppLogo />
+                </Link>
             </SidebarHeader>
 
             <SidebarContent>

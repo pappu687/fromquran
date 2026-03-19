@@ -69,6 +69,7 @@ export default function PublicCollectionDetailPage({ slug }: { slug: string }) {
     const [collection, setCollection] = useState<Collection | null>(null);
     const [verses, setVerses] = useState<Verse[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     const inertiaPage = usePage<{ appUrl?: string; siteName?: string }>();
@@ -115,6 +116,7 @@ export default function PublicCollectionDetailPage({ slug }: { slug: string }) {
             const data = await response.json();
             setCollection(data);
             setVerses(data.verses || []);
+            setIsDescriptionExpanded(false);
         } catch (error) {
             console.error('Failed to load collection:', error);
             setErrors({
@@ -131,6 +133,12 @@ export default function PublicCollectionDetailPage({ slug }: { slug: string }) {
     const pageDescription = collection?.description
         ? collection.description
         : 'Explore a curated public collection of Quran verses on From Quran.';
+    const truncatedDescription =
+        collection?.description && collection.description.length > 150
+            ? `${collection.description.slice(0, 150).trimEnd()}...`
+            : collection?.description;
+    const shouldTruncateDescription =
+        (collection?.description?.length ?? 0) > 150;
 
     if (isLoading) {
         return (
@@ -191,7 +199,7 @@ export default function PublicCollectionDetailPage({ slug }: { slug: string }) {
                 <meta name="twitter:description" content={pageDescription} />
                 <meta name="twitter:image" content={ogImage} />
             </Head>
-            <div className="container mx-auto px-4 py-8">
+            <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
                 {/* Header */}
                 <div className="mb-8">
                     <Button
@@ -233,9 +241,28 @@ export default function PublicCollectionDetailPage({ slug }: { slug: string }) {
                                 </Badge>
                             </div>
                             {collection.description && (
-                                <p className="text-muted-foreground">
-                                    {collection.description}
-                                </p>
+                                <div className="max-w-3xl text-muted-foreground">
+                                    <p>
+                                        {isDescriptionExpanded
+                                            ? collection.description
+                                            : truncatedDescription}{' '}
+                                        {shouldTruncateDescription && (
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setIsDescriptionExpanded(
+                                                        (prev) => !prev,
+                                                    )
+                                                }
+                                                className="font-medium text-foreground underline underline-offset-4"
+                                            >
+                                                {isDescriptionExpanded
+                                                    ? 'Less'
+                                                    : 'More..'}
+                                            </button>
+                                        )}
+                                    </p>
+                                </div>
                             )}
                             <p className="mt-2 text-sm text-muted-foreground">
                                 {verses.length}{' '}

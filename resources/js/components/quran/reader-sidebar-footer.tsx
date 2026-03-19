@@ -4,6 +4,7 @@ import {
     HeartHandshake,
     Info,
     Map,
+    Book,
     ListChecks,
     MenuSquare,
 } from 'lucide-react';
@@ -27,6 +28,11 @@ const footerLinks = [
         title: 'Quran Topic Index',
         href: '/topics',
         icon: ListChecks,
+    },
+    {
+        title: 'Public Collections',
+        href: '/collections',
+        icon: Book,
     },
     {
         title: 'About Us',

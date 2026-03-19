@@ -38,7 +38,7 @@ interface CollectionItem {
     verses_count: number;
     created_at: string;
     deleted_at?: string | null;
-    user: User;
+    user: User | null;
 }
 
 interface PaginationLink {
@@ -357,18 +357,16 @@ export default function CollectionsAdminPage({
                                                         <td className="p-3">
                                                             <div className="space-y-1">
                                                                 <div className="font-medium">
-                                                                    {
-                                                                        collection
-                                                                            .user
-                                                                            .name
-                                                                    }
+                                                                    {collection
+                                                                        .user
+                                                                        ?.name ??
+                                                                        'Unknown user'}
                                                                 </div>
                                                                 <div className="text-sm text-muted-foreground">
-                                                                    {
-                                                                        collection
-                                                                            .user
-                                                                            .email
-                                                                    }
+                                                                    {collection
+                                                                        .user
+                                                                        ?.email ??
+                                                                        'No email available'}
                                                                 </div>
                                                             </div>
                                                         </td>
