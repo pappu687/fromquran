@@ -357,7 +357,7 @@ export function VerseCard({
                 {/* Arabic Text */}
                 <div className="mb-4 text-right">
                     <p
-                        className="font-arabic leading-[2.2]"
+                        className="font-arabic text-slate-900 leading-[2.2] dark:text-slate-100"
                         dir="rtl"
                         style={{ fontSize: `${settings.fontSize}rem` }}
                     >
@@ -372,13 +372,13 @@ export function VerseCard({
                             verse.translations.map((trans, index) => (
                                 <p
                                     key={`${verse.id}-${trans.resource_id}-${index}`}
-                                    className="text-[15px] leading-relaxed text-muted-foreground/80"
+                                    className="text-[15px] leading-relaxed text-slate-900 dark:text-slate-100"
                                 >
                                     {trans.text}
                                 </p>
                             ))
                         ) : verse.translation ? (
-                            <p className="text-[15px] leading-relaxed text-muted-foreground/80">
+                            <p className="text-[15px] leading-relaxed text-slate-900 dark:text-slate-100">
                                 {verse.translation}
                             </p>
                         ) : null}

@@ -10,7 +10,9 @@
 /storage/*.key
 /storage/pail
 /vendor
+/dump.rdb
 .DS_Store
+fabfile.py
 .env
 .env.backup
 .env.production
