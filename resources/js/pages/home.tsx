@@ -223,13 +223,25 @@ export default function HomePage() {
                 className="bg-[#fafaf8] py-14 sm:py-18 lg:py-24"
             >
                 <div className="mx-auto max-w-7xl px-4 sm:px-6">
-                    <div className="mb-8 max-w-2xl sm:mb-10">
+                    <div className="mb-8 max-w-7xl sm:mb-10">
                         <p className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">
                             Chapters
                         </p>
-                        <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-4xl">
-                            All 114 chapters
-                        </h2>
+                        <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <h2 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-4xl">
+                                All 114 chapters
+                            </h2>
+                            <Button
+                                variant="link"
+                                className="h-auto self-start px-0 text-sm font-medium text-slate-700 sm:self-auto"
+                                onClick={() =>
+                                    router.visit('/revelation-order')
+                                }
+                            >
+                                Revelation Order
+                                <ArrowRight className="h-4 w-4" />
+                            </Button>
+                        </div>
                         <p className="mt-3 text-sm leading-7 text-slate-500 sm:text-base">
                             Open any surah directly and continue reading from a
                             calmer, more connected experience.

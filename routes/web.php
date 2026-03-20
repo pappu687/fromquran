@@ -32,6 +32,10 @@ Route::get('/roadmap', function () {
     return Inertia::render('roadmap');
 })->name('roadmap');
 
+Route::get('/revelation-order', function () {
+    return Inertia::render('revelation-order');
+})->name('revelation-order');
+
 Route::get('/support', function () {
     return Inertia::render('support');
 })->name('support');
