@@ -2,6 +2,7 @@ import { VerseCard } from '@/components/quran/verse-card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import QuranReaderLayout from '@/layouts/quran-reader-layout';
+import { type BreadcrumbItem } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
 import { ChevronLeft, ExternalLink, Tags } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
@@ -106,6 +107,16 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
         ? `${rawDescription.trim().slice(0, 200)}...`
         : fallbackDescription;
     const pageTitle = `${topicName} - Quran Topic`;
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'topics',
+            href: '/topics',
+        },
+        {
+            title: topicName,
+            href: `/topic/${topicId}`,
+        },
+    ];
 
     const fetchTopicData = useCallback(
         async (pageNum: number = 1) => {
@@ -613,6 +624,7 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
             chapters={chapters}
             selectedChapter={undefined}
             onChapterSelect={handleChapterSelect}
+            breadcrumbs={breadcrumbs}
         >
             {content}
         </QuranReaderLayout>

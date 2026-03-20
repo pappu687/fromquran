@@ -4,13 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Models\Collection;
 use App\Models\Verse;
-use Illuminate\Http\Request;
+use App\Services\TagService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class CollectionController extends Controller
 {
+    public function __construct(
+        protected TagService $tagService,
+    ) {
+    }
+
     /**
      * Display a listing of the user's collections.
      */
@@ -18,10 +24,13 @@ class CollectionController extends Controller
     {
         $user = Auth::user();
 
-        $collections = $user->collections()
-            ->withCount('verses')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $collections = $this->applyTagFilters(
+            $user->collections()
+                ->with('tags')
+                ->withCount('verses')
+                ->orderBy('created_at', 'desc'),
+            $request,
+        )->get();
 
         return response()->json($collections);
     }
@@ -31,11 +40,14 @@ class CollectionController extends Controller
      */
     public function publicIndex(Request $request): JsonResponse
     {
-        $collections = Collection::where('is_public', true)
-            ->where('status', 'approved')
-            ->withCount('verses')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $collections = $this->applyTagFilters(
+            Collection::where('is_public', true)
+                ->where('status', 'approved')
+                ->with('tags')
+                ->withCount('verses')
+                ->orderBy('created_at', 'desc'),
+            $request,
+        )->get();
 
         return response()->json($collections);
     }
@@ -57,12 +69,7 @@ class CollectionController extends Controller
             ], 422);
         }
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string|max:1000',
-            'color' => 'nullable|string|regex:/^#?[A-Fa-f0-9]{6}$/',
-            'is_public' => 'nullable|boolean',
-        ]);
+        $validated = $this->validateCollectionPayload($request, false);
 
         $collection = $user->collections()->create([
             'name' => $validated['name'],
@@ -74,7 +81,9 @@ class CollectionController extends Controller
                 : 'approved',
         ]);
 
-        $collection->loadCount('verses');
+        $this->syncCollectionTags($collection, $validated);
+
+        $collection->load(['tags'])->loadCount('verses');
 
         return response()->json($collection, 201);
     }
@@ -85,6 +94,7 @@ class CollectionController extends Controller
     public function show(string $slug): JsonResponse
     {
         $collection = Collection::where('slug', $slug)
+            ->with('tags')
             ->withCount('verses')
             ->firstOrFail();
 
@@ -99,9 +109,12 @@ class CollectionController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $collection->load(['verses' => function ($query) {
-            $query->with('chapter')->orderBy('collection_verse.display_order');
-        }]);
+        $collection->load([
+            'tags',
+            'verses' => function ($query) {
+                $query->with('chapter')->orderBy('collection_verse.display_order');
+            }
+        ]);
 
         return response()->json($collection);
     }
@@ -118,12 +131,7 @@ class CollectionController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string|max:1000',
-            'color' => 'nullable|string|regex:/^#?[A-Fa-f0-9]{6}$/',
-            'is_public' => 'nullable|boolean',
-        ]);
+        $validated = $this->validateCollectionPayload($request, true);
 
         $isPublic = $validated['is_public'] ?? $collection->is_public;
         $status = $collection->status;
@@ -143,7 +151,11 @@ class CollectionController extends Controller
             'status' => $status,
         ]);
 
-        $collection->loadCount('verses');
+        if (array_key_exists('tags', $validated)) {
+            $this->syncCollectionTags($collection, $validated);
+        }
+
+        $collection->load(['tags'])->loadCount('verses');
 
         return response()->json($collection);
     }
@@ -255,6 +267,7 @@ class CollectionController extends Controller
 
         // Get user's collections with whether they contain this verse
         $collections = $user->collections()
+            ->with('tags')
             ->withCount('verses')
             ->get()
             ->map(function ($collection) use ($verse) {
@@ -316,5 +329,70 @@ class CollectionController extends Controller
             : "Verse added to collections";
 
         return response()->json(['message' => $message], 200);
+    }
+
+    /**
+     * Validate collection create/update payloads.
+     *
+     * @throws ValidationException
+     */
+    protected function validateCollectionPayload(Request $request, bool $isUpdate): array
+    {
+        $validated = $request->validate([
+            'name' => $isUpdate ? 'sometimes|required|string|max:255' : 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'color' => 'nullable|string|regex:/^#?[A-Fa-f0-9]{6}$/',
+            'is_public' => 'nullable|boolean',
+            'tags' => 'sometimes|array',
+            'tags.*.name' => 'required_with:tags|string|max:255',
+            'tags.*.slug' => 'nullable|string|max:255',
+            'tags.*.type' => 'nullable|string|max:100',
+        ]);
+
+        if (array_key_exists('tags', $validated)) {
+            $normalizedTags = $this->tagService->normalizePayload($validated['tags']);
+
+            if ($normalizedTags->count() !== count($validated['tags'])) {
+                throw ValidationException::withMessages([
+                    'tags' => 'Tags must be unique after normalization.',
+                ]);
+            }
+        }
+
+        return $validated;
+    }
+
+    /**
+     * Sync tags onto a collection.
+     */
+    protected function syncCollectionTags(Collection $collection, array $validated): void
+    {
+        $this->tagService->syncTags($collection, $validated['tags'] ?? []);
+    }
+
+    /**
+     * Apply tag filters to collection listing queries.
+     */
+    protected function applyTagFilters($query, Request $request)
+    {
+        $validated = $request->validate([
+            'tags' => 'nullable|array',
+            'tags.*' => 'string|max:255',
+            'tag_type' => 'nullable|string|max:100',
+        ]);
+
+        $tagType = $validated['tag_type'] ?? null;
+
+        foreach ($validated['tags'] ?? [] as $tagSlug) {
+            $query->whereHas('tags', function ($tagQuery) use ($tagSlug, $tagType) {
+                $tagQuery->where('slug', $tagSlug);
+
+                if ($tagType) {
+                    $tagQuery->where('type', $tagType);
+                }
+            });
+        }
+
+        return $query;
     }
 }

@@ -1,4 +1,3 @@
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -12,12 +11,10 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import {
-    CheckCircle2,
-    Clock,
     ExternalLink,
     FileUp,
     Loader2,
-    XCircle,
+    MoveRight,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -71,6 +68,10 @@ export default function ContributionsPage() {
     const [resourceTypeCounts, setResourceTypeCounts] = useState<
         ResourceTypeCount[]
     >([]);
+    const [activeStatus, setActiveStatus] = useState<
+        'all' | Contribution['status']
+    >('all');
+    const [activeResourceType, setActiveResourceType] = useState<string>('all');
 
     const truncateWords = (str: string, numWords: number) => {
         const plain = str.replace(/<[^>]+>/g, '');
@@ -84,6 +85,49 @@ export default function ContributionsPage() {
         }
 
         return { text: plain, isTruncated: false };
+    };
+
+    const getResourcePreview = (contribution: Contribution) => {
+        const plainComment = (contribution.comment || '')
+            .replace(/<[^>]+>/g, '')
+            .trim();
+
+        if (!plainComment) {
+            return null;
+        }
+
+        try {
+            const parsed = JSON.parse(plainComment);
+
+            if (
+                Array.isArray(parsed) &&
+                parsed.every((item) => typeof item === 'string')
+            ) {
+                const previewItems = parsed.slice(0, 5);
+                const remainingCount = parsed.length - previewItems.length;
+                const resourceTypeName =
+                    contribution.resource_type?.name?.toLowerCase() || '';
+                const itemLabel = resourceTypeName.includes('verse')
+                    ? 'related verses'
+                    : 'linked items';
+
+                return {
+                    title: `${parsed.length} ${itemLabel}`,
+                    preview: `${previewItems.join(', ')}${remainingCount > 0 ? ` +${remainingCount} more` : ''}`,
+                    expandable: true,
+                };
+            }
+        } catch {
+            // Fall back to plain text preview below.
+        }
+
+        const { text, isTruncated } = truncateWords(plainComment, 18);
+
+        return {
+            title: 'Submission preview',
+            preview: text,
+            expandable: isTruncated,
+        };
     };
 
     useEffect(() => {
@@ -138,38 +182,6 @@ export default function ContributionsPage() {
         }
     };
 
-    const getStatusBadge = (status: Contribution['status']) => {
-        switch (status) {
-            case 'approved':
-                return (
-                    <Badge className="rounded-full bg-emerald-600 px-2.5 py-1 text-white hover:bg-emerald-700">
-                        <CheckCircle2 className="mr-1 h-3 w-3" />
-                        Approved
-                    </Badge>
-                );
-            case 'rejected':
-                return (
-                    <Badge
-                        variant="destructive"
-                        className="rounded-full px-2.5 py-1"
-                    >
-                        <XCircle className="mr-1 h-3 w-3" />
-                        Rejected
-                    </Badge>
-                );
-            default:
-                return (
-                    <Badge
-                        variant="secondary"
-                        className="rounded-full bg-stone-100 px-2.5 py-1 text-stone-700"
-                    >
-                        <Clock className="mr-1 h-3 w-3" />
-                        Pending
-                    </Badge>
-                );
-        }
-    };
-
     const getVisiblePages = () => {
         if (!pagination) {
             return [];
@@ -213,6 +225,52 @@ export default function ContributionsPage() {
     const approvedCount = contributions.filter(
         (contribution) => contribution.status === 'approved',
     ).length;
+    const rejectedCount = contributions.filter(
+        (contribution) => contribution.status === 'rejected',
+    ).length;
+    const filteredContributions = contributions.filter((contribution) => {
+        const matchesStatus =
+            activeStatus === 'all' || contribution.status === activeStatus;
+        const matchesType =
+            activeResourceType === 'all' ||
+            (contribution.resource_type?.name || 'N/A') === activeResourceType;
+
+        return matchesStatus && matchesType;
+    });
+    const filterItems = [
+        {
+            key: 'all',
+            label: 'All',
+            count: pagination?.total ?? contributions.length,
+        },
+        {
+            key: 'approved',
+            label: 'Approved',
+            count: approvedCount,
+        },
+        {
+            key: 'pending',
+            label: 'Pending',
+            count: pendingCount,
+        },
+        {
+            key: 'rejected',
+            label: 'Rejected',
+            count: rejectedCount,
+        },
+    ] as const;
+    const resourceTypeFilters = [
+        {
+            key: 'all',
+            label: 'All Types',
+            count: pagination?.total ?? contributions.length,
+        },
+        ...resourceTypeCounts.map((resourceType) => ({
+            key: resourceType.name,
+            label: resourceType.name,
+            count: resourceType.count,
+        })),
+    ];
 
     if (isLoading) {
         return (
@@ -234,15 +292,15 @@ export default function ContributionsPage() {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="My Contributions - From Quran" />
             <div className="flex flex-1 flex-col bg-[#fafaf8]">
-                <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10">
-                    <section className="border-b border-slate-200 pb-6">
-                        <p className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">
+                <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-5 px-4 py-6 sm:px-6 sm:py-8">
+                    <section className="border-b border-slate-200 pb-5">
+                        <p className="text-[11px] font-semibold tracking-[0.18em] text-slate-400 uppercase">
                             My Contributions
                         </p>
-                        <h1 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-4xl">
+                        <h1 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-4xl">
                             Submitted resources
                         </h1>
-                        <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-500 sm:text-base">
+                        <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-500 sm:text-base">
                             A simple record of what you have shared, how it is
                             categorized, and where it stands in review.
                         </p>
@@ -256,33 +314,33 @@ export default function ContributionsPage() {
 
                     {pagination && pagination.total > 0 && (
                         <>
-                            <section className="grid grid-cols-3 gap-2 sm:gap-3">
-                                <Card className="rounded-3xl border-slate-200 bg-white shadow-none">
-                                    <CardContent className="px-3 py-2.5 sm:px-5 sm:py-5">
-                                        <p className="text-xs text-slate-500 sm:text-sm">
+                            <section className="grid grid-cols-3 gap-2">
+                                <Card className="rounded-2xl border-slate-200/80 bg-white/90 shadow-none">
+                                    <CardContent className="px-3 py-3 sm:px-4 sm:py-3.5">
+                                        <p className="text-[11px] tracking-[0.16em] text-slate-400 uppercase">
                                             Total
                                         </p>
-                                        <p className="mt-0.5 text-xl font-semibold tracking-tight text-slate-950 sm:mt-2 sm:text-3xl">
+                                        <p className="mt-1 text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">
                                             {pagination.total}
                                         </p>
                                     </CardContent>
                                 </Card>
-                                <Card className="rounded-3xl border-slate-200 bg-white shadow-none">
-                                    <CardContent className="px-3 py-2.5 sm:px-5 sm:py-5">
-                                        <p className="text-xs text-slate-500 sm:text-sm">
+                                <Card className="rounded-2xl border-slate-200/80 bg-white/90 shadow-none">
+                                    <CardContent className="px-3 py-3 sm:px-4 sm:py-3.5">
+                                        <p className="text-[11px] tracking-[0.16em] text-slate-400 uppercase">
                                             Pending
                                         </p>
-                                        <p className="mt-0.5 text-xl font-semibold tracking-tight text-slate-950 sm:mt-2 sm:text-3xl">
+                                        <p className="mt-1 text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">
                                             {pendingCount}
                                         </p>
                                     </CardContent>
                                 </Card>
-                                <Card className="rounded-3xl border-slate-200 bg-white shadow-none">
-                                    <CardContent className="px-3 py-2.5 sm:px-5 sm:py-5">
-                                        <p className="text-xs text-slate-500 sm:text-sm">
+                                <Card className="rounded-2xl border-slate-200/80 bg-white/90 shadow-none">
+                                    <CardContent className="px-3 py-3 sm:px-4 sm:py-3.5">
+                                        <p className="text-[11px] tracking-[0.16em] text-slate-400 uppercase">
                                             Approved
                                         </p>
-                                        <p className="mt-0.5 text-xl font-semibold tracking-tight text-slate-950 sm:mt-2 sm:text-3xl">
+                                        <p className="mt-1 text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">
                                             {approvedCount}
                                         </p>
                                     </CardContent>
@@ -291,15 +349,47 @@ export default function ContributionsPage() {
 
                             <section>
                                 <div className="flex flex-wrap gap-2">
-                                    {resourceTypeCounts.map((resourceType) => (
-                                        <Badge
-                                            key={resourceType.name}
-                                            variant="secondary"
-                                            className="rounded-full bg-white px-3 py-1.5 text-slate-600 shadow-none"
+                                    {filterItems.map((item) => (
+                                        <button
+                                            key={item.key}
+                                            type="button"
+                                            onClick={() =>
+                                                setActiveStatus(
+                                                    item.key as
+                                                        | 'all'
+                                                        | Contribution['status'],
+                                                )
+                                            }
+                                            className={
+                                                activeStatus === item.key
+                                                    ? 'rounded-full border border-slate-900 bg-slate-900 px-3 py-1.5 text-xs font-medium text-white'
+                                                    : 'rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-slate-300 hover:text-slate-950'
+                                            }
                                         >
-                                            {resourceType.name}:
-                                            {resourceType.count}
-                                        </Badge>
+                                            {item.label} ({item.count})
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="mt-2 flex flex-nowrap gap-2 overflow-x-auto pb-1">
+                                    {resourceTypeFilters.map((resourceType) => (
+                                        <button
+                                            key={resourceType.key}
+                                            type="button"
+                                            onClick={() =>
+                                                setActiveResourceType(
+                                                    resourceType.key,
+                                                )
+                                            }
+                                            className={
+                                                activeResourceType ===
+                                                resourceType.key
+                                                    ? 'rounded-full border border-stone-300 bg-stone-100 px-3 py-1.5 text-xs font-medium text-slate-900'
+                                                    : 'rounded-full border border-transparent bg-transparent px-3 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:bg-white hover:text-slate-900'
+                                            }
+                                        >
+                                            {resourceType.label} (
+                                            {resourceType.count})
+                                        </button>
                                     ))}
                                 </div>
                             </section>
@@ -325,135 +415,151 @@ export default function ContributionsPage() {
                                 </Button>
                             </CardContent>
                         </Card>
+                    ) : filteredContributions.length === 0 ? (
+                        <Card className="rounded-3xl border-slate-200 bg-white shadow-none">
+                            <CardContent className="py-14 text-center">
+                                <h2 className="text-xl font-semibold text-slate-950">
+                                    No matching contributions
+                                </h2>
+                                <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-slate-500">
+                                    Try a different status or resource type
+                                    filter.
+                                </p>
+                            </CardContent>
+                        </Card>
                     ) : (
                         <>
-                            <section className="divide-y divide-slate-200 border-t border-slate-200">
-                                {contributions.map((contribution) => (
+                            <section className="border-t border-slate-200">
+                                {filteredContributions.map((contribution) => (
                                     <article
                                         key={contribution.id}
-                                        className="py-5 first:pt-0"
+                                        className="grid gap-4 border-b border-slate-200 py-5 md:grid-cols-[140px_minmax(0,1fr)_170px] md:gap-6"
                                     >
-                                        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                                            <div className="min-w-0 flex-1">
-                                                <div className="flex flex-wrap items-center gap-2">
-                                                    {contribution.verse && (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            className="h-8 rounded-full border-slate-200 bg-white px-3 font-mono text-xs text-slate-700 shadow-none"
-                                                            onClick={() => {
-                                                                const key =
-                                                                    contribution
-                                                                        .verse
-                                                                        ?.verse_key;
-                                                                if (!key) {
-                                                                    return;
-                                                                }
-
-                                                                const [
-                                                                    chStr,
-                                                                    vStr,
-                                                                ] =
-                                                                    key.split(
-                                                                        ':',
-                                                                    );
-                                                                const chapterNumber =
-                                                                    Number(
-                                                                        chStr,
-                                                                    );
-                                                                const verseNumber =
-                                                                    Number(
-                                                                        vStr,
-                                                                    );
-
-                                                                if (
-                                                                    Number.isFinite(
-                                                                        chapterNumber,
-                                                                    ) &&
-                                                                    Number.isFinite(
-                                                                        verseNumber,
-                                                                    )
-                                                                ) {
-                                                                    router.visit(
-                                                                        `/${chapterNumber}/${verseNumber}`,
-                                                                    );
-                                                                }
-                                                            }}
-                                                        >
-                                                            {
-                                                                contribution
-                                                                    .verse
-                                                                    .verse_key
-                                                            }
-                                                        </Button>
-                                                    )}
-                                                    <Badge
-                                                        variant="secondary"
-                                                        className="rounded-full bg-stone-100 px-2.5 py-1 text-slate-600"
-                                                    >
-                                                        {contribution
-                                                            .resource_type
-                                                            ?.name || 'N/A'}
-                                                    </Badge>
-                                                    {getStatusBadge(
-                                                        contribution.status,
-                                                    )}
-                                                </div>
-
-                                                <a
-                                                    href={
-                                                        contribution.resource_url
-                                                    }
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="mt-3 inline-flex max-w-full items-center gap-2 text-sm font-medium text-slate-900 hover:text-slate-600"
-                                                >
-                                                    <span className="truncate">
-                                                        {
-                                                            contribution.resource_url
+                                        <div className="min-w-0">
+                                            {contribution.verse?.verse_key ? (
+                                                <button
+                                                    type="button"
+                                                    className="font-mono text-sm font-semibold text-slate-950 transition-colors hover:text-slate-600"
+                                                    onClick={() => {
+                                                        const key =
+                                                            contribution.verse
+                                                                ?.verse_key;
+                                                        if (!key) {
+                                                            return;
                                                         }
-                                                    </span>
-                                                    <ExternalLink className="h-3.5 w-3.5 shrink-0" />
-                                                </a>
 
-                                                {contribution.comment && (
-                                                    <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-500">
-                                                        {(() => {
-                                                            const {
-                                                                text,
-                                                                isTruncated,
-                                                            } = truncateWords(
-                                                                contribution.comment,
-                                                                20,
-                                                            );
+                                                        const [chStr, vStr] =
+                                                            key.split(':');
+                                                        const chapterNumber =
+                                                            Number(chStr);
+                                                        const verseNumber =
+                                                            Number(vStr);
 
-                                                            return (
-                                                                <>
-                                                                    {text}
-                                                                    {isTruncated && (
-                                                                        <Button
-                                                                            variant="link"
-                                                                            className="h-auto px-1.5 font-medium text-slate-900"
-                                                                            onClick={() =>
-                                                                                setSelectedComment(
-                                                                                    contribution.comment ||
-                                                                                        '',
-                                                                                )
-                                                                            }
-                                                                        >
-                                                                            See
-                                                                            more
-                                                                        </Button>
-                                                                    )}
-                                                                </>
+                                                        if (
+                                                            Number.isFinite(
+                                                                chapterNumber,
+                                                            ) &&
+                                                            Number.isFinite(
+                                                                verseNumber,
+                                                            )
+                                                        ) {
+                                                            router.visit(
+                                                                `/${chapterNumber}/${verseNumber}`,
                                                             );
-                                                        })()}
-                                                    </p>
-                                                )}
+                                                        }
+                                                    }}
+                                                >
+                                                    {
+                                                        contribution.verse
+                                                            .verse_key
+                                                    }
+                                                </button>
+                                            ) : (
+                                                <p className="font-mono text-sm font-semibold text-slate-950">
+                                                    Submission
+                                                </p>
+                                            )}
+                                            <p className="mt-1 text-sm text-slate-500">
+                                                {contribution.resource_type
+                                                    ?.name || 'N/A'}
+                                            </p>
+                                        </div>
+
+                                        <div className="min-w-0">
+                                            {(() => {
+                                                const preview =
+                                                    getResourcePreview(
+                                                        contribution,
+                                                    );
+
+                                                return (
+                                                    <>
+                                                        {preview ? (
+                                                            <>
+                                                                <p className="text-sm font-medium text-slate-900">
+                                                                    {
+                                                                        preview.title
+                                                                    }
+                                                                </p>
+                                                                <p className="mt-1 text-sm leading-7 text-slate-500">
+                                                                    {
+                                                                        preview.preview
+                                                                    }
+                                                                </p>
+                                                            </>
+                                                        ) : (
+                                                            <p className="text-sm leading-7 text-slate-400">
+                                                                No preview
+                                                                available.
+                                                            </p>
+                                                        )}
+
+                                                        <div className="mt-3 flex flex-wrap items-center gap-3">
+                                                            <a
+                                                                href={
+                                                                    contribution.resource_url
+                                                                }
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="inline-flex items-center gap-2 text-sm font-medium text-slate-900 transition-colors hover:text-slate-600"
+                                                            >
+                                                                Open resource
+                                                                <ExternalLink className="h-3.5 w-3.5" />
+                                                            </a>
+                                                            {preview?.expandable && (
+                                                                <Button
+                                                                    variant="link"
+                                                                    className="h-auto px-0 text-sm font-medium text-slate-600"
+                                                                    onClick={() =>
+                                                                        setSelectedComment(
+                                                                            contribution.comment ||
+                                                                                '',
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    View
+                                                                    details
+                                                                    <MoveRight className="h-3.5 w-3.5" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    </>
+                                                );
+                                            })()}
+                                        </div>
+
+                                        <div className="flex flex-row flex-wrap items-start justify-between gap-3 md:flex-col md:items-end">
+                                            <div className="flex items-center gap-2 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                                {contribution.status
+                                                    .charAt(0)
+                                                    .toUpperCase() +
+                                                    contribution.status.slice(
+                                                        1,
+                                                    )}
                                             </div>
-
-                                            <div className="flex shrink-0 flex-wrap items-center gap-3 text-xs text-slate-400 sm:flex-col sm:items-end">
-                                                <span>
+                                            <div className="space-y-1 text-left text-xs text-slate-400 md:text-right">
+                                                <p>
                                                     Submitted{' '}
                                                     {new Date(
                                                         contribution.created_at,
@@ -465,10 +571,10 @@ export default function ContributionsPage() {
                                                             day: 'numeric',
                                                         },
                                                     )}
-                                                </span>
+                                                </p>
                                                 {contribution.status !==
                                                     'pending' && (
-                                                    <span>
+                                                    <p>
                                                         Updated{' '}
                                                         {new Date(
                                                             contribution.updated_at,
@@ -480,7 +586,7 @@ export default function ContributionsPage() {
                                                                 day: 'numeric',
                                                             },
                                                         )}
-                                                    </span>
+                                                    </p>
                                                 )}
                                             </div>
                                         </div>

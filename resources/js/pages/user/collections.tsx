@@ -1,3 +1,5 @@
+import { CollectionTagList } from '@/components/collections/collection-tag-list';
+import { type CollectionTag } from '@/types/collections';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -14,7 +16,7 @@ import {
     Lock,
     Loader2,
 } from 'lucide-react';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import PublicLayout from '@/layouts/public-layout';
 
@@ -28,6 +30,7 @@ interface Collection {
     verses_count: number;
     slug: string;
     created_at: string;
+    tags: CollectionTag[];
 }
 
 function formatDate(date: string) {
@@ -46,28 +49,48 @@ function truncateDescription(description?: string, maxLength: number = 120) {
 }
 
 export default function CollectionsPage() {
+    const page = usePage();
     const [collections, setCollections] = useState<Collection[]>([]);
+    const [availableTags, setAvailableTags] = useState<CollectionTag[]>([]);
+    const [selectedTagSlugs, setSelectedTagSlugs] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
-        loadCollections();
+        const queryString = page.url.split('?')[1] ?? '';
+        const params = new URLSearchParams(queryString);
+        const urlTags = params.getAll('tags[]');
+        setSelectedTagSlugs(urlTags);
+    }, [page.url]);
+
+    useEffect(() => {
+        loadAvailableTags();
     }, []);
 
-    const loadCollections = async () => {
+    useEffect(() => {
+        loadCollections(selectedTagSlugs);
+    }, [selectedTagSlugs]);
+
+    const loadCollections = async (tagSlugs: string[] = []) => {
         setIsLoading(true);
         try {
             const csrfToken = document
                 .querySelector('meta[name="csrf-token"]')
                 ?.getAttribute('content');
 
-            const response = await fetch('/api/collections/public', {
+            const params = new URLSearchParams();
+            tagSlugs.forEach((slug) => params.append('tags[]', slug));
+
+            const response = await fetch(
+                `/api/collections/public?${params.toString()}`,
+                {
                 headers: {
                     Accept: 'application/json',
                     'X-CSRF-TOKEN': csrfToken || '',
                 },
                 credentials: 'include',
-            });
+                },
+            );
 
             if (response.status === 401) {
                 router.visit('/login');
@@ -88,6 +111,34 @@ export default function CollectionsPage() {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const loadAvailableTags = async () => {
+        try {
+            const response = await fetch('/api/tags', {
+                headers: {
+                    Accept: 'application/json',
+                },
+                credentials: 'include',
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load tags');
+            }
+
+            const data = (await response.json()) as CollectionTag[];
+            setAvailableTags(data);
+        } catch (error) {
+            console.error('Failed to load tags:', error);
+        }
+    };
+
+    const toggleTagFilter = (slug: string) => {
+        setSelectedTagSlugs((prev) =>
+            prev.includes(slug)
+                ? prev.filter((item) => item !== slug)
+                : [...prev, slug],
+        );
     };
 
     const handleViewCollection = (slug: string) => {
@@ -165,6 +216,47 @@ export default function CollectionsPage() {
                                 </p>
                             </div>
                     </div>
+
+                    {availableTags.length > 0 && (
+                        <div className="mt-6 flex flex-wrap items-center gap-2">
+                            <p className="mr-2 text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">
+                                Filter by tag
+                            </p>
+                            {availableTags.map((tag) => {
+                                const isSelected = selectedTagSlugs.includes(
+                                    tag.slug,
+                                );
+
+                                return (
+                                    <button
+                                        key={`${tag.type}-${tag.slug}`}
+                                        type="button"
+                                        onClick={() =>
+                                            toggleTagFilter(tag.slug)
+                                        }
+                                        className={
+                                            isSelected
+                                                ? 'rounded-full border border-slate-900 bg-slate-900 px-3 py-1 text-xs font-medium text-white'
+                                                : 'rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 hover:border-slate-300'
+                                        }
+                                    >
+                                        {tag.name}
+                                    </button>
+                                );
+                            })}
+                            {selectedTagSlugs.length > 0 && (
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="rounded-full px-3 text-slate-500"
+                                    onClick={() => setSelectedTagSlugs([])}
+                                >
+                                    Clear
+                                </Button>
+                            )}
+                        </div>
+                    )}
                 </div>
             </section>
 
@@ -266,6 +358,14 @@ export default function CollectionsPage() {
                                                     </p>
                                                 )}
                                             </div>
+
+                                            <CollectionTagList
+                                                tags={collection.tags}
+                                                className="mt-4"
+                                                getHref={(tag) =>
+                                                    `/collections?tags[]=${encodeURIComponent(tag.slug)}`
+                                                }
+                                            />
 
                                             <div className="mt-6 grid grid-cols-2 gap-3">
                                                 <div className="rounded-2xl bg-stone-50 px-4 py-3">

@@ -1,15 +1,19 @@
 import { NavActions } from '@/components/nav-actions';
 import { QuranSidebar } from '@/components/quran/quran-sidebar';
+import { type BreadcrumbItem as AppBreadcrumbItem } from '@/types';
 import { type ChapterSummary } from '@/types/quran';
 import {
     Breadcrumb,
     BreadcrumbItem,
+    BreadcrumbLink,
     BreadcrumbList,
     BreadcrumbPage,
+    BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
+import { Link } from '@inertiajs/react';
 import { Info } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { ChapterInfoSheet } from '@/components/quran/chapter-info-sheet';
@@ -19,6 +23,7 @@ interface QuranReaderLayoutProps {
     chapters: ChapterSummary[];
     selectedChapter?: number;
     onChapterSelect: (chapterId: number) => void;
+    breadcrumbs?: AppBreadcrumbItem[];
 }
 
 export default function QuranReaderLayout({
@@ -26,6 +31,7 @@ export default function QuranReaderLayout({
     chapters,
     selectedChapter,
     onChapterSelect,
+    breadcrumbs = [],
 }: QuranReaderLayoutProps) {
     const [isChapterInfoOpen, setIsChapterInfoOpen] = useState(false);
     const chapter = selectedChapter ? chapters.find((c) => c.id === selectedChapter) : null;
@@ -47,34 +53,64 @@ export default function QuranReaderLayout({
                         />
                         <Breadcrumb>
                             <BreadcrumbList>
-                                <BreadcrumbItem>
-                                    <BreadcrumbPage className="line-clamp-1">
-                                        {chapter ? (
-                                            <div className="flex items-center gap-2">
-                                                <span>
-                                                    {chapter.romanName ??
-                                                        chapter.englishName}{' '}
-                                                    ({chapter.name})
-                                                </span>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="h-7 w-7 p-0"
-                                                    onClick={() =>
-                                                        setIsChapterInfoOpen(
-                                                            true,
-                                                        )
-                                                    }
-                                                    title="About this Surah"
-                                                >
-                                                    <Info className="h-4 w-4 text-muted-foreground hover:text-primary" />
-                                                </Button>
-                                            </div>
-                                        ) : (
-                                            'Quran Reader'
-                                        )}
-                                    </BreadcrumbPage>
-                                </BreadcrumbItem>
+                                {breadcrumbs.length > 0 ? (
+                                    breadcrumbs.map((item, index) => {
+                                        const isLast =
+                                            index === breadcrumbs.length - 1;
+
+                                        return (
+                                            <BreadcrumbItem key={item.href}>
+                                                {isLast ? (
+                                                    <BreadcrumbPage className="line-clamp-1">
+                                                        {item.title}
+                                                    </BreadcrumbPage>
+                                                ) : (
+                                                    <>
+                                                        <BreadcrumbLink asChild>
+                                                            <Link
+                                                                href={
+                                                                    item.href
+                                                                }
+                                                            >
+                                                                {item.title}
+                                                            </Link>
+                                                        </BreadcrumbLink>
+                                                        <BreadcrumbSeparator />
+                                                    </>
+                                                )}
+                                            </BreadcrumbItem>
+                                        );
+                                    })
+                                ) : (
+                                    <BreadcrumbItem>
+                                        <BreadcrumbPage className="line-clamp-1">
+                                            {chapter ? (
+                                                <div className="flex items-center gap-2">
+                                                    <span>
+                                                        {chapter.romanName ??
+                                                            chapter.englishName}{' '}
+                                                        ({chapter.name})
+                                                    </span>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-7 w-7 p-0"
+                                                        onClick={() =>
+                                                            setIsChapterInfoOpen(
+                                                                true,
+                                                            )
+                                                        }
+                                                        title="About this Surah"
+                                                    >
+                                                        <Info className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                                                    </Button>
+                                                </div>
+                                            ) : (
+                                                'Quran Reader'
+                                            )}
+                                        </BreadcrumbPage>
+                                    </BreadcrumbItem>
+                                )}
                             </BreadcrumbList>
                         </Breadcrumb>
                     </div>

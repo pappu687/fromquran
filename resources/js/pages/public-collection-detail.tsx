@@ -1,10 +1,12 @@
+import { CollectionTagList } from '@/components/collections/collection-tag-list';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import PublicLayout from '@/layouts/public-layout';
+import { type CollectionTag } from '@/types/collections';
 import { Head, router, usePage } from '@inertiajs/react';
 import { ArrowLeft, Globe, Loader2, Lock } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface Verse {
     id: number;
@@ -33,6 +35,7 @@ interface Collection {
     slug: string;
     created_at: string;
     verses: Verse[];
+    tags: CollectionTag[];
 }
 
 function PublicVerseItem({ verse }: { verse: Verse }) {
@@ -85,11 +88,7 @@ export default function PublicCollectionDetailPage({ slug }: { slug: string }) {
     const canonicalUrl = `${baseUrl}${path}`;
     const ogImage = `${baseUrl}/og-banner.png`;
 
-    useEffect(() => {
-        loadCollection();
-    }, [slug]);
-
-    const loadCollection = async () => {
+    const loadCollection = useCallback(async () => {
         setIsLoading(true);
         try {
             const csrfToken = document
@@ -125,7 +124,11 @@ export default function PublicCollectionDetailPage({ slug }: { slug: string }) {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [slug]);
+
+    useEffect(() => {
+        loadCollection();
+    }, [loadCollection]);
 
     const pageTitle = collection
         ? `${collection.name} - Quran Collection`
@@ -264,6 +267,13 @@ export default function PublicCollectionDetailPage({ slug }: { slug: string }) {
                                     </p>
                                 </div>
                             )}
+                            <CollectionTagList
+                                tags={collection.tags}
+                                className="mt-4"
+                                getHref={(tag) =>
+                                    `/collections?tags[]=${encodeURIComponent(tag.slug)}`
+                                }
+                            />
                             <p className="mt-2 text-sm text-muted-foreground">
                                 {verses.length}{' '}
                                 {verses.length === 1 ? 'verse' : 'verses'}

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -63,6 +64,18 @@ class Collection extends Model
             ->withPivot('display_order')
             ->withTimestamps()
             ->orderBy('collection_verse.display_order');
+    }
+
+    /**
+     * Get the tags assigned to the collection.
+     */
+    public function tags(): MorphToMany
+    {
+        return $this->morphToMany(Tag::class, 'taggable')
+            ->withPivot('display_order')
+            ->withTimestamps()
+            ->orderBy('taggables.display_order')
+            ->orderBy('tags.name');
     }
 
     /**

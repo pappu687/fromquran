@@ -1,3 +1,5 @@
+import { CollectionTagInput } from '@/components/collections/collection-tag-input';
+import { CollectionTagList } from '@/components/collections/collection-tag-list';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -19,6 +21,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { type CollectionTag } from '@/types/collections';
 import { router } from '@inertiajs/react';
 import {
     BookmarkPlus,
@@ -30,7 +33,7 @@ import {
     LogIn,
     Palette,
 } from 'lucide-react';
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 
 // Color options for collections
 const colorOptions = [
@@ -53,6 +56,7 @@ interface Collection {
     verses_count: number;
     slug: string;
     contains_verse?: boolean;
+    tags: CollectionTag[];
 }
 
 interface CollectionsModalProps {
@@ -94,6 +98,10 @@ export function CollectionsModal({
         useState('');
     const [newCollectionColor, setNewCollectionColor] = useState('#3b82f6');
     const [newCollectionIsPublic, setNewCollectionIsPublic] = useState(false);
+    const [newCollectionTags, setNewCollectionTags] = useState<CollectionTag[]>(
+        [],
+    );
+    const [availableTags, setAvailableTags] = useState<CollectionTag[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingCollections, setIsLoadingCollections] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -104,28 +112,7 @@ export function CollectionsModal({
     );
     const nameInputRef = useRef<HTMLInputElement>(null);
 
-    // Load collections when modal opens
-    useEffect(() => {
-        if (open) {
-            loadCollections();
-            if (verseNumber) {
-                setFromVerse(verseNumber);
-                setToVerse(verseNumber);
-            }
-        }
-    }, [open, verseId, verseNumber]);
-
-    // Focus name input when new collection form opens
-    useEffect(() => {
-        if (showNewCollectionForm) {
-            // Small delay to ensure the input is rendered and visible
-            setTimeout(() => {
-                nameInputRef.current?.focus();
-            }, 100);
-        }
-    }, [showNewCollectionForm]);
-
-    const loadCollections = async () => {
+    const loadCollections = useCallback(async () => {
         setIsLoadingCollections(true);
         setErrors({});
         setIsAuthenticated(null); // Reset auth status
@@ -171,7 +158,49 @@ export function CollectionsModal({
         } finally {
             setIsLoadingCollections(false);
         }
-    };
+    }, [verseId]);
+
+    const loadAvailableTags = useCallback(async () => {
+        try {
+            const response = await fetch('/api/tags', {
+                headers: {
+                    Accept: 'application/json',
+                },
+                credentials: 'include',
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load tags');
+            }
+
+            const data = (await response.json()) as CollectionTag[];
+            setAvailableTags(data);
+        } catch (error) {
+            console.error('Failed to load tags:', error);
+        }
+    }, []);
+
+    // Load collections when modal opens
+    useEffect(() => {
+        if (open) {
+            loadCollections();
+            loadAvailableTags();
+            if (verseNumber) {
+                setFromVerse(verseNumber);
+                setToVerse(verseNumber);
+            }
+        }
+    }, [loadAvailableTags, loadCollections, open, verseNumber]);
+
+    // Focus name input when new collection form opens
+    useEffect(() => {
+        if (showNewCollectionForm) {
+            // Small delay to ensure the input is rendered and visible
+            setTimeout(() => {
+                nameInputRef.current?.focus();
+            }, 100);
+        }
+    }, [showNewCollectionForm]);
 
     const handleToggleCollection = (collectionId: number) => {
         setSelectedCollectionIds((prev) => {
@@ -206,6 +235,7 @@ export function CollectionsModal({
                     description: newCollectionDescription || null,
                     color: newCollectionColor,
                     is_public: newCollectionIsPublic,
+                    tags: newCollectionTags,
                 }),
             });
 
@@ -239,8 +269,28 @@ export function CollectionsModal({
             setNewCollectionDescription('');
             setNewCollectionColor('#3b82f6');
             setNewCollectionIsPublic(false);
+            setNewCollectionTags([]);
             setShowNewCollectionForm(false);
             setErrors({});
+            setAvailableTags((prev) => {
+                const next = [...prev];
+
+                (data.tags || []).forEach((tag: CollectionTag) => {
+                    if (
+                        next.some(
+                            (existingTag) =>
+                                existingTag.slug === tag.slug &&
+                                existingTag.type === tag.type,
+                        )
+                    ) {
+                        return;
+                    }
+
+                    next.push(tag);
+                });
+
+                return next;
+            });
 
             setSuccessMessage('Collection created successfully!');
             setTimeout(() => setSuccessMessage(null), 3000);
@@ -330,6 +380,7 @@ export function CollectionsModal({
                 setNewCollectionDescription('');
                 setNewCollectionColor('#3b82f6');
                 setNewCollectionIsPublic(false);
+                setNewCollectionTags([]);
                 setErrors({});
                 setSuccessMessage(null);
                 setIsAuthenticated(null);
@@ -552,6 +603,10 @@ export function CollectionsModal({
                                                     {collection.description}
                                                 </p>
                                             )}
+                                            <CollectionTagList
+                                                tags={collection.tags}
+                                                className="mt-2"
+                                            />
                                         </div>
                                         <Badge
                                             variant="secondary"
@@ -697,6 +752,14 @@ export function CollectionsModal({
                             )}
                         </div>
 
+                        <CollectionTagInput
+                            value={newCollectionTags}
+                            onChange={setNewCollectionTags}
+                            availableTags={availableTags}
+                            disabled={isSubmitting}
+                            description="Choose existing tags or create new ones for this collection."
+                        />
+
                         {/* Color Picker */}
                         <div className="space-y-2">
                             <Label className="flex items-center gap-2">
@@ -749,6 +812,7 @@ export function CollectionsModal({
                                 onClick={() => {
                                     setShowNewCollectionForm(false);
                                     setErrors({});
+                                    setNewCollectionTags([]);
                                 }}
                                 disabled={isSubmitting}
                             >

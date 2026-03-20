@@ -73,8 +73,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
     return (
         <Sidebar className="border-r-0" {...props}>
-            <SidebarHeader className="border-b p-3">
-                <Link href="/" className="flex min-w-0 items-center space-x-2">
+            <SidebarHeader className="flex h-16 flex-row items-center justify-start gap-0 border-b px-4 py-0">
+                <Link
+                    href="/"
+                    className="flex min-w-0 items-center justify-start space-x-2"
+                >
                     <AppLogo />
                 </Link>
             </SidebarHeader>

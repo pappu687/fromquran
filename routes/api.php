@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\QuranController;
 use App\Http\Controllers\BookmarkController;
 use App\Http\Controllers\CollectionController;
+use App\Http\Controllers\TagController;
 use App\Http\Controllers\Api\VerseResourceController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
@@ -66,6 +67,7 @@ Route::get('/resource-types', [\App\Http\Controllers\Admin\ResourceTypeControlle
 Route::get('/topics', [\App\Http\Controllers\TopicController::class, 'index']);
 Route::get('/topics/{topicId}', [\App\Http\Controllers\TopicController::class, 'show']);
 Route::get('/verses/{verseId}/topics', [\App\Http\Controllers\TopicController::class, 'forVerse']);
+Route::get('/tags', [TagController::class, 'index']);
 
 // Collection Routes (require authentication)
 // Public Collection Routes

@@ -1,3 +1,5 @@
+import { CollectionTagInput } from '@/components/collections/collection-tag-input';
+import { CollectionTagList } from '@/components/collections/collection-tag-list';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
+import { type CollectionTag } from '@/types/collections';
 import {
     closestCenter,
     DndContext,
@@ -84,6 +87,7 @@ interface Collection {
     slug: string;
     created_at: string;
     verses: Verse[];
+    tags: CollectionTag[];
 }
 
 interface CollectionFormData {
@@ -91,6 +95,7 @@ interface CollectionFormData {
     description: string;
     color: string;
     is_public: boolean;
+    tags: CollectionTag[];
 }
 
 interface SortableVerseItemProps {
@@ -199,7 +204,9 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
         description: '',
         color: '#3b82f6',
         is_public: false,
+        tags: [],
     });
+    const [availableTags, setAvailableTags] = useState<CollectionTag[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -225,6 +232,7 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
 
     useEffect(() => {
         loadCollection();
+        loadAvailableTags();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [slug]);
 
@@ -270,6 +278,26 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
             });
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const loadAvailableTags = async () => {
+        try {
+            const response = await fetch('/api/tags', {
+                headers: {
+                    Accept: 'application/json',
+                },
+                credentials: 'include',
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load tags');
+            }
+
+            const data = (await response.json()) as CollectionTag[];
+            setAvailableTags(data);
+        } catch (error) {
+            console.error('Failed to load tags:', error);
         }
     };
 
@@ -433,6 +461,7 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
             description: collection.description || '',
             color: collection.color,
             is_public: collection.is_public,
+            tags: collection.tags || [],
         });
         setErrors({});
         setIsEditDialogOpen(true);
@@ -463,6 +492,7 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
                     description: editForm.description || null,
                     color: editForm.color,
                     is_public: editForm.is_public,
+                    tags: editForm.tags,
                 }),
             });
 
@@ -478,7 +508,7 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
                 return;
             }
 
-            setCollection(data);
+            await loadCollection();
             setIsEditDialogOpen(false);
             setSuccessMessage('Collection updated successfully');
             setTimeout(() => setSuccessMessage(null), 3000);
@@ -578,6 +608,13 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
                                         {collection.description}
                                     </p>
                                 )}
+                                <CollectionTagList
+                                    tags={collection.tags}
+                                    className="mt-4"
+                                    getHref={(tag) =>
+                                        `/my-collections?tags[]=${encodeURIComponent(tag.slug)}`
+                                    }
+                                />
                             </div>
                             <Button
                                 onClick={handleEdit}
@@ -701,6 +738,19 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
                                         className="rounded-2xl border-slate-200 bg-white shadow-none"
                                     />
                                 </div>
+
+                                <CollectionTagInput
+                                    value={editForm.tags}
+                                    onChange={(tags) =>
+                                        setEditForm({
+                                            ...editForm,
+                                            tags,
+                                        })
+                                    }
+                                    availableTags={availableTags}
+                                    disabled={isSubmitting}
+                                    description="Add themes and topics to make this collection easier to discover."
+                                />
 
                                 <div className="space-y-2">
                                     <Label className="flex items-center gap-2">
