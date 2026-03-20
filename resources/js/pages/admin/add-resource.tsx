@@ -323,8 +323,8 @@ export default function AddResource({ resourceTypes, chapters }: Props) {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <div className="overflow-x-auto rounded-md border">
-                                    <table className="w-full text-sm">
+                                <div className="overflow-x-auto rounded-md border bg-white">
+                                    <table className="w-full bg-white text-sm">
                                         <thead className="bg-muted">
                                             <tr className="border-b">
                                                 <th className="w-12 p-3 text-left">

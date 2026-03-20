@@ -4,7 +4,7 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { BookmarkX, CheckCircle2, Loader2, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface Bookmark {
     id: number;
@@ -56,54 +56,8 @@ export default function FavoritesPage() {
         bookmark.notes?.trim(),
     ).length;
 
-    useEffect(() => {
-        loadBookmarks();
-    }, []);
-
-    const loadBookmarks = async () => {
-        setIsLoading(true);
-        try {
-            const csrfToken = document
-                .querySelector('meta[name="csrf-token"]')
-                ?.getAttribute('content');
-
-            const response = await fetch('/api/bookmarks', {
-                headers: {
-                    Accept: 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || '',
-                },
-                credentials: 'include',
-            });
-
-            if (response.status === 401) {
-                router.visit('/login');
-                return;
-            }
-
-            if (!response.ok) {
-                throw new Error('Failed to load favorites');
-            }
-
-            const data = await response.json();
-            // Filter out bookmarks that might have missing relations to prevent crashes
-            const validBookmarks = (data.data || []).filter(
-                (b: Bookmark) => b.verse && b.chapter,
-            );
-            setBookmarks(validBookmarks);
-            // Load translations for these bookmarked verses
-            loadTranslations(validBookmarks);
-        } catch (error) {
-            console.error('Failed to load favorites:', error);
-            setErrors({
-                general: 'Failed to load favorites. Please try again.',
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
     // Load translations for bookmarked verses using Quran API (Solr-backed)
-    const loadTranslations = async (loadedBookmarks: Bookmark[]) => {
+    const loadTranslations = useCallback(async (loadedBookmarks: Bookmark[]) => {
         try {
             const byChapter: Record<number, Bookmark[]> = {};
             loadedBookmarks.forEach((b) => {
@@ -175,7 +129,53 @@ export default function FavoritesPage() {
                 error,
             );
         }
-    };
+    }, []);
+
+    const loadBookmarks = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const csrfToken = document
+                .querySelector('meta[name="csrf-token"]')
+                ?.getAttribute('content');
+
+            const response = await fetch('/api/bookmarks', {
+                headers: {
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': csrfToken || '',
+                },
+                credentials: 'include',
+            });
+
+            if (response.status === 401) {
+                router.visit('/login');
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error('Failed to load favorites');
+            }
+
+            const data = await response.json();
+            // Filter out bookmarks that might have missing relations to prevent crashes
+            const validBookmarks = (data.data || []).filter(
+                (b: Bookmark) => b.verse && b.chapter,
+            );
+            setBookmarks(validBookmarks);
+            // Load translations for these bookmarked verses
+            loadTranslations(validBookmarks);
+        } catch (error) {
+            console.error('Failed to load favorites:', error);
+            setErrors({
+                general: 'Failed to load favorites. Please try again.',
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [loadTranslations]);
+
+    useEffect(() => {
+        loadBookmarks();
+    }, [loadBookmarks]);
 
     const handleRemove = async (bookmarkId: number) => {
         if (
@@ -234,35 +234,48 @@ export default function FavoritesPage() {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Favorites - From Quran" />
             <div className="flex flex-1 flex-col bg-gradient-to-b from-background to-muted/20">
-                <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
+                <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 py-6 sm:px-6 sm:py-8">
+                    <section className="border-b border-slate-200 pb-5">
+                        <p className="text-[11px] font-semibold tracking-[0.18em] text-slate-400 uppercase">
+                            Favorites
+                        </p>
+                        <h1 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-4xl">
+                            Saved ayat
+                        </h1>
+                        <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-500 sm:text-base">
+                            A quieter reading list of the verses you want to
+                            revisit, reflect on, or keep close.
+                        </p>
+                    </section>
+
                     {bookmarks.length > 0 && (
-                        <section className="grid grid-cols-3 gap-2 sm:gap-3">
-                            <Card className="rounded-3xl border-slate-200 bg-white shadow-none">
-                                <CardContent className="px-3 py-2.5 sm:px-5 sm:py-5">
-                                    <p className="text-xs text-slate-500 sm:text-sm">
+                        <section className="grid grid-cols-3 gap-2">
+                            <Card className="rounded-2xl border-slate-200/80 bg-white/90 shadow-none">
+                                <CardContent className="px-3 py-3 sm:px-4 sm:py-3.5">
+                                    <p className="text-[11px] tracking-[0.16em] text-slate-400 uppercase">
                                         Total
                                     </p>
-                                    <p className="mt-0.5 text-xl font-semibold tracking-tight text-slate-950 sm:mt-2 sm:text-3xl">
+                                    <p className="mt-1 text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">
                                         {bookmarks.length}
                                     </p>
                                 </CardContent>
                             </Card>
-                            <Card className="rounded-3xl border-slate-200 bg-white shadow-none">
-                                <CardContent className="px-3 py-2.5 sm:px-5 sm:py-5">
-                                    <p className="text-xs text-slate-500 sm:text-sm">
+                            <Card className="rounded-2xl border-slate-200/80 bg-white/90 shadow-none">
+                                <CardContent className="px-3 py-3 sm:px-4 sm:py-3.5">
+                                    <p className="text-[11px] tracking-[0.16em] text-slate-400 uppercase">
                                         Surahs
                                     </p>
-                                    <p className="mt-0.5 text-xl font-semibold tracking-tight text-slate-950 sm:mt-2 sm:text-3xl">
+                                    <p className="mt-1 text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">
                                         {uniqueChapterCount}
                                     </p>
                                 </CardContent>
                             </Card>
-                            <Card className="rounded-3xl border-slate-200 bg-white shadow-none">
-                                <CardContent className="px-3 py-2.5 sm:px-5 sm:py-5">
-                                    <p className="text-xs text-slate-500 sm:text-sm">
+                            <Card className="rounded-2xl border-slate-200/80 bg-white/90 shadow-none">
+                                <CardContent className="px-3 py-3 sm:px-4 sm:py-3.5">
+                                    <p className="text-[11px] tracking-[0.16em] text-slate-400 uppercase">
                                         Notes
                                     </p>
-                                    <p className="mt-0.5 text-xl font-semibold tracking-tight text-slate-950 sm:mt-2 sm:text-3xl">
+                                    <p className="mt-1 text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">
                                         {notedCount}
                                     </p>
                                 </CardContent>
@@ -300,136 +313,127 @@ export default function FavoritesPage() {
                             </CardContent>
                         </Card>
                     ) : (
-                        <div className="space-y-4">
+                        <section className="border-t border-slate-200">
                             {bookmarks.map((bookmark) => (
-                                <Card
+                                <article
                                     key={bookmark.id}
-                                    className="group p-4 transition-all hover:shadow-md"
+                                    className="group grid gap-4 border-b border-slate-200 py-6 md:grid-cols-[150px_minmax(0,1fr)_150px] md:gap-6"
                                 >
-                                    <CardContent className="p-3">
-                                        <div className="flex items-start gap-4">
-                                            <div className="flex-1">
-                                                <div className="mb-3 flex items-center justify-between">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="mr-2 flex h-8 w-8 items-center justify-center rounded-[40%] bg-gray-400/20 text-sm font-semibold">
-                                                            {
-                                                                bookmark.verse
-                                                                    ?.verse_number
-                                                            }
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-sm font-medium">
-                                                                {bookmark
-                                                                    .chapter
-                                                                    ?.name_roman ??
-                                                                    bookmark
-                                                                        .chapter
-                                                                        ?.name_simple}
-                                                            </div>
-                                                            <div
-                                                                className="text-xs text-muted-foreground"
-                                                                dir="rtl"
-                                                            >
-                                                                {
-                                                                    bookmark
-                                                                        .chapter
-                                                                        ?.name_arabic
-                                                                }
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                    <div className="min-w-0">
+                                        <button
+                                            type="button"
+                                            className="font-mono text-lg font-semibold text-slate-950 transition-colors hover:text-slate-600"
+                                            onClick={() =>
+                                                bookmark.chapter
+                                                    ?.chapter_number &&
+                                                bookmark.verse?.verse_number &&
+                                                handleViewVerse(
+                                                    bookmark.chapter
+                                                        .chapter_number,
+                                                    bookmark.verse
+                                                        .verse_number,
+                                                )
+                                            }
+                                        >
+                                            {bookmark.verse?.verse_key}
+                                        </button>
+                                        <p className="mt-1 text-sm text-slate-500">
+                                            {bookmark.chapter?.name_roman ??
+                                                bookmark.chapter?.name_simple}
+                                        </p>
+                                        <p
+                                            className="mt-1 text-xs text-slate-400"
+                                            dir="rtl"
+                                        >
+                                            {bookmark.chapter?.name_arabic}
+                                        </p>
+                                    </div>
 
-                                                <p
-                                                    className="font-arabic mb-3 text-right text-3xl leading-relaxed"
-                                                    dir="rtl"
-                                                >
+                                    <div className="min-w-0">
+                                        <p
+                                            className="font-arabic text-right text-3xl leading-relaxed text-slate-950"
+                                            dir="rtl"
+                                        >
+                                            {bookmark.verse?.text_uthmani}
+                                        </p>
+
+                                        {bookmark.verse?.translation && (
+                                            <p className="mt-3 text-sm leading-7 font-medium text-slate-700">
+                                                {bookmark.verse.translation}
+                                            </p>
+                                        )}
+
+                                        {bookmark.verse?.text_imlaei_simple && (
+                                            <p className="mt-2 text-sm text-slate-400">
+                                                {
+                                                    bookmark.verse
+                                                        .text_imlaei_simple
+                                                }
+                                            </p>
+                                        )}
+
+                                        {bookmark.notes && (
+                                            <p className="mt-3 text-sm leading-7 text-slate-500">
+                                                <span className="font-medium text-slate-700">
+                                                    Note:
+                                                </span>{' '}
+                                                {bookmark.notes}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div className="flex flex-row items-start justify-between gap-3 md:flex-col md:items-end">
+                                        <div className="space-y-1 text-left text-xs text-slate-400 md:text-right">
+                                            <p>
+                                                Added{' '}
+                                                {new Date(
+                                                    bookmark.created_at,
+                                                ).toLocaleDateString(
+                                                    'en-US',
                                                     {
+                                                        year: 'numeric',
+                                                        month: 'short',
+                                                        day: 'numeric',
+                                                    },
+                                                )}
+                                            </p>
+                                        </div>
+
+                                        <div className="flex items-center gap-3">
+                                            <Button
+                                                variant="link"
+                                                size="sm"
+                                                className="h-auto p-0 text-sm text-slate-700"
+                                                onClick={() =>
+                                                    bookmark.chapter
+                                                        ?.chapter_number &&
+                                                    bookmark.verse
+                                                        ?.verse_number &&
+                                                    handleViewVerse(
+                                                        bookmark.chapter
+                                                            .chapter_number,
                                                         bookmark.verse
-                                                            ?.text_uthmani
-                                                    }
-                                                </p>
-
-                                                {bookmark.verse
-                                                    ?.translation && (
-                                                    <p className="leading-relaxed font-medium text-blue-950/60">
-                                                        {
-                                                            bookmark.verse
-                                                                .translation
-                                                        }
-                                                    </p>
-                                                )}
-
-                                                {bookmark.verse
-                                                    ?.text_imlaei_simple && (
-                                                    <p className="mt-2 text-sm text-muted-foreground">
-                                                        {
-                                                            bookmark.verse
-                                                                .text_imlaei_simple
-                                                        }
-                                                    </p>
-                                                )}
-
-                                                {bookmark.notes && (
-                                                    <div className="mt-3 rounded-md bg-muted/50 p-3">
-                                                        <p className="text-sm italic">
-                                                            Note:{' '}
-                                                            {bookmark.notes}
-                                                        </p>
-                                                    </div>
-                                                )}
-
-                                                <div className="mt-4 flex items-center gap-4">
-                                                    <span className="text-sm text-muted-foreground">
-                                                        Added{' '}
-                                                        {new Date(
-                                                            bookmark.created_at,
-                                                        ).toLocaleDateString(
-                                                            'en-US',
-                                                            {
-                                                                year: 'numeric',
-                                                                month: 'long',
-                                                                day: 'numeric',
-                                                            },
-                                                        )}
-                                                    </span>
-                                                    <Button
-                                                        variant="link"
-                                                        size="sm"
-                                                        className="h-auto p-0 text-sm"
-                                                        onClick={() =>
-                                                            bookmark.chapter
-                                                                ?.chapter_number &&
-                                                            bookmark.verse
-                                                                ?.verse_number &&
-                                                            handleViewVerse(
-                                                                bookmark.chapter
-                                                                    .chapter_number,
-                                                                bookmark.verse
-                                                                    .verse_number,
-                                                            )
-                                                        }
-                                                    >
-                                                        View in context
-                                                    </Button>
-                                                </div>
-                                            </div>
-
+                                                            .verse_number,
+                                                    )
+                                                }
+                                            >
+                                                View in context
+                                            </Button>
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={() =>
                                                     handleRemove(bookmark.id)
                                                 }
-                                                className="text-destructive opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
+                                                className="rounded-full px-2 text-slate-400 opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </div>
-                                    </CardContent>
-                                </Card>
+                                    </div>
+                                </article>
                             ))}
-                        </div>
+                        </section>
                     )}
                 </div>
             </div>

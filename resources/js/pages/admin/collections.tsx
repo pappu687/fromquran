@@ -274,9 +274,9 @@ export default function CollectionsAdminPage({
                             </div>
                         </div>
 
-                        <div className="overflow-x-auto">
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
+                        <div className="overflow-x-auto bg-white">
+                            <div className="overflow-x-auto bg-white">
+                                <table className="w-full bg-white">
                                     <thead>
                                         <tr className="border-b border-border/70 bg-muted/20">
                                             <th className="p-3 text-left text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">

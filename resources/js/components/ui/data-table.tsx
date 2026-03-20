@@ -21,10 +21,7 @@ import {
     ChevronLeft,
     ChevronRight,
     Loader2,
-    MoreHorizontal,
     Search,
-    Trash2,
-    Pencil,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -161,7 +158,7 @@ export function DataTable<T>({
             </div>
 
             {/* Table */}
-            <div className="rounded-md border">
+            <div className="rounded-md border bg-white">
                 <Table>
                     <TableHeader>
                         <TableRow>

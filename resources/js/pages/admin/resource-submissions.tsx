@@ -386,8 +386,8 @@ export default function ResourceSubmissions({
                             )}
                         </div>
 
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full">
+                        <div className="overflow-x-auto bg-white">
+                            <table className="min-w-full bg-white">
                                 <thead>
                                     <tr className="border-b border-border/70 bg-muted/20 text-left">
                                         <th className="w-12 px-4 py-3 md:px-5">
