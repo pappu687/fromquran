@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Solarium\Client;
 
 class QuranDatabaseService {
-    private const CACHE_SCHEMA_VERSION = 'v2';
+    private const CACHE_SCHEMA_VERSION = 'v3';
     private int $cacheTtl;
     private Client $solrClient;
 
@@ -87,11 +87,13 @@ class QuranDatabaseService {
             }
 
             $availableTranslationIds = $this->getAvailableTranslationResourceIds();
-            $translationResources = $this->resolveVerseTranslationResources(
-                $translationIds,
-                $edition,
-                $availableTranslationIds,
-            );
+            $translationResources = empty($translationIds)
+                ? collect()
+                : $this->resolveVerseTranslationResources(
+                    $translationIds,
+                    $edition,
+                    $availableTranslationIds,
+                );
 
             if (!empty($translationIds)) {
                 $translationResources = $translationResources->sortBy(function (
@@ -176,7 +178,6 @@ class QuranDatabaseService {
                     'verseNumber'   => $meta->verse_number ?? ( $doc[ 'verse_number_i' ] ?? null ),
                     'text'          => $doc[ 'text_uthmani_t' ] ?? null,
                     'translations'  => $translations,
-                    'translation'   => !empty($translations) ? $translations[0]['text'] : null, // keep for backward compatibility
                     'juzNumber'     => $meta->juz_number ?? ( $doc[ 'juz_number_i' ] ?? null ),
                     'pageNumber'    => $meta->page_number ?? ( $doc[ 'page_number_i' ] ?? null ),
                     'hizbQuarter'   => $meta->rub_el_hizb_number ?? null,

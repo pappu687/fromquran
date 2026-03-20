@@ -84,9 +84,11 @@ class VerseResourceController extends Controller
             $verseData = collect($verses)->firstWhere('verseNumber', $verse->verse_number);
 
             if ($verseData) {
+                $translation = collect($verseData['translations'] ?? [])->first()['text'] ?? null;
+
                 $verseContext = [
                     'text' => $verseData['text'],
-                    'translation' => $verseData['translation'],
+                    'translation' => $translation,
                     'verse_key' => $verse->verse_key,
                 ];
             }

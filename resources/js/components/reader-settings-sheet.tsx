@@ -153,10 +153,7 @@ export function ReaderSettingsSheet({
         const normalizedTranslations = settings.selectedTranslations.filter(
             (id) => availableIds.has(id),
         );
-        const nextTranslations =
-            normalizedTranslations.length > 0
-                ? normalizedTranslations.slice(0, 2)
-                : [availableTranslations[0].id];
+        const nextTranslations = normalizedTranslations.slice(0, 2);
 
         const hasChanged =
             nextTranslations.length !== settings.selectedTranslations.length ||

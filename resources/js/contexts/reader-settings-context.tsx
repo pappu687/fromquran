@@ -8,7 +8,7 @@ import React, {
 
 export interface ReaderSettings {
     fontSize: number; // in rem, default 1.5
-    selectedTranslations: number[]; // default [131] (Sahih International)
+    selectedTranslations: number[]; // default none selected
     showArabic: boolean; // default true
     mushafFont: 'uthmanic' | 'indopak'; // default 'uthmanic'
     showRecentlyViewed: boolean; // default false
@@ -22,7 +22,7 @@ interface ReaderSettingsContextType {
 
 const DEFAULT_SETTINGS: ReaderSettings = {
     fontSize: 1.5,
-    selectedTranslations: [131], // Sahih International typically has ID 131 in many datasets, fallback to what's available
+    selectedTranslations: [],
     showArabic: true,
     mushafFont: 'uthmanic',
     showRecentlyViewed: false,

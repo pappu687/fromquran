@@ -101,8 +101,10 @@ export function VerseCard({
     };
 
     const handleCopyTranslation = () => {
-        if (verse.translation) {
-            navigator.clipboard.writeText(verse.translation);
+        const firstTranslation = verse.translations?.[0]?.text;
+
+        if (firstTranslation) {
+            navigator.clipboard.writeText(firstTranslation);
         }
     };
 
@@ -377,10 +379,6 @@ export function VerseCard({
                                     {trans.text}
                                 </p>
                             ))
-                        ) : verse.translation ? (
-                            <p className="text-[15px] leading-relaxed text-slate-900 dark:text-slate-100">
-                                {verse.translation}
-                            </p>
                         ) : null}
                     </div>
                 )}

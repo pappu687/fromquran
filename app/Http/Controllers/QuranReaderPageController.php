@@ -19,9 +19,6 @@ class QuranReaderPageController extends Controller
 
         // Fetch initial verses for SSR
         $versesData = $quranService->getVerses($chapter->id, 1, $pageSize, $edition);
-        if ($edition !== 'ar') {
-            $versesData = $quranService->getTranslations($versesData, $edition);
-        }
 
         $initialVerses = [
             'data' => array_slice($versesData, 0, $pageSize),
@@ -57,9 +54,6 @@ class QuranReaderPageController extends Controller
  
         // Fetch verses for the range
         $versesData = $quranService->getVerses($chapter->id, 1, 1000, $edition);
-        if ($edition !== 'ar') {
-            $versesData = $quranService->getTranslations($versesData, $edition);
-        }
  
         $filteredVerses = array_values(array_filter($versesData, function ($verse) use ($from, $to) {
             return $verse['verseNumber'] >= $from && $verse['verseNumber'] <= $to;

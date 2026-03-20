@@ -105,11 +105,6 @@ class QuranController extends Controller
                 // When using an explicit range, treat all verses as a single page
                 $page = 1;
                 $limit = count($verses) ?: $limit;
-            } else {
-                // Add translations if edition is not the original Arabic and no specific translations requested
-                if ($edition !== 'ar' && empty($translations)) {
-                    $verses = $this->quranService->getTranslations($verses, $edition);
-                }
             }
 
             $totalVerses = count($verses);

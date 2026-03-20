@@ -23,7 +23,6 @@ export interface VerseListItem {
     chapterNumber?: number;
     verseNumber: number;
     text: string;
-    translation?: string;
     translations?: VerseTranslation[];
     audioUrl?: string;
     juzNumber: number;
