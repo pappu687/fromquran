@@ -7,7 +7,7 @@ import React, {
 } from 'react';
 
 export interface ReaderSettings {
-    fontSize: number; // in rem, default 1.5
+    fontSize: number; // in rem, default 2.3
     selectedTranslations: number[]; // default none selected
     showArabic: boolean; // default true
     mushafFont: 'uthmanic' | 'indopak'; // default 'uthmanic'
@@ -21,7 +21,7 @@ interface ReaderSettingsContextType {
 }
 
 const DEFAULT_SETTINGS: ReaderSettings = {
-    fontSize: 1.5,
+    fontSize: 2.3,
     selectedTranslations: [],
     showArabic: true,
     mushafFont: 'uthmanic',
