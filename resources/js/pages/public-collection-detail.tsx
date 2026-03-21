@@ -1,4 +1,5 @@
 import { CollectionTagList } from '@/components/collections/collection-tag-list';
+import { VerseCard } from '@/components/quran/verse-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,6 +15,16 @@ interface Verse {
     verse_number: number;
     text_uthmani: string;
     text_imlaei_simple?: string;
+    juz_number?: number;
+    page_number?: number;
+    has_resources?: boolean;
+    resource_count?: number;
+    translations?: Array<{
+        resource_id: number;
+        resource_name?: string;
+        language?: string;
+        text: string;
+    }>;
     chapter: {
         id: number;
         chapter_number: number;
@@ -36,36 +47,6 @@ interface Collection {
     created_at: string;
     verses: Verse[];
     tags: CollectionTag[];
-}
-
-function PublicVerseItem({ verse }: { verse: Verse }) {
-    return (
-        <div className="rounded-lg border bg-card p-4">
-            <div className="flex items-start gap-3">
-                <div className="min-w-0 flex-1">
-                    <div className="mb-2 flex items-center gap-2">
-                        <Badge variant="outline" className="font-mono text-xs">
-                            {verse.verse_key}
-                        </Badge>
-                        <span className="text-sm text-muted-foreground">
-                            {verse.chapter.name_simple}
-                        </span>
-                    </div>
-                    <p
-                        className="font-arabic mb-2 text-right text-2xl leading-relaxed"
-                        dir="rtl"
-                    >
-                        {verse.text_uthmani}
-                    </p>
-                    {verse.text_imlaei_simple && (
-                        <p className="text-sm text-muted-foreground">
-                            {verse.text_imlaei_simple}
-                        </p>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
 }
 
 export default function PublicCollectionDetailPage({ slug }: { slug: string }) {
@@ -114,7 +95,8 @@ export default function PublicCollectionDetailPage({ slug }: { slug: string }) {
 
             const data = await response.json();
             setCollection(data);
-            setVerses(data.verses || []);
+            const loadedVerses: Verse[] = data.verses || [];
+            setVerses(loadedVerses);
             setIsDescriptionExpanded(false);
         } catch (error) {
             console.error('Failed to load collection:', error);
@@ -303,7 +285,24 @@ export default function PublicCollectionDetailPage({ slug }: { slug: string }) {
                 ) : (
                     <div className="space-y-3">
                         {verses.map((verse) => (
-                            <PublicVerseItem key={verse.id} verse={verse} />
+                            <VerseCard
+                                key={verse.id}
+                                className="bg-transparent px-0 py-3 md:p-3"
+                                hideHeaderActions
+                                showTranslation
+                                verseDisplayLabel={verse.verse_key}
+                                verseDisplayHref={`/${verse.chapter.chapter_number}/${verse.verse_number}`}
+                                verse={{
+                                    id: verse.id,
+                                    chapterId: verse.chapter.id,
+                                    chapterNumber: verse.chapter.chapter_number,
+                                    verseNumber: verse.verse_number,
+                                    text: verse.text_uthmani,
+                                    translations: verse.translations ?? [],
+                                    juzNumber: verse.juz_number ?? 0,
+                                    pageNumber: verse.page_number ?? 0,
+                                }}
+                            />
                         ))}
                     </div>
                 )}

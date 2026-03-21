@@ -1,5 +1,6 @@
 import { CollectionTagInput } from '@/components/collections/collection-tag-input';
 import { CollectionTagList } from '@/components/collections/collection-tag-list';
+import { VerseCard } from '@/components/quran/verse-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -64,7 +65,16 @@ interface Verse {
     verse_number: number;
     text_uthmani: string;
     text_imlaei_simple?: string;
-    translation?: string;
+    juz_number?: number;
+    page_number?: number;
+    has_resources?: boolean;
+    resource_count?: number;
+    translations?: Array<{
+        resource_id: number;
+        resource_name?: string;
+        language?: string;
+        text: string;
+    }>;
     chapter: {
         id: number;
         chapter_number: number;
@@ -103,13 +113,6 @@ interface SortableVerseItemProps {
     onDelete: (verseId: number) => void;
 }
 
-interface ChapterVersesResponse {
-    data?: Array<{
-        verseNumber: number;
-        translation?: string;
-    }>;
-}
-
 function SortableVerseItem({ verse, onDelete }: SortableVerseItemProps) {
     const {
         attributes,
@@ -130,66 +133,45 @@ function SortableVerseItem({ verse, onDelete }: SortableVerseItemProps) {
         <div
             ref={setNodeRef}
             style={style}
-            className={cn(
-                'group rounded-3xl border border-slate-200 bg-white p-5 shadow-none transition-colors',
-                isDragging && 'border-slate-300 shadow-sm',
-            )}
+            className={cn('group relative', isDragging && 'z-10')}
         >
-            <div className="flex items-start gap-4">
+            <div className="absolute top-5 right-4 z-10 flex items-center gap-2">
                 <button
-                    className="mt-1 cursor-grab rounded-full p-1 text-slate-400 hover:text-slate-700 active:cursor-grabbing"
+                    className="cursor-grab rounded-full border border-slate-200 bg-white/95 p-1.5 text-slate-400 shadow-sm transition-colors hover:text-slate-700 active:cursor-grabbing"
                     {...attributes}
                     {...listeners}
                 >
                     <GripVertical className="h-4 w-4" />
                 </button>
-                <div className="min-w-0 flex-1">
-                    <button
-                        type="button"
-                        onClick={() =>
-                            router.visit(
-                                `/${verse.chapter.chapter_number}/${verse.verse_number}`,
-                            )
-                        }
-                        className="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-left transition-colors hover:border-slate-300"
-                    >
-                        <Badge
-                            variant="outline"
-                            className="border-slate-200 font-mono text-xs text-slate-700"
-                        >
-                            {verse.verse_key}
-                        </Badge>
-                        <span className="text-sm text-slate-500">
-                            {verse.chapter.name_roman ??
-                                verse.chapter.name_simple}
-                        </span>
-                    </button>
-                    <p
-                        className="font-arabic mb-3 text-right text-3xl leading-relaxed text-slate-950"
-                        dir="rtl"
-                    >
-                        {verse.text_uthmani}
-                    </p>
-                    {verse.translation && (
-                        <p className="text-sm leading-7 font-medium text-slate-700">
-                            {verse.translation}
-                        </p>
-                    )}
-                    {verse.text_imlaei_simple && (
-                        <p className="mt-2 text-sm text-slate-400">
-                            {verse.text_imlaei_simple}
-                        </p>
-                    )}
-                </div>
                 <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => onDelete(verse.id)}
-                    className="rounded-full text-slate-400 opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
+                    className="rounded-full border border-slate-200 bg-white/95 text-slate-400 shadow-sm opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
                 >
                     <Trash2 className="h-4 w-4" />
                 </Button>
             </div>
+            <VerseCard
+                className={cn(
+                    'bg-transparent px-0 py-3 md:p-3',
+                    isDragging && 'opacity-70',
+                )}
+                hideHeaderActions
+                showTranslation
+                verseDisplayLabel={verse.verse_key}
+                verseDisplayHref={`/${verse.chapter.chapter_number}/${verse.verse_number}`}
+                verse={{
+                    id: verse.id,
+                    chapterId: verse.chapter.id,
+                    chapterNumber: verse.chapter.chapter_number,
+                    verseNumber: verse.verse_number,
+                    text: verse.text_uthmani,
+                    translations: verse.translations ?? [],
+                    juzNumber: verse.juz_number ?? 0,
+                    pageNumber: verse.page_number ?? 0,
+                }}
+            />
         </div>
     );
 }
@@ -269,8 +251,6 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
             setCollection(data);
             const loadedVerses: Verse[] = data.verses || [];
             setVerses(loadedVerses);
-            // load translations for these verses
-            loadTranslations(loadedVerses);
         } catch (error) {
             console.error('Failed to load collection:', error);
             setErrors({
@@ -298,75 +278,6 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
             setAvailableTags(data);
         } catch (error) {
             console.error('Failed to load tags:', error);
-        }
-    };
-
-    // load translations for verses in this collection using Quran API (Solr-backed)
-    const loadTranslations = async (loadedVerses: Verse[]) => {
-        try {
-            const byChapter: Record<number, Verse[]> = {};
-            loadedVerses.forEach((v) => {
-                const chapterNumber = v.chapter.chapter_number;
-                if (!byChapter[chapterNumber]) {
-                    byChapter[chapterNumber] = [];
-                }
-                byChapter[chapterNumber].push(v);
-            });
-
-            const translationMap: Record<string, string> = {};
-
-            await Promise.all(
-                Object.entries(byChapter).map(
-                    async ([chapterNumStr, versesInChapter]) => {
-                        const chapterNumber = Number(chapterNumStr);
-                        const verseNumbers = versesInChapter.map(
-                            (v) => v.verse_number,
-                        );
-                        const minVerse = Math.min(...verseNumbers);
-                        const maxVerse = Math.max(...verseNumbers);
-
-                        const params = new URLSearchParams({
-                            from: String(minVerse),
-                            to: String(maxVerse),
-                            limit: String(maxVerse - minVerse + 1),
-                            edition: 'en.sahih',
-                        });
-
-                        const resp = await fetch(
-                            `/api/quran/chapters/${chapterNumber}/verses?${params.toString()}`,
-                        );
-                        if (!resp.ok) return;
-                        const payload =
-                            (await resp.json()) as ChapterVersesResponse;
-                        const items = payload.data || [];
-                        items.forEach((item) => {
-                            const key = `${chapterNumber}:${item.verseNumber}`;
-                            if (item.translation) {
-                                translationMap[key] = item.translation;
-                            }
-                        });
-                    },
-                ),
-            );
-
-            if (Object.keys(translationMap).length === 0) {
-                return;
-            }
-
-            setVerses((prev) =>
-                prev.map((v) => {
-                    const key = `${v.chapter.chapter_number}:${v.verse_number}`;
-                    return {
-                        ...v,
-                        translation: translationMap[key] ?? v.translation,
-                    };
-                }),
-            );
-        } catch (error) {
-            console.error(
-                'Failed to load translations for collection verses',
-                error,
-            );
         }
     };
 

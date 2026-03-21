@@ -16,6 +16,7 @@ import { useReaderSettings } from '@/contexts/reader-settings-context';
 import { cn } from '@/lib/utils';
 import { useAudioPlayer } from '@/store/use-audio-player';
 import { type VerseAnnotation, type VerseListItem } from '@/types/quran';
+import { router } from '@inertiajs/react';
 import {
     Bookmark,
     BookmarkCheck,
@@ -40,6 +41,8 @@ import { VerseGraphModal } from './verse-graph-modal';
 
 interface VerseCardProps {
     verse: VerseListItem;
+    verseDisplayLabel?: string;
+    verseDisplayHref?: string;
     totalVerses?: number;
     isBookmarked?: boolean;
     hasResources?: boolean;
@@ -57,6 +60,8 @@ interface VerseCardProps {
 
 export function VerseCard({
     verse,
+    verseDisplayLabel,
+    verseDisplayHref,
     totalVerses,
     isBookmarked = false,
     hasResources = false,
@@ -182,9 +187,31 @@ export function VerseCard({
                 {/* Verse Header */}
                 <div className="mb-5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <div className="mr-2 flex h-8 w-8 items-center justify-center rounded-[40%] bg-gray-400/20 align-middle text-sm font-semibold">
-                            {verse.verseNumber}
-                        </div>
+                        {verseDisplayHref ? (
+                            <button
+                                type="button"
+                                onClick={() => router.visit(verseDisplayHref)}
+                                className={cn(
+                                    'mr-2 flex items-center justify-center bg-gray-400/20 align-middle text-sm font-semibold transition-colors hover:bg-gray-400/30',
+                                    verseDisplayLabel
+                                        ? 'h-8 min-w-14 rounded-full px-3 font-mono text-xs'
+                                        : 'h-8 w-8 rounded-[40%]',
+                                )}
+                            >
+                                {verseDisplayLabel ?? verse.verseNumber}
+                            </button>
+                        ) : (
+                            <div
+                                className={cn(
+                                    'mr-2 flex items-center justify-center bg-gray-400/20 align-middle text-sm font-semibold',
+                                    verseDisplayLabel
+                                        ? 'h-8 min-w-14 rounded-full px-3 font-mono text-xs'
+                                        : 'h-8 w-8 rounded-[40%]',
+                                )}
+                            >
+                                {verseDisplayLabel ?? verse.verseNumber}
+                            </div>
+                        )}
                     </div>
 
                     {!hideHeaderActions && (

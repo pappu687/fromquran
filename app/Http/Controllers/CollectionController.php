@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Collection;
 use App\Models\Verse;
+use App\Services\QuranDatabaseService;
 use App\Services\TagService;
+use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -91,7 +93,10 @@ class CollectionController extends Controller
     /**
      * Display the specified collection.
      */
-    public function show(string $slug): JsonResponse
+    public function show(
+        string $slug,
+        QuranDatabaseService $quranService,
+    ): JsonResponse
     {
         $collection = Collection::where('slug', $slug)
             ->with('tags')
@@ -113,10 +118,99 @@ class CollectionController extends Controller
             'tags',
             'verses' => function ($query) {
                 $query->with('chapter')->orderBy('collection_verse.display_order');
-            }
+            },
         ]);
 
-        return response()->json($collection);
+        return response()->json(
+            $this->serializeCollection(
+                $collection,
+                $this->hydrateCollectionVersesFromSolr(
+                    $collection->verses,
+                    $quranService,
+                ),
+            ),
+        );
+    }
+
+    /**
+     * Hydrate collection verses with the same Solr-backed fields as the reader.
+     *
+     * @param SupportCollection<int, Verse> $verses
+     * @return SupportCollection<int, Verse>
+     */
+    private function hydrateCollectionVersesFromSolr(
+        SupportCollection $verses,
+        QuranDatabaseService $quranService,
+    ): SupportCollection {
+        $verseKeys = $verses
+            ->pluck('verse_key')
+            ->filter()
+            ->values()
+            ->all();
+
+        $solrVersesByKey = collect(
+            $quranService->getVersesByKeys(
+                $verseKeys,
+                config('quran.default_edition', 'en.sahih'),
+            ),
+        )->keyBy(
+            static fn (array $verse): string => ($verse['chapterId'] ?? '') . ':' . ($verse['verseNumber'] ?? ''),
+        );
+
+        return $verses->map(function (Verse $verse) use ($solrVersesByKey) {
+            $solrVerse = $solrVersesByKey->get($verse->verse_key);
+
+            return [
+                'id' => $verse->id,
+                'verse_key' => $verse->verse_key,
+                'verse_number' => $verse->verse_number,
+                'text_uthmani' => $solrVerse['text'] ?? $verse->text_uthmani,
+                'translations' => $solrVerse['translations'] ?? [],
+                'juz_number' => $solrVerse['juzNumber'] ?? $verse->juz_number,
+                'page_number' => $solrVerse['pageNumber'] ?? $verse->page_number,
+                'has_resources' => $solrVerse['hasResources'] ?? false,
+                'resource_count' => $solrVerse['resourceCount'] ?? 0,
+                'pivot' => [
+                    'display_order' => $verse->pivot?->display_order,
+                ],
+                'chapter' => [
+                    'id' => $verse->chapter->id,
+                    'chapter_number' => $verse->chapter->chapter_number,
+                    'name_simple' => $verse->chapter->name_simple,
+                    'name_roman' => $verse->chapter->name_roman,
+                    'name_arabic' => $verse->chapter->name_arabic,
+                ],
+            ];
+        });
+    }
+
+    /**
+     * @param SupportCollection<int, array<string, mixed>> $verses
+     * @return array<string, mixed>
+     */
+    private function serializeCollection(
+        Collection $collection,
+        SupportCollection $verses,
+    ): array {
+        return [
+            'id' => $collection->id,
+            'name' => $collection->name,
+            'description' => $collection->description,
+            'color' => $collection->color,
+            'is_public' => $collection->is_public,
+            'status' => $collection->status,
+            'slug' => $collection->slug,
+            'created_at' => $collection->created_at?->toISOString(),
+            'updated_at' => $collection->updated_at?->toISOString(),
+            'verses_count' => $collection->verses_count,
+            'tags' => $collection->tags->map(fn ($tag) => [
+                'id' => $tag->id,
+                'name' => $tag->name,
+                'slug' => $tag->slug,
+                'type' => $tag->type,
+            ])->values(),
+            'verses' => $verses->values(),
+        ];
     }
 
     /**

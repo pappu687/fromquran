@@ -311,7 +311,7 @@ export default function CollectionsPage() {
                                             }}
                                         />
 
-                                        <CardHeader className="pb-4">
+                                        <CardHeader className="pb-3">
                                             <div className="flex items-start justify-between gap-4">
                                                 <div className="min-w-0 flex-1">
                                                     <div className="flex items-center gap-2">
@@ -326,7 +326,7 @@ export default function CollectionsPage() {
                                                             Collection
                                                         </p>
                                                     </div>
-                                                    <h3 className="mt-3 line-clamp-2 text-xl font-semibold tracking-tight text-slate-950">
+                                                    <h3 className="mt-2 line-clamp-2 text-lg font-semibold tracking-tight text-slate-950">
                                                         {collection.name}
                                                     </h3>
                                                 </div>
@@ -348,7 +348,7 @@ export default function CollectionsPage() {
                                         </CardHeader>
 
                                         <CardContent className="flex flex-1 flex-col pt-0">
-                                            <div className="min-h-[4.5rem] text-sm leading-7 text-slate-500">
+                                            <div className="min-h-[3.5rem] text-sm leading-6 text-slate-500">
                                                 {shortDescription ? (
                                                     <p>{shortDescription}</p>
                                                 ) : (
@@ -361,14 +361,14 @@ export default function CollectionsPage() {
 
                                             <CollectionTagList
                                                 tags={collection.tags}
-                                                className="mt-4"
+                                                className="mt-3"
                                                 getHref={(tag) =>
                                                     `/collections?tags[]=${encodeURIComponent(tag.slug)}`
                                                 }
                                             />
 
-                                            <div className="mt-6 grid grid-cols-2 gap-3">
-                                                <div className="rounded-2xl bg-stone-50 px-4 py-3">
+                                            <div className="mt-4 grid grid-cols-2 gap-3">
+                                                <div className="rounded-2xl bg-stone-50 px-4 py-2.5">
                                                     <p className="text-xl font-semibold tracking-tight text-slate-950">
                                                         {collection.verses_count}
                                                     </p>
@@ -376,7 +376,7 @@ export default function CollectionsPage() {
                                                         Verses
                                                     </p>
                                                 </div>
-                                                <div className="rounded-2xl bg-stone-50 px-4 py-3">
+                                                <div className="rounded-2xl bg-stone-50 px-4 py-2.5">
                                                     <p className="text-sm font-semibold text-slate-950">
                                                         {formatDate(
                                                             collection.created_at,
@@ -397,7 +397,7 @@ export default function CollectionsPage() {
                                                         collection.slug,
                                                     )
                                                 }
-                                                className="h-11 w-full justify-between rounded-full border-slate-200 bg-white px-5 text-sm font-medium shadow-none"
+                                                className="h-10 w-full justify-between rounded-full border-slate-200 bg-white px-5 text-sm font-medium shadow-none"
                                             >
                                                 <span>View Collection</span>
                                                 <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />

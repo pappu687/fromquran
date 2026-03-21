@@ -87,13 +87,11 @@ class QuranDatabaseService {
             }
 
             $availableTranslationIds = $this->getAvailableTranslationResourceIds();
-            $translationResources = empty($translationIds)
-                ? collect()
-                : $this->resolveVerseTranslationResources(
-                    $translationIds,
-                    $edition,
-                    $availableTranslationIds,
-                );
+            $translationResources = $this->resolveVerseTranslationResources(
+                $translationIds,
+                $edition,
+                $availableTranslationIds,
+            );
 
             if (!empty($translationIds)) {
                 $translationResources = $translationResources->sortBy(function (
@@ -143,53 +141,88 @@ class QuranDatabaseService {
                 ->get()
                 ->keyBy( 'verse_key' );
 
-            $verses = array(  );
+            return $this->formatSolrVerses(
+                $resultSet,
+                $verseMeta,
+                $translationResources,
+                $chapter->id,
+            );
+        } );
+    }
 
-            foreach ( $resultSet as $doc ) {
-                $verseKey = $doc[ 'verse_key_s' ] ?? null;
+    /**
+     * Get specific verses by verse keys from Solr.
+     */
+    public function getVersesByKeys(
+        array $verseKeys,
+        string $edition = 'en.sahih',
+        array $translationIds = [],
+    ): array {
+        $verseKeys = array_values(array_unique(array_filter($verseKeys)));
 
-                if ( ! $verseKey ) {
-                    continue;
-                }
+        if (empty($verseKeys)) {
+            return [];
+        }
 
-                $meta = $verseMeta->get( $verseKey );
-                $resourceCount = isset( $doc[ 'num_resource_i' ] )
-                    ? (int) $doc[ 'num_resource_i' ]
-                    : 0;
+        $cacheKey = 'q.' . self::CACHE_SCHEMA_VERSION . '.verses.keys.' . md5(
+            implode(',', $verseKeys) . '|' . $edition . '|' . implode(',', $translationIds),
+        );
 
-                // Translations from Solr
-                $translations = [];
-                foreach ($translationResources as $resource) {
-                    $fieldName = 'translation_' . $resource->id . '_t';
-                    if (isset($doc[$fieldName])) {
-                        $translations[] = [
-                            'resource_id' => $resource->id,
-                            'resource_content_id' => $resource->id,
-                            'resource_name' => $resource->name,
-                            'language' => $resource->language_name,
-                            'text' => $doc[$fieldName]
-                        ];
-                    }
-                }
+        return Cache::remember($cacheKey, $this->cacheTtl, function () use ($verseKeys, $edition, $translationIds) {
+            $availableTranslationIds = $this->getAvailableTranslationResourceIds();
+            $translationResources = $this->resolveVerseTranslationResources(
+                $translationIds,
+                $edition,
+                $availableTranslationIds,
+            );
 
-                $verses[  ] = array(
-                    'id'            => $meta->id ?? null,
-                    'chapterId'     => $meta->chapter_id ?? $chapter->id,
-                    'verseNumber'   => $meta->verse_number ?? ( $doc[ 'verse_number_i' ] ?? null ),
-                    'text'          => $doc[ 'text_uthmani_t' ] ?? null,
-                    'translations'  => $translations,
-                    'juzNumber'     => $meta->juz_number ?? ( $doc[ 'juz_number_i' ] ?? null ),
-                    'pageNumber'    => $meta->page_number ?? ( $doc[ 'page_number_i' ] ?? null ),
-                    'hizbQuarter'   => $meta->rub_el_hizb_number ?? null,
-                    'sajda'         => false,
-                    'audioUrl'      => null,
-                    'hasResources'  => $resourceCount > 0,
-                    'resourceCount' => $resourceCount,
-                 );
+            $select = $this->solrClient->createSelect();
+            $select->setQuery('verse_key_s:[* TO *] AND -document_type_s:[* TO *] AND -type_s:[* TO *]');
+
+            $escapedVerseKeys = array_map(
+                static fn (string $verseKey): string => '"' . addcslashes($verseKey, '"\\') . '"',
+                $verseKeys,
+            );
+
+            $select->createFilterQuery('verse_keys')
+                ->setQuery('verse_key_s:(' . implode(' OR ', $escapedVerseKeys) . ')');
+            $select->setStart(0)->setRows(count($verseKeys));
+
+            $resultSet = $this->solrClient->select($select);
+
+            if ($resultSet->getNumFound() === 0) {
+                return [];
             }
 
-            return $verses;
-        } );
+            $verseMeta = Verse::whereIn('verses.verse_key', $verseKeys)
+                ->select(
+                    'verses.id',
+                    'verses.chapter_id',
+                    'verses.verse_number',
+                    'verses.verse_key',
+                    'verses.juz_number',
+                    'verses.rub_el_hizb_number',
+                    'verses.page_number'
+                )
+                ->get()
+                ->keyBy('verse_key');
+
+            $formatted = $this->formatSolrVerses(
+                $resultSet,
+                $verseMeta,
+                $translationResources,
+            );
+
+            $formattedByKey = collect($formatted)->keyBy(
+                static fn (array $verse): string => ($verse['chapterId'] ?? '') . ':' . ($verse['verseNumber'] ?? ''),
+            );
+
+            return collect($verseKeys)
+                ->map(static fn (string $verseKey) => $formattedByKey->get($verseKey))
+                ->filter()
+                ->values()
+                ->all();
+        });
     }
 
     /**
@@ -298,6 +331,65 @@ class QuranDatabaseService {
         }
 
         return collect([$resource])->keyBy('id');
+    }
+
+    /**
+     * @param \Traversable<int, mixed> $resultSet
+     * @param \Illuminate\Support\Collection<string, Verse> $verseMeta
+     * @param \Illuminate\Support\Collection<int, ResourceContent> $translationResources
+     * @return array<int, array<string, mixed>>
+     */
+    private function formatSolrVerses(
+        \Traversable $resultSet,
+        Collection $verseMeta,
+        Collection $translationResources,
+        ?int $fallbackChapterId = null,
+    ): array {
+        $verses = [];
+
+        foreach ($resultSet as $doc) {
+            $verseKey = $doc['verse_key_s'] ?? null;
+
+            if (!$verseKey) {
+                continue;
+            }
+
+            $meta = $verseMeta->get($verseKey);
+            $resourceCount = isset($doc['num_resource_i'])
+                ? (int) $doc['num_resource_i']
+                : 0;
+
+            $translations = [];
+            foreach ($translationResources as $resource) {
+                $fieldName = 'translation_' . $resource->id . '_t';
+                if (isset($doc[$fieldName])) {
+                    $translations[] = [
+                        'resource_id' => $resource->id,
+                        'resource_content_id' => $resource->id,
+                        'resource_name' => $resource->name,
+                        'language' => $resource->language_name,
+                        'text' => $doc[$fieldName],
+                    ];
+                }
+            }
+
+            $verses[] = [
+                'id' => $meta->id ?? null,
+                'chapterId' => $meta->chapter_id ?? $fallbackChapterId ?? ($doc['chapter_id_i'] ?? null),
+                'verseNumber' => $meta->verse_number ?? ($doc['verse_number_i'] ?? null),
+                'text' => $doc['text_uthmani_t'] ?? null,
+                'translations' => $translations,
+                'juzNumber' => $meta->juz_number ?? ($doc['juz_number_i'] ?? null),
+                'pageNumber' => $meta->page_number ?? ($doc['page_number_i'] ?? null),
+                'hizbQuarter' => $meta->rub_el_hizb_number ?? null,
+                'sajda' => false,
+                'audioUrl' => null,
+                'hasResources' => $resourceCount > 0,
+                'resourceCount' => $resourceCount,
+            ];
+        }
+
+        return $verses;
     }
 
     /**
