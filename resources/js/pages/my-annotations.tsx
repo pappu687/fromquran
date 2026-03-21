@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { BookText, Loader2, MoveRight } from 'lucide-react';
+import { BookText, Loader2, MoveRight, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Annotation {
@@ -34,6 +34,9 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function MyAnnotationsPage() {
     const [annotations, setAnnotations] = useState<Annotation[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [deletingAnnotationId, setDeletingAnnotationId] = useState<
+        number | null
+    >(null);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -90,6 +93,55 @@ export default function MyAnnotationsPage() {
             Number.isFinite(verseNumber)
         ) {
             router.visit(`/${chapterNumber}/${verseNumber}`);
+        }
+    };
+
+    const handleDelete = async (annotationId: number) => {
+        const confirmed = window.confirm(
+            'Delete this annotation? This cannot be undone.',
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        setDeletingAnnotationId(annotationId);
+
+        try {
+            const csrfToken = document
+                .querySelector('meta[name="csrf-token"]')
+                ?.getAttribute('content');
+
+            const response = await fetch(
+                `/api/verse-annotations/${annotationId}`,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        Accept: 'application/json',
+                        'X-CSRF-TOKEN': csrfToken || '',
+                    },
+                    credentials: 'include',
+                },
+            );
+
+            if (response.status === 401) {
+                router.visit('/login');
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error('Failed to delete annotation');
+            }
+
+            setAnnotations((current) =>
+                current.filter((annotation) => annotation.id !== annotationId),
+            );
+            setError(null);
+        } catch (deleteError) {
+            console.error('Failed to delete annotation:', deleteError);
+            setError('Failed to delete annotation. Please try again.');
+        } finally {
+            setDeletingAnnotationId(null);
         }
     };
 
@@ -226,6 +278,24 @@ export default function MyAnnotationsPage() {
                                         </div>
 
                                         <div className="space-y-1 text-left text-xs text-slate-400 md:text-right">
+                                            <div className="mb-3 flex md:justify-end">
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleDelete(
+                                                            annotation.id,
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        deletingAnnotationId ===
+                                                        annotation.id
+                                                    }
+                                                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                                                    aria-label="Delete annotation"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </button>
+                                            </div>
                                             <p>
                                                 Created{' '}
                                                 {new Date(
