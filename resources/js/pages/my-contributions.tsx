@@ -10,12 +10,7 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import {
-    ExternalLink,
-    FileUp,
-    Loader2,
-    MoveRight,
-} from 'lucide-react';
+import { ExternalLink, FileUp, Loader2, MoveRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Contribution {
@@ -52,7 +47,7 @@ interface ResourceTypeCount {
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'My Contributions',
-        href: '/contributions',
+        href: '/my-contributions',
     },
 ];
 
@@ -160,6 +155,7 @@ export default function ContributionsPage() {
             }
 
             const data: PaginationData = await response.json();
+
             setContributions(data.data);
             setResourceTypeCounts(data.resource_type_counts || []);
             setPagination({

@@ -1,6 +1,7 @@
 'use client';
 
 import {
+    BookText,
     BookOpen,
     FolderOpen,
     Heart,
@@ -69,6 +70,11 @@ const menuData: MenuItem[][] = [
             label: 'My Contributions',
             icon: User,
             href: '/my-contributions',
+        },
+        {
+            label: 'My Annotations',
+            icon: BookText,
+            href: '/my-annotations',
         },
         {
             label: 'Favorites',

@@ -11,13 +11,20 @@ import {
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/contexts/auth-context';
 import { useReaderSettings } from '@/contexts/reader-settings-context';
 import { useReadingMode } from '@/contexts/reading-mode-context';
 import { useVersesPanel } from '@/hooks/use-verses-panel';
 import { cn } from '@/lib/utils';
-import { type ChapterSummary, type PaginatedVersesResponse, type VerseListItem } from '@/types/quran';
+import {
+    type ChapterSummary,
+    type PaginatedVersesResponse,
+    type VerseAnnotation,
+    type VerseListItem,
+} from '@/types/quran';
 import { router } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { VerseCard } from './verse-card';
 import { VerseReading } from './verse-reading';
 
@@ -46,6 +53,10 @@ export function VersesPanel({
 }: VersesPanelProps) {
     const { mode } = useReadingMode();
     const { settings } = useReaderSettings();
+    const { user } = useAuth();
+    const [annotationsByVerse, setAnnotationsByVerse] = useState<
+        Record<number, VerseAnnotation[]>
+    >({});
 
     const {
         verses,
@@ -75,6 +86,85 @@ export function VersesPanel({
         toVerse,
         startFromVerse,
     });
+
+    const verseIdsKey = verses.map((verse) => verse.id).join(',');
+
+    useEffect(() => {
+        if (!user || verses.length === 0) {
+            setAnnotationsByVerse({});
+            return;
+        }
+
+        let isCancelled = false;
+
+        const fetchAnnotations = async () => {
+            try {
+                const response = await fetch(
+                    `/api/verse-annotations?verse_ids=${verseIdsKey}`,
+                    {
+                        headers: {
+                            Accept: 'application/json',
+                        },
+                    },
+                );
+
+                if (!response.ok) {
+                    throw new Error('Failed to load annotations.');
+                }
+
+                const payload = (await response.json()) as {
+                    data: VerseAnnotation[];
+                };
+
+                if (isCancelled) {
+                    return;
+                }
+
+                const grouped = payload.data.reduce(
+                    (accumulator, annotation) => {
+                        if (!accumulator[annotation.verse_id]) {
+                            accumulator[annotation.verse_id] = [];
+                        }
+
+                        accumulator[annotation.verse_id].push(annotation);
+                        accumulator[annotation.verse_id].sort(
+                            (left, right) =>
+                                left.start_offset - right.start_offset,
+                        );
+
+                        return accumulator;
+                    },
+                    {} as Record<number, VerseAnnotation[]>,
+                );
+
+                setAnnotationsByVerse(grouped);
+            } catch {
+                if (!isCancelled) {
+                    setAnnotationsByVerse({});
+                }
+            }
+        };
+
+        fetchAnnotations();
+
+        return () => {
+            isCancelled = true;
+        };
+    }, [user, verseIdsKey, verses.length]);
+
+    const handleAnnotationCreated = (annotation: VerseAnnotation) => {
+        setAnnotationsByVerse((current) => {
+            const existing = current[annotation.verse_id] ?? [];
+            const next = [...existing, annotation].sort(
+                (left, right) => left.start_offset - right.start_offset,
+            );
+
+            return {
+                ...current,
+                [annotation.verse_id]: next,
+            };
+        });
+    };
 
     if (!chapter) {
         return (
@@ -192,13 +282,18 @@ export function VersesPanel({
                                 onBookmarkToggle={() =>
                                     handleBookmarkToggle(verse as VerseListItem)
                                 }
+                                annotations={annotationsByVerse[verse.id] ?? []}
+                                onAnnotationCreated={handleAnnotationCreated}
                                 onCopy={handleCopy}
                                 onPlayAudio={handlePlayAudio}
                                 showTranslation={showTranslation}
                             />
                         ))
                     ) : !showChapterLoadingSkeleton ? (
-                        <VerseReading verses={verses} />
+                        <VerseReading
+                            annotationsByVerse={annotationsByVerse}
+                            verses={verses}
+                        />
                     ) : null}
 
                     {/* Load More Button */}

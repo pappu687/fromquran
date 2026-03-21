@@ -6,7 +6,7 @@
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:is(.never-match-dark-mode *));
 
 /* KFGQPC Uthmanic Script HAFS Font for Quranic Text */
 @font-face {

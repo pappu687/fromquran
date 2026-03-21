@@ -15,7 +15,7 @@ import {
 import { useReaderSettings } from '@/contexts/reader-settings-context';
 import { cn } from '@/lib/utils';
 import { useAudioPlayer } from '@/store/use-audio-player';
-import { type VerseListItem } from '@/types/quran';
+import { type VerseAnnotation, type VerseListItem } from '@/types/quran';
 import {
     Bookmark,
     BookmarkCheck,
@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { AddResourceModal } from './add-resource-modal';
+import { AnnotatedArabicText } from './annotated-arabic-text';
 import { CollectionsModal } from './collections-modal';
 import { ResourcesSheet } from './resources-sheet';
 import { TafsirModal } from './tafsir-modal';
@@ -50,6 +51,8 @@ interface VerseCardProps {
     className?: string;
     reciterId?: number;
     hideHeaderActions?: boolean;
+    annotations?: VerseAnnotation[];
+    onAnnotationCreated?: (annotation: VerseAnnotation) => void;
 }
 
 export function VerseCard({
@@ -65,6 +68,8 @@ export function VerseCard({
     className,
     reciterId = 1, // Default reciter ID
     hideHeaderActions = false,
+    annotations = [],
+    onAnnotationCreated,
 }: VerseCardProps) {
     const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
     const [isResourcesSheetOpen, setIsResourcesSheetOpen] = useState(false);
@@ -358,28 +363,32 @@ export function VerseCard({
 
                 {/* Arabic Text */}
                 <div className="mb-4 text-right">
-                    <p
-                        className="font-arabic text-slate-900 leading-[2.2] dark:text-slate-100"
+                    <AnnotatedArabicText
+                        as="div"
+                        annotations={annotations}
+                        className="font-arabic leading-[2.2] text-slate-900 dark:text-slate-100"
                         dir="rtl"
+                        interactive
+                        onAnnotationCreated={onAnnotationCreated}
                         style={{ fontSize: `${settings.fontSize}rem` }}
-                    >
-                        {verse.text}
-                    </p>
+                        text={verse.text}
+                        verseId={verse.id}
+                    />
                 </div>
 
                 {/* Translations */}
                 {showTranslation && (
                     <div className="space-y-4 border-t border-muted/30 pt-4">
-                        {verse.translations && verse.translations.length > 0 ? (
-                            verse.translations.map((trans, index) => (
-                                <p
-                                    key={`${verse.id}-${trans.resource_id}-${index}`}
-                                    className="text-[15px] leading-relaxed text-slate-900 dark:text-slate-100"
-                                >
-                                    {trans.text}
-                                </p>
-                            ))
-                        ) : null}
+                        {verse.translations && verse.translations.length > 0
+                            ? verse.translations.map((trans, index) => (
+                                  <p
+                                      key={`${verse.id}-${trans.resource_id}-${index}`}
+                                      className="text-[15px] leading-relaxed text-slate-900 dark:text-slate-100"
+                                  >
+                                      {trans.text}
+                                  </p>
+                              ))
+                            : null}
                     </div>
                 )}
             </CardContent>

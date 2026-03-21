@@ -6,6 +6,7 @@ use App\Http\Controllers\QuranController;
 use App\Http\Controllers\BookmarkController;
 use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\TagController;
+use App\Http\Controllers\Api\VerseAnnotationController;
 use App\Http\Controllers\Api\VerseResourceController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
@@ -52,6 +53,13 @@ Route::middleware(['web', 'auth'])->prefix('bookmarks')->group(function () {
 // Verse Report Routes (require authentication)
 Route::middleware(['web', 'auth'])->prefix('verse-reports')->group(function () {
     Route::post('/', [\App\Http\Controllers\Api\VerseReportController::class, 'store']);
+});
+
+Route::middleware(['web', 'auth'])->prefix('verse-annotations')->group(function () {
+    Route::get('/', [VerseAnnotationController::class, 'index']);
+    Route::post('/', [VerseAnnotationController::class, 'store']);
+    Route::put('/{verseAnnotation}', [VerseAnnotationController::class, 'update']);
+    Route::delete('/{verseAnnotation}', [VerseAnnotationController::class, 'destroy']);
 });
 
 // Verse Resources (public - approved resources only)

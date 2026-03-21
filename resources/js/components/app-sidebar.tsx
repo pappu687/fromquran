@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
+    BookText,
     BookOpen,
     FileUp,
     FolderOpen,
@@ -46,6 +47,11 @@ const userNavData = {
             title: 'Contributions',
             url: '/my-contributions',
             icon: FileUp,
+        },
+        {
+            title: 'Annotations',
+            url: '/my-annotations',
+            icon: BookText,
         },
         {
             title: 'Favorites',

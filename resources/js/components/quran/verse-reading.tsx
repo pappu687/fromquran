@@ -1,13 +1,19 @@
 import { useReaderSettings } from '@/contexts/reader-settings-context';
 import { cn } from '@/lib/utils';
-import { type VerseListItem } from '@/types/quran';
+import { type VerseAnnotation, type VerseListItem } from '@/types/quran';
+import { AnnotatedArabicText } from './annotated-arabic-text';
 
 interface VerseReadingProps {
     verses: VerseListItem[];
     className?: string;
+    annotationsByVerse?: Record<number, VerseAnnotation[]>;
 }
 
-export function VerseReading({ verses, className }: VerseReadingProps) {
+export function VerseReading({
+    verses,
+    className,
+    annotationsByVerse = {},
+}: VerseReadingProps) {
     const { settings } = useReaderSettings();
     if (verses.length === 0) {
         return null;
@@ -61,7 +67,17 @@ export function VerseReading({ verses, className }: VerseReadingProps) {
                                 >
                                     {versesByPage[page].map((verse, index) => (
                                         <span key={verse.id}>
-                                            {verse.text}
+                                            <AnnotatedArabicText
+                                                as="span"
+                                                annotations={
+                                                    annotationsByVerse[
+                                                        verse.id
+                                                    ] ?? []
+                                                }
+                                                className="inline"
+                                                text={verse.text}
+                                                verseId={verse.id}
+                                            />
                                             <span className="mr-2 inline-flex h-8 w-8 items-center justify-center rounded-[40%] bg-gray-400/20 align-middle text-sm font-semibold">
                                                 {verse.verseNumber}
                                             </span>

@@ -161,6 +161,14 @@ class Verse extends Model
     }
 
     /**
+     * Get the annotations for the verse.
+     */
+    public function annotations(): HasMany
+    {
+        return $this->hasMany(VerseAnnotation::class);
+    }
+
+    /**
      * Scope a query to only include verses from specific Juz.
      */
     public function scopeInJuz($query, $juzNumber)

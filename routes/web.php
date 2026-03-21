@@ -122,6 +122,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('my-contributions', function () {
         return Inertia::render('my-contributions');
     })->name('my-contributions.index');
+
+    Route::get('my-annotations', function () {
+        return Inertia::render('my-annotations');
+    })->name('my-annotations.index');
 });
 
 // User Resource Submission Routes (require authentication)

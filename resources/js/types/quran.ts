@@ -31,6 +31,8 @@ export interface VerseListItem {
     resourceCount?: number;
 }
 
+export type { VerseAnnotation } from './verse-annotations';
+
 export interface PaginatedVersesResponse {
     data: VerseListItem[];
     total: number;

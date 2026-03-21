@@ -62,6 +62,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get the verse annotations for the user.
+     */
+    public function verseAnnotations(): HasMany
+    {
+        return $this->hasMany(VerseAnnotation::class);
+    }
+
+    /**
      * Get the audio preferences for the user.
      */
     public function audioPreference(): HasOne

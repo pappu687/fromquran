@@ -68,9 +68,14 @@ export function VerseGraphModal({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
             <div className="relative flex h-full w-full flex-col bg-card shadow-lg sm:h-auto sm:max-h-[90vh] sm:max-w-4xl sm:rounded-xl sm:border">
                 <div className="flex items-center justify-between border-b px-4 py-3">
-                    <h2 className="text-lg font-semibold">
-                        Resources Network ({verseKey})
-                    </h2>
+                    <div>
+                        <h2 className="text-lg font-semibold">
+                            Resources Network ({verseKey})
+                        </h2>
+                        <p className="text-sm text-muted-foreground">
+                            Click the nodes / circles to go to the section.
+                        </p>
+                    </div>
                     <button
                         onClick={() => onOpenChange(false)}
                         className="rounded-full p-1.5 transition-colors hover:bg-muted"
