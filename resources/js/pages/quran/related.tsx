@@ -126,7 +126,9 @@ export default function RelatedPage({
 
     const [resources, setResources] = useState<Resource[]>([]);
     const [loadingResources, setLoadingResources] = useState(false);
-    const [loadingFull, setLoadingFull] = useState(false);
+    const [loadingFullResourceId, setLoadingFullResourceId] = useState<
+        string | number | null
+    >(null);
     const [selectedResource, setSelectedResource] = useState<{
         title: string | null;
         url: string | null;
@@ -288,7 +290,7 @@ export default function RelatedPage({
     };
 
     const handleSeeMore = async (resourceId: string | number) => {
-        setLoadingFull(true);
+        setLoadingFullResourceId(resourceId);
         try {
             const response = await fetch(`/api/resources/${resourceId}`);
             if (!response.ok) {
@@ -303,7 +305,7 @@ export default function RelatedPage({
         } catch (err) {
             console.error('Failed to fetch full resource:', err);
         } finally {
-            setLoadingFull(false);
+            setLoadingFullResourceId(null);
         }
     };
 
@@ -596,7 +598,8 @@ export default function RelatedPage({
                                                                                 size="sm"
                                                                                 className="mt-2 h-7 bg-muted/30 px-2 text-xs font-medium text-primary hover:bg-muted"
                                                                                 disabled={
-                                                                                    loadingFull
+                                                                                    loadingFullResourceId ===
+                                                                                    resource.id
                                                                                 }
                                                                                 onClick={() =>
                                                                                     handleSeeMore(
@@ -604,7 +607,8 @@ export default function RelatedPage({
                                                                                     )
                                                                                 }
                                                                             >
-                                                                                {loadingFull
+                                                                                {loadingFullResourceId ===
+                                                                                resource.id
                                                                                     ? 'Loading...'
                                                                                     : 'Read Full Answer'}
                                                                             </Button>

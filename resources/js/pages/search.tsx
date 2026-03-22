@@ -135,10 +135,7 @@ export default function SearchPage({
                     <div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-8 py-4 sm:gap-10 sm:py-6">
                         <section className="border-b border-slate-200 pb-6 sm:pb-8">
                             <div className="max-w-3xl">
-                                <p className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">
-                                    Quran Search
-                                </p>
-                                <h1 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-4xl">
+                                <h1 className="font-young mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-4xl">
                                     Search the Qur&apos;an with context
                                 </h1>
                                 <p className="mt-3 text-sm leading-7 text-slate-500 sm:text-base">
@@ -171,11 +168,6 @@ export default function SearchPage({
                                     >
                                         {isSubmitting ? 'Searching…' : 'Search'}
                                     </Button>
-                                </div>
-                                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-400 sm:text-sm">
-                                    <span>Edition: {edition}</span>
-                                    <span className="text-slate-300">•</span>
-                                    <span>Press Enter to search</span>
                                 </div>
                             </form>
                         </section>

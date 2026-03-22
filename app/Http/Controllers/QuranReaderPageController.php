@@ -26,9 +26,13 @@ class QuranReaderPageController extends Controller
             'has_more' => count($versesData) > $pageSize,
         ];
 
+        // Preload chapters for the sidebar to avoid client-side refetches.
+        $chapters = $quranService->getChapters();
+
         return Inertia::render('quran/reader', [
             'chapterNumber' => $chapterNumber,
             'initialVerses' => $initialVerses,
+            'chapters' => $chapters,
             'chapter' => [
                 'id' => $chapter->id,
                 'number' => $chapter->chapter_number,
@@ -73,6 +77,7 @@ class QuranReaderPageController extends Controller
             'fromVerse' => $from,
             'toVerse' => $to,
             'initialVerses' => $initialVerses,
+            'chapters' => $chapters,
             'chapter' => [
                 'id' => $chapter->id,
                 'number' => $chapter->chapter_number,

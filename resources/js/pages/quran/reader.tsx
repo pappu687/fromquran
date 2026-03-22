@@ -2,7 +2,7 @@ import { VersesPanel } from '@/components/quran/verses-panel';
 import QuranReaderLayout from '@/layouts/quran-reader-layout';
 import { type ChapterSummary, type PaginatedVersesResponse } from '@/types/quran';
 import { Head, router, usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface QuranReaderProps {
     chapterNumber?: number;
@@ -31,6 +31,10 @@ export default function QuranReader({
     );
     const [loading, setLoading] = useState(!initialChapter);
     const [error, setError] = useState<string | null>(null);
+    const [currentAyah, setCurrentAyah] = useState(fromVerse ?? 1);
+    const [jumpToAyah, setJumpToAyah] = useState<
+        ((ayahNumber: number) => Promise<boolean>) | undefined
+    >(undefined);
 
     // Dynamic Title and Description for SEO
     // Use romanName (e.g. At-Tawbah) if available, otherwise fallback to englishName (e.g. The Repentance)
@@ -117,6 +121,10 @@ export default function QuranReader({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [chapters, chapterNumber]);
 
+    useEffect(() => {
+        setCurrentAyah(fromVerse ?? 1);
+    }, [chapterNumber, fromVerse, toVerse]);
+
     const handleChapterSelect = (chapterId: number) => {
         const chapter = chapters.find((ch) => ch.id === chapterId);
         if (!chapter) return;
@@ -134,6 +142,13 @@ export default function QuranReader({
             preserveState: true,
         });
     };
+
+    const handleJumpHandlerChange = useCallback(
+        (handler: ((ayahNumber: number) => Promise<boolean>) | undefined) => {
+            setJumpToAyah(() => handler);
+        },
+        [],
+    );
 
     if (loading && !selectedChapter) {
         return (
@@ -184,6 +199,8 @@ export default function QuranReader({
                     chapters={chapters}
                     selectedChapter={selectedChapter?.id}
                     onChapterSelect={handleChapterSelect}
+                    currentAyah={currentAyah}
+                    onJumpToAyah={jumpToAyah}
                 >
                     <div className="flex flex-1 flex-col px-0 py-5 md:px-4">
                         <div className="mx-auto h-full w-full max-w-3xl rounded-xl">
@@ -196,6 +213,8 @@ export default function QuranReader({
                                 fromVerse={fromVerse ?? undefined}
                                 toVerse={toVerse ?? undefined}
                                 startFromVerse={startFromVerse}
+                                onCurrentAyahChange={setCurrentAyah}
+                                onJumpHandlerChange={handleJumpHandlerChange}
                             />
                         </div>
                     </div>

@@ -24,7 +24,7 @@ import {
 } from '@/types/quran';
 import { router } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { VerseCard } from './verse-card';
 import { VerseReading } from './verse-reading';
 
@@ -38,6 +38,10 @@ interface VersesPanelProps {
     fromVerse?: number;
     toVerse?: number;
     startFromVerse?: number;
+    onCurrentAyahChange?: (ayah: number) => void;
+    onJumpHandlerChange?: (
+        handler: ((ayahNumber: number) => Promise<boolean>) | undefined,
+    ) => void;
 }
 
 export function VersesPanel({
@@ -50,6 +54,8 @@ export function VersesPanel({
     fromVerse,
     toVerse,
     startFromVerse,
+    onCurrentAyahChange,
+    onJumpHandlerChange,
 }: VersesPanelProps) {
     const { mode } = useReadingMode();
     const { settings } = useReaderSettings();
@@ -57,6 +63,10 @@ export function VersesPanel({
     const [annotationsByVerse, setAnnotationsByVerse] = useState<
         Record<number, VerseAnnotation[]>
     >({});
+    const [highlightedAyah, setHighlightedAyah] = useState<number | null>(null);
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const highlightTimeoutRef = useRef<number | null>(null);
+    const highlightedStartVerseRef = useRef<string | null>(null);
 
     const {
         verses,
@@ -88,6 +98,54 @@ export function VersesPanel({
     });
 
     const verseIdsKey = verses.map((verse) => verse.id).join(',');
+
+    useEffect(() => {
+        return () => {
+            if (highlightTimeoutRef.current) {
+                window.clearTimeout(highlightTimeoutRef.current);
+            }
+        };
+    }, []);
+
+    const flashAyah = useCallback((ayahNumber: number) => {
+        if (highlightTimeoutRef.current) {
+            window.clearTimeout(highlightTimeoutRef.current);
+        }
+
+        setHighlightedAyah(ayahNumber);
+        highlightTimeoutRef.current = window.setTimeout(() => {
+            setHighlightedAyah((current) =>
+                current === ayahNumber ? null : current,
+            );
+        }, 1200);
+    }, []);
+
+    const scrollToAyah = useCallback(
+        (ayahNumber: number, behavior: ScrollBehavior = 'smooth') => {
+            if (!chapter) {
+                return false;
+            }
+
+            const element = document.getElementById(
+                `verse-${chapter.id}-${ayahNumber}`,
+            );
+
+            if (!element) {
+                return false;
+            }
+
+            const y = element.getBoundingClientRect().top + window.scrollY - 90;
+            window.scrollTo({
+                top: Math.max(0, y),
+                behavior,
+            });
+            flashAyah(ayahNumber);
+            onCurrentAyahChange?.(ayahNumber);
+
+            return true;
+        },
+        [chapter, flashAyah, onCurrentAyahChange],
+    );
 
     useEffect(() => {
         if (!user || verses.length === 0) {
@@ -166,6 +224,137 @@ export function VersesPanel({
         });
     };
 
+    useEffect(() => {
+        onJumpHandlerChange?.(
+            !chapter
+                ? undefined
+                : async (ayahNumber: number) => {
+                      if (fromVerse || toVerse) {
+                          router.visit(
+                              `/${chapter.number}?start-verse=${ayahNumber}`,
+                          );
+
+                          return true;
+                      }
+
+                      if (scrollToAyah(ayahNumber)) {
+                          return true;
+                      }
+
+                      // When the target ayah is not rendered yet, reopen the
+                      // chapter centered around it using the existing
+                      // start-verse flow.
+                      router.visit(
+                          `/${chapter.number}?start-verse=${ayahNumber}`,
+                      );
+
+                      return true;
+                  },
+        );
+
+        return () => {
+            onJumpHandlerChange?.(undefined);
+        };
+    }, [
+        chapter,
+        fromVerse,
+        onJumpHandlerChange,
+        scrollToAyah,
+        toVerse,
+    ]);
+
+    useEffect(() => {
+        if (!chapter || !containerRef.current || verses.length === 0) {
+            return;
+        }
+
+        let frameId = 0;
+
+        const updateCurrentAyah = () => {
+            const ayahElements = Array.from(
+                containerRef.current?.querySelectorAll<HTMLElement>(
+                    '[data-ayah-number]',
+                ) ?? [],
+            );
+
+            if (!ayahElements.length) {
+                return;
+            }
+
+            const topOffset = 92;
+            let closestAyah = Number.parseInt(
+                ayahElements[0].dataset.ayahNumber ?? '1',
+                10,
+            );
+            let closestDistance = Number.POSITIVE_INFINITY;
+
+            ayahElements.forEach((element) => {
+                const ayahNumber = Number.parseInt(
+                    element.dataset.ayahNumber ?? '',
+                    10,
+                );
+
+                if (!ayahNumber) {
+                    return;
+                }
+
+                const rect = element.getBoundingClientRect();
+
+                if (rect.bottom <= topOffset) {
+                    closestAyah = ayahNumber;
+                    closestDistance = 0;
+                    return;
+                }
+
+                const distance = Math.abs(rect.top - topOffset);
+
+                if (distance < closestDistance) {
+                    closestDistance = distance;
+                    closestAyah = ayahNumber;
+                }
+            });
+
+            onCurrentAyahChange?.(closestAyah);
+        };
+
+        const requestUpdate = () => {
+            if (frameId) {
+                window.cancelAnimationFrame(frameId);
+            }
+
+            frameId = window.requestAnimationFrame(updateCurrentAyah);
+        };
+
+        requestUpdate();
+        window.addEventListener('scroll', requestUpdate, { passive: true });
+        window.addEventListener('resize', requestUpdate);
+
+        return () => {
+            if (frameId) {
+                window.cancelAnimationFrame(frameId);
+            }
+
+            window.removeEventListener('scroll', requestUpdate);
+            window.removeEventListener('resize', requestUpdate);
+        };
+    }, [chapter, onCurrentAyahChange, verses]);
+
+    useEffect(() => {
+        if (!chapter || !startFromVerse || verses.length === 0) {
+            return;
+        }
+
+        const key = `${chapter.id}:${startFromVerse}`;
+
+        if (highlightedStartVerseRef.current === key) {
+            return;
+        }
+
+        if (scrollToAyah(startFromVerse)) {
+            highlightedStartVerseRef.current = key;
+        }
+    }, [chapter, scrollToAyah, startFromVerse, verses]);
+
     if (!chapter) {
         return (
             <div className="flex h-full items-center justify-center px-4 py-12">
@@ -190,7 +379,7 @@ export function VersesPanel({
             )}
         >
             {/* Verses Content */}
-            <div>
+            <div ref={containerRef}>
                 <div className="px-0 py-4 md:p-4">
                     {error && (
                         <div className="mb-4 rounded-3xl border border-red-200 bg-red-50 px-5 py-4 text-red-700">
@@ -215,7 +404,9 @@ export function VersesPanel({
                     )}
 
                     {/* Bismillah — shown before verse 1 for all chapters except chapter 9 */}
-                    {chapter.number !== 9 && verses.length > 0 && (
+                    {chapter.number !== 9 &&
+                        verses.length > 0 &&
+                        verses[0]?.verseNumber === 1 && (
                         <div className="mb-6 flex justify-center py-4">
                             <p
                                 className="font-arabic text-center leading-loose text-foreground/90"
@@ -264,34 +455,51 @@ export function VersesPanel({
                     {/* Verses */}
                     {!showChapterLoadingSkeleton && mode === 'list' ? (
                         verses.map((verse) => (
-                            <VerseCard
-                                className="bg-transparent px-0 py-3 md:p-3"
+                            <div
                                 key={verse.id}
-                                verse={{
-                                    ...verse,
-                                    chapterId: verse.chapterId || chapter?.id,
-                                    chapterNumber:
-                                        verse.chapterNumber || chapter?.number,
-                                }}
-                                totalVerses={chapter?.verses}
-                                isBookmarked={bookmarkedVerses.has(
-                                    verse.id.toString(),
+                                id={`verse-${verse.chapterId}-${verse.verseNumber}`}
+                                data-ayah-number={verse.verseNumber}
+                                className={cn(
+                                    'scroll-mt-24 rounded-[28px] transition-colors duration-700',
+                                    highlightedAyah === verse.verseNumber &&
+                                        'bg-amber-100/75 ring-1 ring-amber-300/60',
                                 )}
-                                hasResources={verse.hasResources || false}
-                                resourceCount={verse.resourceCount || 0}
-                                onBookmarkToggle={() =>
-                                    handleBookmarkToggle(verse as VerseListItem)
-                                }
-                                annotations={annotationsByVerse[verse.id] ?? []}
-                                onAnnotationCreated={handleAnnotationCreated}
-                                onCopy={handleCopy}
-                                onPlayAudio={handlePlayAudio}
-                                showTranslation={showTranslation}
-                            />
+                            >
+                                <VerseCard
+                                    className="bg-transparent px-0 py-3 md:p-3"
+                                    verse={{
+                                        ...verse,
+                                        chapterId:
+                                            verse.chapterId || chapter?.id,
+                                        chapterNumber:
+                                            verse.chapterNumber ||
+                                            chapter?.number,
+                                    }}
+                                    totalVerses={chapter?.verses}
+                                    isBookmarked={bookmarkedVerses.has(
+                                        verse.id.toString(),
+                                    )}
+                                    hasResources={verse.hasResources || false}
+                                    resourceCount={verse.resourceCount || 0}
+                                    onBookmarkToggle={() =>
+                                        handleBookmarkToggle(
+                                            verse as VerseListItem,
+                                        )
+                                    }
+                                    annotations={
+                                        annotationsByVerse[verse.id] ?? []
+                                    }
+                                    onAnnotationCreated={handleAnnotationCreated}
+                                    onCopy={handleCopy}
+                                    onPlayAudio={handlePlayAudio}
+                                    showTranslation={showTranslation}
+                                />
+                            </div>
                         ))
                     ) : !showChapterLoadingSkeleton ? (
                         <VerseReading
                             annotationsByVerse={annotationsByVerse}
+                            highlightedAyah={highlightedAyah}
                             verses={verses}
                         />
                     ) : null}

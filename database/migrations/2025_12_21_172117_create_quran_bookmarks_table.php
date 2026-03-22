@@ -20,8 +20,7 @@ return new class extends Migration
             $table->foreignId('user_id');
             $table->integer('chapter_id');
             $table->integer('verse_number');
-            $table->string('verse_id')->unique(); // Unique identifier for the verse
-            $table->json('verse_data')->nullable(); // Store verse details
+            $table->string('verse_id'); // Unique identifier for the verse
             $table->text('notes')->nullable(); // User's personal notes
             $table->string('edition', 20)->default('en.sahih'); // Translation edition
             $table->timestamps();

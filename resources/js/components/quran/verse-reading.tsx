@@ -7,12 +7,14 @@ interface VerseReadingProps {
     verses: VerseListItem[];
     className?: string;
     annotationsByVerse?: Record<number, VerseAnnotation[]>;
+    highlightedAyah?: number | null;
 }
 
 export function VerseReading({
     verses,
     className,
     annotationsByVerse = {},
+    highlightedAyah,
 }: VerseReadingProps) {
     const { settings } = useReaderSettings();
     if (verses.length === 0) {
@@ -66,7 +68,17 @@ export function VerseReading({
                                     }}
                                 >
                                     {versesByPage[page].map((verse, index) => (
-                                        <span key={verse.id}>
+                                        <span
+                                            key={verse.id}
+                                            id={`verse-${verse.chapterId}-${verse.verseNumber}`}
+                                            data-ayah-number={verse.verseNumber}
+                                            className={cn(
+                                                'rounded-2xl px-1 py-1 transition-colors duration-700',
+                                                highlightedAyah ===
+                                                    verse.verseNumber &&
+                                                    'bg-amber-100/90 ring-1 ring-amber-300/60',
+                                            )}
+                                        >
                                             <AnnotatedArabicText
                                                 as="span"
                                                 annotations={

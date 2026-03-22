@@ -19,21 +19,12 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id');
             $table->foreignId('verse_id');
-            $table->enum('resource_type', [
-                'youtube_tafseer',
-                'podcast',
-                'article',
-                'shan_e_nuzul',
-                'hadith',
-                'fiqh_ruling',
-                'fatwa',
-                'scholarly_commentary',
-                'other'
-            ]);
-            $table->string('resource_url')->nullable();
+            $table->foreignId('resource_type_id');
+            $table->string('resource_url');
             $table->text('resource_title')->nullable();
+            $table->string('thumbnail_url')->nullable();
             $table->text('comment')->nullable();
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->string('status')->default('pending');
             $table->timestamps();
 
             $table->index(['verse_id', 'status']);

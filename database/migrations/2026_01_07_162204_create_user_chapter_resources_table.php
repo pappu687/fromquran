@@ -21,6 +21,8 @@ return new class extends Migration
             $table->foreignId('chapter_id');
             $table->foreignId('resource_type_id');
             $table->string('resource_url');
+            $table->string('resource_title')->nullable();
+            $table->string('thumbnail_url')->nullable();
             $table->text('comment')->nullable();
             $table->string('status')->default('pending');
             $table->timestamps();

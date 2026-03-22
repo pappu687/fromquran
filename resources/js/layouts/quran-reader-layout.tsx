@@ -1,4 +1,5 @@
 import { NavActions } from '@/components/nav-actions';
+import { JumpToAyah } from '@/components/quran/jump-to-ayah';
 import { QuranSidebar } from '@/components/quran/quran-sidebar';
 import { type BreadcrumbItem as AppBreadcrumbItem } from '@/types';
 import { type ChapterSummary } from '@/types/quran';
@@ -23,6 +24,8 @@ interface QuranReaderLayoutProps {
     chapters: ChapterSummary[];
     selectedChapter?: number;
     onChapterSelect: (chapterId: number) => void;
+    currentAyah?: number;
+    onJumpToAyah?: (ayahNumber: number) => Promise<boolean>;
     breadcrumbs?: AppBreadcrumbItem[];
 }
 
@@ -31,6 +34,8 @@ export default function QuranReaderLayout({
     chapters,
     selectedChapter,
     onChapterSelect,
+    currentAyah = 1,
+    onJumpToAyah,
     breadcrumbs = [],
 }: QuranReaderLayoutProps) {
     const [isChapterInfoOpen, setIsChapterInfoOpen] = useState(false);
@@ -114,7 +119,14 @@ export default function QuranReaderLayout({
                             </BreadcrumbList>
                         </Breadcrumb>
                     </div>
-                    <div className="ml-auto px-3">
+                    <div className="ml-auto flex items-center gap-1 px-3">
+                        {chapter && chapter.verses && onJumpToAyah && (
+                            <JumpToAyah
+                                totalAyahs={chapter.verses}
+                                currentAyah={currentAyah}
+                                onJump={onJumpToAyah}
+                            />
+                        )}
                         <NavActions />
                     </div>
                 </header>

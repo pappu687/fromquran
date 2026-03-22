@@ -102,7 +102,9 @@ export function ResourcesSheet({
     const [resources, setResources] = useState<Resource[]>([]);
     const [totalResources, setTotalResources] = useState<number>(0);
     const [loading, setLoading] = useState(false);
-    const [loadingFull, setLoadingFull] = useState(false);
+    const [loadingFullResourceId, setLoadingFullResourceId] = useState<
+        string | number | null
+    >(null);
     const [selectedResource, setSelectedResource] = useState<{
         title: string | null;
         url: string | null;
@@ -273,7 +275,7 @@ export function ResourcesSheet({
     };
 
     const handleSeeMore = async (resourceId: string | number) => {
-        setLoadingFull(true);
+        setLoadingFullResourceId(resourceId);
         try {
             const response = await fetch(`/api/resources/${resourceId}`);
             if (response.ok) {
@@ -287,7 +289,7 @@ export function ResourcesSheet({
         } catch (error) {
             console.error('Failed to fetch full resource:', error);
         } finally {
-            setLoadingFull(false);
+            setLoadingFullResourceId(null);
         }
     };
 
@@ -529,7 +531,8 @@ export function ResourcesSheet({
                                                                                     size="sm"
                                                                                     className="mt-2 h-7 bg-muted/30 px-2 text-xs font-medium text-primary hover:bg-muted"
                                                                                     disabled={
-                                                                                        loadingFull
+                                                                                        loadingFullResourceId ===
+                                                                                        resource.id
                                                                                     }
                                                                                     onClick={() =>
                                                                                         handleSeeMore(
@@ -537,7 +540,8 @@ export function ResourcesSheet({
                                                                                         )
                                                                                     }
                                                                                 >
-                                                                                    {loadingFull
+                                                                                    {loadingFullResourceId ===
+                                                                                    resource.id
                                                                                         ? 'Loading...'
                                                                                         : 'Read Full Answer'}
                                                                                 </Button>

@@ -22,10 +22,13 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->string('color')->default('#3b82f6'); // Default blue color
             $table->boolean('is_public')->default(false);
+            $table->string('status')->default('approved');
             $table->string('slug')->unique();
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index(['user_id', 'is_public']);
+            $table->index(['status', 'is_public']);
         });
     }
 

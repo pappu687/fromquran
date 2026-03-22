@@ -181,7 +181,7 @@ export function VerseCard({
                     'bg-orange-50/50 shadow-sm ring-1 ring-orange-500/20 dark:bg-orange-900/10',
                 className,
             )}
-            id={`verse-${verse.chapterId}-${verse.verseNumber}`}
+            data-verse-id={`verse-${verse.chapterId}-${verse.verseNumber}`}
         >
             <CardContent className="px-4 py-2 md:p-1">
                 {/* Verse Header */}

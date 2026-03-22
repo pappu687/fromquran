@@ -85,7 +85,7 @@ export default function ContactPage() {
                         </div>
 
                         <div className="mx-auto mt-12 grid max-w-5xl gap-6 md:mt-16 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] md:items-start">
-                            <aside className="rounded-[28px] border border-border/60 bg-background/80 p-6 shadow-sm shadow-black/[0.03] md:p-7">
+                            <aside className="hidden rounded-[28px] border border-border/60 bg-background/80 p-6 shadow-sm shadow-black/[0.03] md:block md:p-7">
                                 <p className="text-xs font-medium tracking-[0.24em] text-muted-foreground uppercase">
                                     Best for
                                 </p>
