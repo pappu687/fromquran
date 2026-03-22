@@ -104,21 +104,16 @@ export function JumpToAyah({
         await submitAyah(Number.parseInt(query, 10));
     };
 
-    const trigger = (
-        <Tooltip>
-            <TooltipTrigger asChild>
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    className="rounded-full text-slate-500 hover:bg-stone-200/80 hover:text-slate-900"
-                    aria-label="Jump to ayah"
-                >
-                    <Crosshair className="h-4 w-4" />
-                </Button>
-            </TooltipTrigger>
-            <TooltipContent>Jump to Ayah</TooltipContent>
-        </Tooltip>
+    const triggerButton = (
+        <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="rounded-full text-slate-500 hover:bg-stone-200/80 hover:text-slate-900"
+            aria-label="Jump to ayah"
+        >
+            <Crosshair className="h-4 w-4" />
+        </Button>
     );
 
     const panel = (
@@ -237,7 +232,12 @@ export function JumpToAyah({
     if (isMobile) {
         return (
             <Sheet open={open} onOpenChange={handleOpenChange}>
-                <SheetTrigger asChild>{trigger}</SheetTrigger>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <SheetTrigger asChild>{triggerButton}</SheetTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>Jump to Ayah</TooltipContent>
+                </Tooltip>
                 <SheetContent
                     side="bottom"
                     className="h-[70vh] min-h-0 rounded-t-[28px] border-t border-slate-200 bg-transparent p-0"
@@ -253,7 +253,12 @@ export function JumpToAyah({
 
     return (
         <Popover open={open} onOpenChange={handleOpenChange}>
-            <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <PopoverTrigger asChild>{triggerButton}</PopoverTrigger>
+                </TooltipTrigger>
+                <TooltipContent>Jump to Ayah</TooltipContent>
+            </Tooltip>
             <PopoverContent
                 align="end"
                 side="bottom"
