@@ -117,7 +117,12 @@ export function JumpToAyah({
     );
 
     const panel = (
-        <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[28px] bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(245,244,238,0.96)_100%)]">
+        <div
+            className={cn(
+                'flex h-full min-h-0 flex-col overflow-hidden bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(245,244,238,0.96)_100%)]',
+                isMobile ? 'rounded-none' : 'rounded-[28px]',
+            )}
+        >
             <div className="flex items-start justify-between gap-4 border-b border-slate-200/80 px-5 py-4">
                 <div>
                     <h2 className="text-base font-semibold tracking-tight text-slate-900">
@@ -239,8 +244,8 @@ export function JumpToAyah({
                     <TooltipContent>Jump to Ayah</TooltipContent>
                 </Tooltip>
                 <SheetContent
-                    side="bottom"
-                    className="h-[70vh] min-h-0 rounded-t-[28px] border-t border-slate-200 bg-transparent p-0"
+                    side="left"
+                    className="h-full w-[min(88vw,380px)] min-h-0 border-r border-slate-200 bg-transparent p-0 sm:max-w-none"
                 >
                     <SheetHeader className="sr-only">
                         <SheetTitle>Jump to Ayah</SheetTitle>
