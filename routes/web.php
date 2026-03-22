@@ -203,6 +203,12 @@ Route::middleware(['auth', 'role:Admin|Moderator|Reviewer'])->prefix('admin')->g
     // Resource Submissions
     Route::get('/resource-submissions', [\App\Http\Controllers\Admin\ResourceSubmissionController::class, 'index'])
         ->name('admin.resource-submissions');
+    Route::get('/verse-reports', [\App\Http\Controllers\Admin\VerseReportController::class, 'index'])
+        ->name('admin.verse-reports');
+    Route::post('/verse-reports/{report}/resolve', [\App\Http\Controllers\Admin\VerseReportController::class, 'resolve'])
+        ->name('admin.verse-reports.resolve');
+    Route::post('/verse-reports/{report}/dismiss', [\App\Http\Controllers\Admin\VerseReportController::class, 'dismiss'])
+        ->name('admin.verse-reports.dismiss');
 
     Route::get('/collections', [\App\Http\Controllers\Admin\CollectionManagementController::class, 'index'])
         ->name('admin.collections');

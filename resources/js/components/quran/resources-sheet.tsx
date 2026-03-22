@@ -697,15 +697,15 @@ export function ResourcesSheet({
                 onOpenChange={(open) => !open && setSelectedResource(null)}
             >
                 <DialogContent className="h-screen w-screen max-w-none p-4 sm:h-auto sm:w-auto sm:max-w-[80rem] sm:p-6">
-                    <DialogHeader className="flex flex-row items-center justify-between pr-8">
-                        <DialogTitle className="flex-1">
+                    <DialogHeader className="pr-8">
+                        <DialogTitle className="text-base sm:text-[1.05rem]">
                             {selectedResource?.title || 'Full Description'}
                         </DialogTitle>
                         {selectedResource?.url && (
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-8 shrink-0 gap-1.5 text-xs font-semibold"
+                                className="mt-2 h-7 w-fit gap-1.5 px-2.5 text-[11px] font-medium"
                                 asChild
                             >
                                 <a

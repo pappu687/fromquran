@@ -62,6 +62,11 @@ const adminNavData = {
             icon: FileText,
         },
         {
+            title: 'Verse Reports',
+            url: '/admin/verse-reports',
+            icon: FileText,
+        },
+        {
             title: 'Collections',
             url: '/admin/collections',
             icon: FolderOpen,

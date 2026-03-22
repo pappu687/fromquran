@@ -8,6 +8,7 @@ use App\Mail\VerseReportAdminEmail;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class VerseReportController extends Controller
@@ -30,10 +31,18 @@ class VerseReportController extends Controller
             'status' => 'pending',
         ]);
 
-        // Send Email to Admin
-        $adminEmail = config('mail.from.address');
+        $adminEmail = config('mail.admin.address');
+
         if ($adminEmail) {
-            Mail::to($adminEmail)->send(new VerseReportAdminEmail($report));
+            try {
+                Mail::to($adminEmail)->send(new VerseReportAdminEmail($report));
+            } catch (\Throwable $exception) {
+                Log::error('Failed to send verse report admin email.', [
+                    'report_id' => $report->id,
+                    'admin_email' => $adminEmail,
+                    'message' => $exception->getMessage(),
+                ]);
+            }
         }
 
         return response()->json([

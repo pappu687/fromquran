@@ -1,5 +1,11 @@
 import { LoginModal } from '@/components/auth/login-modal';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import {
     Tooltip,
@@ -58,6 +64,30 @@ export function AnnotatedArabicText({
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+    const [openTooltipAnnotationId, setOpenTooltipAnnotationId] = useState<
+        number | null
+    >(null);
+    const [selectedAnnotation, setSelectedAnnotation] =
+        useState<VerseAnnotation | null>(null);
+    const [isTouchDevice, setIsTouchDevice] = useState(false);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') {
+            return;
+        }
+
+        const mediaQuery = window.matchMedia('(hover: none), (pointer: coarse)');
+        const updateTouchState = () => {
+            setIsTouchDevice(mediaQuery.matches);
+        };
+
+        updateTouchState();
+        mediaQuery.addEventListener('change', updateTouchState);
+
+        return () => {
+            mediaQuery.removeEventListener('change', updateTouchState);
+        };
+    }, []);
 
     useEffect(() => {
         if (typeof document === 'undefined') {
@@ -74,6 +104,7 @@ export function AnnotatedArabicText({
 
             setSelection(null);
             setError(null);
+            setOpenTooltipAnnotationId(null);
         };
 
         document.addEventListener('mousedown', handlePointerDown);
@@ -86,6 +117,8 @@ export function AnnotatedArabicText({
     useEffect(() => {
         setSelection(null);
         setError(null);
+        setOpenTooltipAnnotationId(null);
+        setSelectedAnnotation(null);
     }, [verseId]);
 
     useEffect(() => {
@@ -201,6 +234,64 @@ export function AnnotatedArabicText({
     };
 
     const segments = buildSegments(text, annotations);
+    const noteExceedsTooltipLimit = (note: string) => note.trim().length > 150;
+
+    const handleAnnotationActivate = (annotation: VerseAnnotation) => {
+        if (noteExceedsTooltipLimit(annotation.note)) {
+            setSelectedAnnotation(annotation);
+            setOpenTooltipAnnotationId(null);
+            return;
+        }
+
+        if (isTouchDevice) {
+            setOpenTooltipAnnotationId((current) =>
+                current === annotation.id ? null : annotation.id,
+            );
+        }
+    };
+
+    const renderAnnotatedSegment = (
+        annotation: VerseAnnotation,
+        segmentText: string,
+    ) => {
+        const trigger = (
+            <button
+                aria-label="View note"
+                className="inline rounded border-0 bg-amber-200/90 px-0.5 py-0 text-inherit outline-none"
+                data-note={annotation.note}
+                onClick={() => handleAnnotationActivate(annotation)}
+                type="button"
+            >
+                {segmentText}
+            </button>
+        );
+
+        if (noteExceedsTooltipLimit(annotation.note)) {
+            return trigger;
+        }
+
+        return (
+            <Tooltip
+                onOpenChange={(open) =>
+                    setOpenTooltipAnnotationId(open ? annotation.id : null)
+                }
+                open={
+                    isTouchDevice
+                        ? openTooltipAnnotationId === annotation.id
+                        : undefined
+                }
+            >
+                <TooltipTrigger asChild>{trigger}</TooltipTrigger>
+                <TooltipContent
+                    className="max-w-xs text-left whitespace-pre-wrap"
+                    sideOffset={6}
+                >
+                    {annotation.note}
+                </TooltipContent>
+            </Tooltip>
+        );
+    };
+
     const rootProps = {
         className: cn('relative whitespace-pre-wrap', className),
         'data-verse-id': verseId,
@@ -227,22 +318,12 @@ export function AnnotatedArabicText({
                         }
 
                         return (
-                            <Tooltip key={segment.annotation.id}>
-                                <TooltipTrigger asChild>
-                                    <span
-                                        className="rounded bg-amber-200/90 px-0.5 text-inherit"
-                                        data-note={segment.annotation.note}
-                                    >
-                                        {segment.text}
-                                    </span>
-                                </TooltipTrigger>
-                                <TooltipContent
-                                    className="max-w-xs text-left whitespace-pre-wrap"
-                                    sideOffset={6}
-                                >
-                                    {segment.annotation.note}
-                                </TooltipContent>
-                            </Tooltip>
+                            <span key={segment.annotation.id}>
+                                {renderAnnotatedSegment(
+                                    segment.annotation,
+                                    segment.text,
+                                )}
+                            </span>
                         );
                     })}
                 </span>
@@ -258,22 +339,12 @@ export function AnnotatedArabicText({
                         }
 
                         return (
-                            <Tooltip key={segment.annotation.id}>
-                                <TooltipTrigger asChild>
-                                    <span
-                                        className="rounded bg-amber-200/90 px-0.5 text-inherit"
-                                        data-note={segment.annotation.note}
-                                    >
-                                        {segment.text}
-                                    </span>
-                                </TooltipTrigger>
-                                <TooltipContent
-                                    className="max-w-xs text-left whitespace-pre-wrap"
-                                    sideOffset={6}
-                                >
-                                    {segment.annotation.note}
-                                </TooltipContent>
-                            </Tooltip>
+                            <span key={segment.annotation.id}>
+                                {renderAnnotatedSegment(
+                                    segment.annotation,
+                                    segment.text,
+                                )}
+                            </span>
                         );
                     })}
                 </div>
@@ -370,6 +441,22 @@ export function AnnotatedArabicText({
                 open={isLoginModalOpen}
                 onOpenChange={setIsLoginModalOpen}
             />
+            <Dialog
+                open={!!selectedAnnotation}
+                onOpenChange={(open) => !open && setSelectedAnnotation(null)}
+            >
+                <DialogContent
+                    aria-describedby={undefined}
+                    className="max-h-[85vh] overflow-hidden p-4 sm:max-w-lg sm:p-6"
+                >
+                    <DialogHeader>
+                        <DialogTitle>Note</DialogTitle>
+                    </DialogHeader>
+                    <div className="overflow-y-auto whitespace-pre-wrap text-sm text-foreground">
+                        {selectedAnnotation?.note}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }

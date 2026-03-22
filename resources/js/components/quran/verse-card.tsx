@@ -56,6 +56,7 @@ interface VerseCardProps {
     hideHeaderActions?: boolean;
     annotations?: VerseAnnotation[];
     onAnnotationCreated?: (annotation: VerseAnnotation) => void;
+    contentClassName?: string;
 }
 
 export function VerseCard({
@@ -75,6 +76,7 @@ export function VerseCard({
     hideHeaderActions = false,
     annotations = [],
     onAnnotationCreated,
+    contentClassName,
 }: VerseCardProps) {
     const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
     const [isResourcesSheetOpen, setIsResourcesSheetOpen] = useState(false);
@@ -183,7 +185,7 @@ export function VerseCard({
             )}
             data-verse-id={`verse-${verse.chapterId}-${verse.verseNumber}`}
         >
-            <CardContent className="px-4 py-2 md:p-1">
+            <CardContent className={cn('px-4 py-2 md:p-1', contentClassName)}>
                 {/* Verse Header */}
                 <div className="mb-5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
