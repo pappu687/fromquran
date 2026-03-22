@@ -7,6 +7,11 @@ import {
     PopoverTrigger,
 } from '@/components/ui/popover';
 import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
     Sheet,
     SheetContent,
     SheetHeader,
@@ -100,15 +105,20 @@ export function JumpToAyah({
     };
 
     const trigger = (
-        <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            className="rounded-full text-slate-500 hover:bg-stone-200/80 hover:text-slate-900"
-            aria-label="Jump to ayah"
-        >
-            <Crosshair className="h-4 w-4" />
-        </Button>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="rounded-full text-slate-500 hover:bg-stone-200/80 hover:text-slate-900"
+                    aria-label="Jump to ayah"
+                >
+                    <Crosshair className="h-4 w-4" />
+                </Button>
+            </TooltipTrigger>
+            <TooltipContent>Jump to Ayah</TooltipContent>
+        </Tooltip>
     );
 
     const panel = (
