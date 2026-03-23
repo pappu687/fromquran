@@ -38,8 +38,24 @@ createInertiaApp({
             </StrictMode>
         );
 
-        if (el.innerHTML) {
-            hydrateRoot(el, content);
+        if (el.hasChildNodes()) {
+            try {
+                hydrateRoot(el, content);
+            } catch (error) {
+                if (import.meta.env.DEV) {
+                    // In development, rethrow so React's full error is visible
+                    console.error(error);
+                    throw error;
+                }
+
+                // In production, fall back to a client-only render if hydration fails
+                console.error(
+                    'Hydration failed; falling back to client render.',
+                    error,
+                );
+                el.innerHTML = '';
+                createRoot(el).render(content);
+            }
         } else {
             createRoot(el).render(content);
         }

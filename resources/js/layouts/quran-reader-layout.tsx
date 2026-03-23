@@ -1,8 +1,7 @@
 import { NavActions } from '@/components/nav-actions';
+import { ChapterInfoSheet } from '@/components/quran/chapter-info-sheet';
 import { JumpToAyah } from '@/components/quran/jump-to-ayah';
 import { QuranSidebar } from '@/components/quran/quran-sidebar';
-import { type BreadcrumbItem as AppBreadcrumbItem } from '@/types';
-import { type ChapterSummary } from '@/types/quran';
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -11,13 +10,18 @@ import {
     BreadcrumbPage,
     BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-import { Separator } from '@/components/ui/separator';
-import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import {
+    SidebarInset,
+    SidebarProvider,
+    SidebarTrigger,
+} from '@/components/ui/sidebar';
+import { type BreadcrumbItem as AppBreadcrumbItem } from '@/types';
+import { type ChapterSummary } from '@/types/quran';
 import { Link } from '@inertiajs/react';
 import { Info } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
-import { ChapterInfoSheet } from '@/components/quran/chapter-info-sheet';
 
 interface QuranReaderLayoutProps {
     children: ReactNode;
@@ -39,7 +43,9 @@ export default function QuranReaderLayout({
     breadcrumbs = [],
 }: QuranReaderLayoutProps) {
     const [isChapterInfoOpen, setIsChapterInfoOpen] = useState(false);
-    const chapter = selectedChapter ? chapters.find((c) => c.id === selectedChapter) : null;
+    const chapter = selectedChapter
+        ? chapters.find((c) => c.id === selectedChapter)
+        : null;
 
     return (
         <SidebarProvider>
@@ -73,9 +79,7 @@ export default function QuranReaderLayout({
                                                     <>
                                                         <BreadcrumbLink asChild>
                                                             <Link
-                                                                href={
-                                                                    item.href
-                                                                }
+                                                                href={item.href}
                                                             >
                                                                 {item.title}
                                                             </Link>
