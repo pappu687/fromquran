@@ -255,9 +255,14 @@ export default function SearchPage({
                                                     verse.chapterId,
                                                 verseNumber: verse.verseNumber,
                                                 text: verse.text,
-                                                translation:
-                                                    verse.translation ??
-                                                    undefined,
+                                                translations: verse.translation
+                                                    ? [
+                                                          {
+                                                              resource_id: 0,
+                                                              text: verse.translation,
+                                                          },
+                                                      ]
+                                                    : undefined,
                                                 juzNumber: verse.juzNumber ?? 0,
                                                 pageNumber:
                                                     verse.pageNumber ?? 0,

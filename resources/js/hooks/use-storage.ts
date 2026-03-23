@@ -13,19 +13,22 @@ export function useStorage<T>({
     serialize = JSON.stringify,
     deserialize = JSON.parse,
 }: UseStorageOptions<T>) {
-    const [value, setValue] = useState<T>(() => {
+    const [value, setValue] = useState<T>(defaultValue);
+
+    useEffect(() => {
         if (typeof window === 'undefined') {
-            return defaultValue;
+            return;
         }
 
         try {
             const item = window.localStorage.getItem(key);
-            return item ? deserialize(item) : defaultValue;
+            if (item) {
+                setValue(deserialize(item));
+            }
         } catch (error) {
             console.warn(`Error reading localStorage key "${key}":`, error);
-            return defaultValue;
         }
-    });
+    }, [key, deserialize]);
 
     useEffect(() => {
         if (typeof window === 'undefined') {

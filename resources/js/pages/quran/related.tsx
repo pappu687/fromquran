@@ -572,8 +572,10 @@ export default function RelatedPage({
                                                                                     {new Date(
                                                                                         resource.created_at,
                                                                                     ).toLocaleDateString(
-                                                                                        undefined,
+                                                                                        'en-US',
                                                                                         {
+                                                                                            timeZone:
+                                                                                                'UTC',
                                                                                             month: 'short',
                                                                                             year: 'numeric',
                                                                                         },
@@ -772,8 +774,12 @@ export default function RelatedPage({
                                                         verseNumber:
                                                             similar.verse_number,
                                                         text: similar.text_uthmani,
-                                                        translation:
-                                                            similar.translation,
+                                                        translations: [
+                                                            {
+                                                                resource_id: 0,
+                                                                text: similar.translation,
+                                                            },
+                                                        ],
                                                         juzNumber: 0,
                                                         pageNumber: 0,
                                                     }}

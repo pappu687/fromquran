@@ -505,8 +505,10 @@ export function ResourcesSheet({
                                                                                         {new Date(
                                                                                             resource.created_at,
                                                                                         ).toLocaleDateString(
-                                                                                            undefined,
+                                                                                            'en-US',
                                                                                             {
+                                                                                                timeZone:
+                                                                                                    'UTC',
                                                                                                 month: 'short',
                                                                                                 year: 'numeric',
                                                                                             },

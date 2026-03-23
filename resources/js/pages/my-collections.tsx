@@ -93,13 +93,16 @@ export default function MyCollectionsPage() {
             const params = new URLSearchParams();
             tagSlugs.forEach((slug) => params.append('tags[]', slug));
 
-            const response = await fetch(`/api/collections?${params.toString()}`, {
-                headers: {
-                    Accept: 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || '',
+            const response = await fetch(
+                `/api/collections?${params.toString()}`,
+                {
+                    headers: {
+                        Accept: 'application/json',
+                        'X-CSRF-TOKEN': csrfToken || '',
+                    },
+                    credentials: 'include',
                 },
-                credentials: 'include',
-            });
+            );
 
             if (response.status === 401) {
                 router.visit('/login');
@@ -338,9 +341,8 @@ export default function MyCollectionsPage() {
                                     Filter by tag
                                 </p>
                                 {availableTags.map((tag) => {
-                                    const isSelected = selectedTagSlugs.includes(
-                                        tag.slug,
-                                    );
+                                    const isSelected =
+                                        selectedTagSlugs.includes(tag.slug);
 
                                     return (
                                         <button
@@ -498,6 +500,7 @@ export default function MyCollectionsPage() {
                                             {new Date(
                                                 collection.created_at,
                                             ).toLocaleDateString('en-US', {
+                                                timeZone: 'UTC',
                                                 year: 'numeric',
                                                 month: 'short',
                                                 day: 'numeric',

@@ -68,14 +68,20 @@ function SidebarProvider({
 
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
-  const [_open, _setOpen] = React.useState(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(SIDEBAR_STORAGE_KEY)
-      if (saved !== null) return saved === "true"
+  const [_open, _setOpen] = React.useState(defaultOpen)
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return
+    try {
+      const saved = window.localStorage.getItem(SIDEBAR_STORAGE_KEY)
+      if (saved !== null) {
+        _setOpen(saved === "true")
+      }
+    } catch (error) {
+      console.warn('Error reading sidebar state from localStorage:', error)
     }
-    return defaultOpen
-  })
-  
+  }, [])
+
   const open = openProp ?? _open
   const setOpen = React.useCallback(
     (value: boolean | ((value: boolean) => boolean)) => {
@@ -610,10 +616,8 @@ function SidebarMenuSkeleton({
 }: React.ComponentProps<"div"> & {
   showIcon?: boolean
 }) {
-  // Random width between 50 to 90%.
-  const width = React.useMemo(() => {
-    return `${Math.floor(Math.random() * 40) + 50}%`
-  }, [])
+  // Fixed width to keep SSR and client consistent.
+  const width = "70%"
 
   return (
     <div

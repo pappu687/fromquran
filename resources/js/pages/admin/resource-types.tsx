@@ -244,7 +244,12 @@ export default function AdminResourceTypes({
             title: 'Created',
             sortable: true,
             cell: (resourceType) =>
-                new Date(resourceType.created_at).toLocaleDateString(),
+                new Date(resourceType.created_at).toLocaleDateString('en-US', {
+                    timeZone: 'UTC',
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                }),
         },
     ];
 
@@ -346,8 +351,7 @@ export default function AdminResourceTypes({
                                 Are you sure you want to delete the resource
                                 type "{resourceTypeToDelete?.name}"?
                                 {(resourceTypeToDelete?.user_verse_resources_count ??
-                                    0) >
-                                    0 && (
+                                    0) > 0 && (
                                     <>
                                         {' '}
                                         This action cannot be undone as it has

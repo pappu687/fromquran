@@ -39,23 +39,24 @@ export function ChaptersPanel({
     const chapterButtonRefs = useRef<Record<number, HTMLButtonElement | null>>(
         {},
     );
-    const [recentlyViewed, setRecentlyViewed] = useState<number[]>(() => {
+    const [recentlyViewed, setRecentlyViewed] = useState<number[]>([]);
+
+    useEffect(() => {
         if (typeof window === 'undefined') {
-            return [];
+            return;
         }
 
-        const saved = localStorage.getItem('quran_recently_viewed');
+        const saved = window.localStorage.getItem('quran_recently_viewed');
         if (!saved) {
-            return [];
+            return;
         }
 
         try {
-            return JSON.parse(saved) as number[];
+            setRecentlyViewed(JSON.parse(saved) as number[]);
         } catch (e) {
             console.error('Failed to parse recently viewed', e);
-            return [];
         }
-    });
+    }, []);
 
     const saveRecentlyViewed = (id: number) => {
         const updated = [
@@ -104,16 +105,16 @@ export function ChaptersPanel({
         let attempts = 0;
 
         const alignSelectedChapter = () => {
-            const viewport =
-                scrollAreaRef.current?.osInstance()?.elements().viewport;
+            const viewport = scrollAreaRef.current
+                ?.osInstance()
+                ?.elements().viewport;
             const selectedButton = chapterButtonRefs.current[selectedChapter];
 
             if (!viewport || !selectedButton) {
                 if (attempts < 10) {
                     attempts += 1;
-                    frameId = window.requestAnimationFrame(
-                        alignSelectedChapter,
-                    );
+                    frameId =
+                        window.requestAnimationFrame(alignSelectedChapter);
                 }
 
                 return;
@@ -122,9 +123,7 @@ export function ChaptersPanel({
             const viewportRect = viewport.getBoundingClientRect();
             const buttonRect = selectedButton.getBoundingClientRect();
             const targetTop =
-                viewport.scrollTop +
-                (buttonRect.top - viewportRect.top) -
-                12;
+                viewport.scrollTop + (buttonRect.top - viewportRect.top) - 12;
             const maxScrollTop = viewport.scrollHeight - viewport.clientHeight;
 
             viewport.scrollTo({

@@ -227,7 +227,13 @@ export default function AdminUsers({
             key: 'created_at',
             title: 'Created',
             sortable: true,
-            cell: (user) => new Date(user.created_at).toLocaleDateString(),
+            cell: (user) =>
+                new Date(user.created_at).toLocaleDateString('en-US', {
+                    timeZone: 'UTC',
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                }),
         },
     ];
 

@@ -258,7 +258,13 @@ export default function AdminRoles({
             key: 'created_at',
             title: 'Created',
             sortable: true,
-            cell: (role) => new Date(role.created_at).toLocaleDateString(),
+            cell: (role) =>
+                new Date(role.created_at).toLocaleDateString('en-US', {
+                    timeZone: 'UTC',
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                }),
         },
     ];
 

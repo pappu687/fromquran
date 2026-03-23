@@ -242,10 +242,6 @@ export default function HomePage() {
                                 <ArrowRight className="h-4 w-4" />
                             </Button>
                         </div>
-                        <p className="mt-3 text-sm leading-7 text-slate-500 sm:text-base">
-                            Open any surah directly and continue reading from a
-                            calmer, more connected experience.
-                        </p>
                     </div>
 
                     {loading ? (

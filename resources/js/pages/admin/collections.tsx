@@ -398,7 +398,16 @@ export default function CollectionsAdminPage({
                                                         <td className="p-3 text-sm text-muted-foreground">
                                                             {new Date(
                                                                 collection.created_at,
-                                                            ).toLocaleDateString()}
+                                                            ).toLocaleDateString(
+                                                                'en-US',
+                                                                {
+                                                                    timeZone:
+                                                                        'UTC',
+                                                                    year: 'numeric',
+                                                                    month: 'short',
+                                                                    day: 'numeric',
+                                                                },
+                                                            )}
                                                         </td>
                                                         <td className="p-3">
                                                             <div className="flex justify-end gap-2">

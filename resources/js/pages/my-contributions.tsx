@@ -533,8 +533,7 @@ export default function ContributionsPage() {
                                                                         )
                                                                     }
                                                                 >
-                                                                    View
-                                                                    details
+                                                                    View details
                                                                     <MoveRight className="h-3.5 w-3.5" />
                                                                 </Button>
                                                             )}
@@ -562,6 +561,7 @@ export default function ContributionsPage() {
                                                     ).toLocaleDateString(
                                                         'en-US',
                                                         {
+                                                            timeZone: 'UTC',
                                                             year: 'numeric',
                                                             month: 'short',
                                                             day: 'numeric',
@@ -577,6 +577,7 @@ export default function ContributionsPage() {
                                                         ).toLocaleDateString(
                                                             'en-US',
                                                             {
+                                                                timeZone: 'UTC',
                                                                 year: 'numeric',
                                                                 month: 'short',
                                                                 day: 'numeric',

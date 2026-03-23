@@ -532,7 +532,15 @@ export default function ResourceSubmissions({
                                                     <span className="text-sm text-muted-foreground">
                                                         {new Date(
                                                             submission.created_at,
-                                                        ).toLocaleDateString()}
+                                                        ).toLocaleDateString(
+                                                            'en-US',
+                                                            {
+                                                                timeZone: 'UTC',
+                                                                year: 'numeric',
+                                                                month: 'short',
+                                                                day: 'numeric',
+                                                            },
+                                                        )}
                                                     </span>
                                                 </td>
                                                 <td className="px-4 py-4 md:px-5">

@@ -502,8 +502,12 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
                                                                 verseNumber:
                                                                     verse.verse_number,
                                                                 text: verse.text_uthmani,
-                                                                translation:
-                                                                    verse.translation,
+                                                                translations: [
+                                                                    {
+                                                                        resource_id: 0,
+                                                                        text: verse.translation,
+                                                                    },
+                                                                ],
                                                                 juzNumber: 0,
                                                                 pageNumber: 0,
                                                             }}

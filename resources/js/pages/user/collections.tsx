@@ -1,5 +1,5 @@
 import { CollectionTagList } from '@/components/collections/collection-tag-list';
-import { type CollectionTag } from '@/types/collections';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -7,18 +7,18 @@ import {
     CardFooter,
     CardHeader,
 } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import PublicLayout from '@/layouts/public-layout';
+import { type CollectionTag } from '@/types/collections';
+import { Head, router, usePage } from '@inertiajs/react';
 import {
     ChevronRight,
     Folder,
     FolderPlus,
     Globe,
-    Lock,
     Loader2,
+    Lock,
 } from 'lucide-react';
-import { Head, router, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import PublicLayout from '@/layouts/public-layout';
 
 interface Collection {
     id: number;
@@ -34,7 +34,13 @@ interface Collection {
 }
 
 function formatDate(date: string) {
-    return new Date(date).toLocaleDateString(undefined, {
+    const parsed = new Date(date);
+    if (Number.isNaN(parsed.getTime())) {
+        return date;
+    }
+
+    return parsed.toLocaleDateString('en-US', {
+        timeZone: 'UTC',
         year: 'numeric',
         month: 'short',
         day: 'numeric',
@@ -84,11 +90,11 @@ export default function CollectionsPage() {
             const response = await fetch(
                 `/api/collections/public?${params.toString()}`,
                 {
-                headers: {
-                    Accept: 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || '',
-                },
-                credentials: 'include',
+                    headers: {
+                        Accept: 'application/json',
+                        'X-CSRF-TOKEN': csrfToken || '',
+                    },
+                    credentials: 'include',
                 },
             );
 
@@ -171,16 +177,16 @@ export default function CollectionsPage() {
                 <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
                     <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                         <div className="max-w-3xl">
-                        <p className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">
-                            Public Collections
-                        </p>
-                        <h1 className="font-young mt-3 text-[2.3rem] leading-[0.98] tracking-[-0.05em] text-slate-950 sm:text-[3.25rem]">
-                            Community-curated verse sets.
-                        </h1>
-                        <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-500 sm:text-base">
-                            Browse how others organize ayat into themes for
-                            reflection, teaching, memorization, and study.
-                        </p>
+                            <p className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">
+                                Public Collections
+                            </p>
+                            <h1 className="font-young mt-3 text-[2.3rem] leading-[0.98] tracking-[-0.05em] text-slate-950 sm:text-[3.25rem]">
+                                Community-curated verse sets.
+                            </h1>
+                            <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-500 sm:text-base">
+                                Browse how others organize ayat into themes for
+                                reflection, teaching, memorization, and study.
+                            </p>
                         </div>
 
                         <div className="flex flex-col gap-3 sm:flex-row">
@@ -195,26 +201,26 @@ export default function CollectionsPage() {
                     </div>
 
                     <div className="mt-6 grid gap-3 sm:max-w-md sm:grid-cols-2">
-                            <div className="rounded-3xl bg-white px-4 py-4 ring-1 ring-slate-200">
-                                <div className="text-2xl font-semibold tracking-tight text-slate-950">
-                                    {collections.length}
-                                </div>
-                                <p className="mt-1 text-sm leading-6 text-slate-500">
-                                    public collections available
-                                </p>
+                        <div className="rounded-3xl bg-white px-4 py-4 ring-1 ring-slate-200">
+                            <div className="text-2xl font-semibold tracking-tight text-slate-950">
+                                {collections.length}
                             </div>
-                            <div className="rounded-3xl bg-white px-4 py-4 ring-1 ring-slate-200">
-                                <div className="text-2xl font-semibold tracking-tight text-slate-950">
-                                    {collections.reduce(
-                                        (sum, collection) =>
-                                            sum + collection.verses_count,
-                                        0,
-                                    )}
-                                </div>
-                                <p className="mt-1 text-sm leading-6 text-slate-500">
-                                    verses gathered across lists
-                                </p>
+                            <p className="mt-1 text-sm leading-6 text-slate-500">
+                                public collections available
+                            </p>
+                        </div>
+                        <div className="rounded-3xl bg-white px-4 py-4 ring-1 ring-slate-200">
+                            <div className="text-2xl font-semibold tracking-tight text-slate-950">
+                                {collections.reduce(
+                                    (sum, collection) =>
+                                        sum + collection.verses_count,
+                                    0,
+                                )}
                             </div>
+                            <p className="mt-1 text-sm leading-6 text-slate-500">
+                                verses gathered across lists
+                            </p>
+                        </div>
                     </div>
 
                     {availableTags.length > 0 && (
@@ -352,9 +358,8 @@ export default function CollectionsPage() {
                                                 {shortDescription ? (
                                                     <p>{shortDescription}</p>
                                                 ) : (
-                                                    <p className="italic text-slate-400">
-                                                        No description
-                                                        provided.
+                                                    <p className="text-slate-400 italic">
+                                                        No description provided.
                                                     </p>
                                                 )}
                                             </div>
@@ -370,7 +375,9 @@ export default function CollectionsPage() {
                                             <div className="mt-4 grid grid-cols-2 gap-3">
                                                 <div className="rounded-2xl bg-stone-50 px-4 py-2.5">
                                                     <p className="text-xl font-semibold tracking-tight text-slate-950">
-                                                        {collection.verses_count}
+                                                        {
+                                                            collection.verses_count
+                                                        }
                                                     </p>
                                                     <p className="mt-1 text-xs tracking-[0.14em] text-slate-400 uppercase">
                                                         Verses

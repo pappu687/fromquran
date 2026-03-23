@@ -88,10 +88,7 @@ export default function MyAnnotationsPage() {
         const chapterNumber = Number(chapterString);
         const verseNumber = Number(verseString);
 
-        if (
-            Number.isFinite(chapterNumber) &&
-            Number.isFinite(verseNumber)
-        ) {
+        if (Number.isFinite(chapterNumber) && Number.isFinite(verseNumber)) {
             router.visit(`/${chapterNumber}/${verseNumber}`);
         }
     };
@@ -300,27 +297,23 @@ export default function MyAnnotationsPage() {
                                                 Created{' '}
                                                 {new Date(
                                                     annotation.created_at,
-                                                ).toLocaleDateString(
-                                                    'en-US',
-                                                    {
-                                                        year: 'numeric',
-                                                        month: 'short',
-                                                        day: 'numeric',
-                                                    },
-                                                )}
+                                                ).toLocaleDateString('en-US', {
+                                                    timeZone: 'UTC',
+                                                    year: 'numeric',
+                                                    month: 'short',
+                                                    day: 'numeric',
+                                                })}
                                             </p>
                                             <p>
                                                 Updated{' '}
                                                 {new Date(
                                                     annotation.updated_at,
-                                                ).toLocaleDateString(
-                                                    'en-US',
-                                                    {
-                                                        year: 'numeric',
-                                                        month: 'short',
-                                                        day: 'numeric',
-                                                    },
-                                                )}
+                                                ).toLocaleDateString('en-US', {
+                                                    timeZone: 'UTC',
+                                                    year: 'numeric',
+                                                    month: 'short',
+                                                    day: 'numeric',
+                                                })}
                                             </p>
                                         </div>
                                     </article>

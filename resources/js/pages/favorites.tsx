@@ -57,79 +57,82 @@ export default function FavoritesPage() {
     ).length;
 
     // Load translations for bookmarked verses using Quran API (Solr-backed)
-    const loadTranslations = useCallback(async (loadedBookmarks: Bookmark[]) => {
-        try {
-            const byChapter: Record<number, Bookmark[]> = {};
-            loadedBookmarks.forEach((b) => {
-                const chapterNumber = b.chapter.chapter_number;
-                if (!byChapter[chapterNumber]) {
-                    byChapter[chapterNumber] = [];
+    const loadTranslations = useCallback(
+        async (loadedBookmarks: Bookmark[]) => {
+            try {
+                const byChapter: Record<number, Bookmark[]> = {};
+                loadedBookmarks.forEach((b) => {
+                    const chapterNumber = b.chapter.chapter_number;
+                    if (!byChapter[chapterNumber]) {
+                        byChapter[chapterNumber] = [];
+                    }
+                    byChapter[chapterNumber].push(b);
+                });
+
+                const translationMap: Record<string, string> = {};
+
+                await Promise.all(
+                    Object.entries(byChapter).map(
+                        async ([chapterNumStr, bookmarksInChapter]) => {
+                            const chapterNumber = Number(chapterNumStr);
+                            const verseNumbers = bookmarksInChapter.map(
+                                (b) => b.verse.verse_number,
+                            );
+                            const minVerse = Math.min(...verseNumbers);
+                            const maxVerse = Math.max(...verseNumbers);
+
+                            const params = new URLSearchParams({
+                                from: String(minVerse),
+                                to: String(maxVerse),
+                                limit: String(maxVerse - minVerse + 1),
+                                edition: 'en.sahih',
+                            });
+
+                            const resp = await fetch(
+                                `/api/quran/chapters/${chapterNumber}/verses?${params.toString()}`,
+                            );
+                            if (!resp.ok) return;
+                            const payload =
+                                (await resp.json()) as ChapterVersesResponse;
+                            const items = payload.data || [];
+                            items.forEach((item) => {
+                                const key = `${chapterNumber}:${item.verseNumber}`;
+                                if (item.translation) {
+                                    translationMap[key] = item.translation;
+                                }
+                            });
+                        },
+                    ),
+                );
+
+                if (Object.keys(translationMap).length === 0) {
+                    return;
                 }
-                byChapter[chapterNumber].push(b);
-            });
 
-            const translationMap: Record<string, string> = {};
-
-            await Promise.all(
-                Object.entries(byChapter).map(
-                    async ([chapterNumStr, bookmarksInChapter]) => {
-                        const chapterNumber = Number(chapterNumStr);
-                        const verseNumbers = bookmarksInChapter.map(
-                            (b) => b.verse.verse_number,
-                        );
-                        const minVerse = Math.min(...verseNumbers);
-                        const maxVerse = Math.max(...verseNumbers);
-
-                        const params = new URLSearchParams({
-                            from: String(minVerse),
-                            to: String(maxVerse),
-                            limit: String(maxVerse - minVerse + 1),
-                            edition: 'en.sahih',
-                        });
-
-                        const resp = await fetch(
-                            `/api/quran/chapters/${chapterNumber}/verses?${params.toString()}`,
-                        );
-                        if (!resp.ok) return;
-                        const payload =
-                            (await resp.json()) as ChapterVersesResponse;
-                        const items = payload.data || [];
-                        items.forEach((item) => {
-                            const key = `${chapterNumber}:${item.verseNumber}`;
-                            if (item.translation) {
-                                translationMap[key] = item.translation;
-                            }
-                        });
-                    },
-                ),
-            );
-
-            if (Object.keys(translationMap).length === 0) {
-                return;
+                setBookmarks((prev) =>
+                    prev.map((b) => {
+                        const key = `${b.chapter.chapter_number}:${b.verse.verse_number}`;
+                        const translation = translationMap[key];
+                        return translation
+                            ? {
+                                  ...b,
+                                  verse: {
+                                      ...b.verse,
+                                      translation,
+                                  },
+                              }
+                            : b;
+                    }),
+                );
+            } catch (error) {
+                console.error(
+                    'Failed to load translations for favorite verses',
+                    error,
+                );
             }
-
-            setBookmarks((prev) =>
-                prev.map((b) => {
-                    const key = `${b.chapter.chapter_number}:${b.verse.verse_number}`;
-                    const translation = translationMap[key];
-                    return translation
-                        ? {
-                              ...b,
-                              verse: {
-                                  ...b.verse,
-                                  translation,
-                              },
-                          }
-                        : b;
-                }),
-            );
-        } catch (error) {
-            console.error(
-                'Failed to load translations for favorite verses',
-                error,
-            );
-        }
-    }, []);
+        },
+        [],
+    );
 
     const loadBookmarks = useCallback(async () => {
         setIsLoading(true);
@@ -330,8 +333,7 @@ export default function FavoritesPage() {
                                                 handleViewVerse(
                                                     bookmark.chapter
                                                         .chapter_number,
-                                                    bookmark.verse
-                                                        .verse_number,
+                                                    bookmark.verse.verse_number,
                                                 )
                                             }
                                         >
@@ -388,14 +390,12 @@ export default function FavoritesPage() {
                                                 Added{' '}
                                                 {new Date(
                                                     bookmark.created_at,
-                                                ).toLocaleDateString(
-                                                    'en-US',
-                                                    {
-                                                        year: 'numeric',
-                                                        month: 'short',
-                                                        day: 'numeric',
-                                                    },
-                                                )}
+                                                ).toLocaleDateString('en-US', {
+                                                    timeZone: 'UTC',
+                                                    year: 'numeric',
+                                                    month: 'short',
+                                                    day: 'numeric',
+                                                })}
                                             </p>
                                         </div>
 
