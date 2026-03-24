@@ -33,19 +33,8 @@ import {
     Trash2,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-
-interface Collection {
-    id: number;
-    name: string;
-    description?: string;
-    color: string;
-    is_public: boolean;
-    status: 'pending' | 'approved' | 'rejected';
-    verses_count: number;
-    slug: string;
-    created_at: string;
-    tags: CollectionTag[];
-}
+import { useCollections } from '@/hooks';
+import { api } from '@/lib/api-client';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -56,23 +45,31 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function MyCollectionsPage() {
     const page = usePage();
-    const [collections, setCollections] = useState<Collection[]>([]);
+    const {
+        collections,
+        loading,
+        error,
+        successMessage,
+        selectedTagSlugs,
+        loadCollections,
+        deleteCollection,
+        clearError,
+        clearSuccessMessage,
+        setSelectedTagSlugs,
+    } = useCollections();
+
     const [availableTags, setAvailableTags] = useState<CollectionTag[]>([]);
-    const [selectedTagSlugs, setSelectedTagSlugs] = useState<string[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedCollection, setSelectedCollection] =
-        useState<Collection | null>(null);
+        useState<typeof collections[number] | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [errors, setErrors] = useState<Record<string, string>>({});
-    const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
     useEffect(() => {
         const queryString = page.url.split('?')[1] ?? '';
         const params = new URLSearchParams(queryString);
         const urlTags = params.getAll('tags[]');
         setSelectedTagSlugs(urlTags);
-    }, [page.url]);
+    }, [page.url, setSelectedTagSlugs]);
 
     useEffect(() => {
         loadAvailableTags();
@@ -80,66 +77,11 @@ export default function MyCollectionsPage() {
 
     useEffect(() => {
         loadCollections(selectedTagSlugs);
-    }, [selectedTagSlugs]);
-
-    const loadCollections = async (tagSlugs: string[] = []) => {
-        setIsLoading(true);
-
-        try {
-            const csrfToken = document
-                .querySelector('meta[name="csrf-token"]')
-                ?.getAttribute('content');
-
-            const params = new URLSearchParams();
-            tagSlugs.forEach((slug) => params.append('tags[]', slug));
-
-            const response = await fetch(
-                `/api/collections?${params.toString()}`,
-                {
-                    headers: {
-                        Accept: 'application/json',
-                        'X-CSRF-TOKEN': csrfToken || '',
-                    },
-                    credentials: 'include',
-                },
-            );
-
-            if (response.status === 401) {
-                router.visit('/login');
-                return;
-            }
-
-            if (!response.ok) {
-                throw new Error('Failed to load collections');
-            }
-
-            const data = (await response.json()) as Collection[];
-            setCollections(data);
-            setErrors({});
-        } catch (error) {
-            console.error('Failed to load collections:', error);
-            setErrors({
-                general: 'Failed to load collections. Please try again.',
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    }, [selectedTagSlugs, loadCollections]);
 
     const loadAvailableTags = async () => {
         try {
-            const response = await fetch('/api/tags', {
-                headers: {
-                    Accept: 'application/json',
-                },
-                credentials: 'include',
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to load tags');
-            }
-
-            const data = (await response.json()) as CollectionTag[];
+            const data = await api.get<CollectionTag[]>('/api/tags');
             setAvailableTags(data);
         } catch (error) {
             console.error('Failed to load tags:', error);
@@ -154,7 +96,7 @@ export default function MyCollectionsPage() {
         );
     };
 
-    const handleDelete = (collection: Collection) => {
+    const handleDelete = (collection: typeof collections[number]) => {
         setSelectedCollection(collection);
         setIsDeleteDialogOpen(true);
     };
@@ -165,46 +107,21 @@ export default function MyCollectionsPage() {
         }
 
         setIsSubmitting(true);
-        const csrfToken = document
-            .querySelector('meta[name="csrf-token"]')
-            ?.getAttribute('content');
+        const success = await deleteCollection(selectedCollection.slug);
 
-        try {
-            const response = await fetch(
-                `/api/collections/${selectedCollection.slug}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        Accept: 'application/json',
-                        'X-CSRF-TOKEN': csrfToken || '',
-                    },
-                    credentials: 'include',
-                },
-            );
-
-            if (!response.ok) {
-                throw new Error('Failed to delete collection');
-            }
-
-            setCollections((prev) =>
-                prev.filter((item) => item.id !== selectedCollection.id),
-            );
+        if (success) {
             setIsDeleteDialogOpen(false);
             setSelectedCollection(null);
-            setSuccessMessage('Collection deleted successfully');
-            setTimeout(() => setSuccessMessage(null), 3000);
-        } catch {
-            setErrors({ general: 'Failed to delete collection' });
-        } finally {
-            setIsSubmitting(false);
         }
+
+        setIsSubmitting(false);
     };
 
     const handleViewCollection = (slug: string) => {
         router.visit(`/my-collections/${slug}`);
     };
 
-    const getStatusBadge = (status: Collection['status']) => {
+    const getStatusBadge = (status: typeof collections[number]['status']) => {
         if (status === 'approved') {
             return (
                 <Badge className="rounded-full bg-emerald-600 px-2.5 py-1 text-white hover:bg-emerald-700">
@@ -234,7 +151,7 @@ export default function MyCollectionsPage() {
         );
     };
 
-    if (isLoading) {
+    if (loading) {
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
                 <Head title="My Collections - From Quran" />
@@ -325,12 +242,28 @@ export default function MyCollectionsPage() {
                         <div className="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
                             <CheckCircle2 className="h-4 w-4 shrink-0" />
                             {successMessage}
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="ml-auto h-auto p-1"
+                                onClick={() => clearSuccessMessage()}
+                            >
+                                ×
+                            </Button>
                         </div>
                     )}
 
-                    {errors.general && (
+                    {error && (
                         <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                            {errors.general}
+                            {error}
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="ml-auto h-auto p-1"
+                                onClick={() => clearError()}
+                            >
+                                ×
+                            </Button>
                         </div>
                     )}
 
@@ -545,30 +478,22 @@ export default function MyCollectionsPage() {
                     </DialogHeader>
                     <DialogFooter className="gap-2 sm:gap-0">
                         <Button
+                            type="button"
                             variant="outline"
-                            className="rounded-full"
                             onClick={() => setIsDeleteDialogOpen(false)}
                             disabled={isSubmitting}
+                            className="rounded-full px-5"
                         >
                             Cancel
                         </Button>
                         <Button
+                            type="button"
                             variant="destructive"
-                            className="rounded-full"
                             onClick={confirmDelete}
                             disabled={isSubmitting}
+                            className="rounded-full px-5"
                         >
-                            {isSubmitting ? (
-                                <>
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                    Deleting...
-                                </>
-                            ) : (
-                                <>
-                                    <Trash2 className="h-4 w-4" />
-                                    Delete
-                                </>
-                            )}
+                            {isSubmitting ? 'Deleting...' : 'Delete'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

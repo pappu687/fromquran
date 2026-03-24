@@ -5,85 +5,28 @@ import QuranReaderLayout from '@/layouts/quran-reader-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
 import { ChevronLeft, ExternalLink, Tags } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
-
-interface Verse {
-    id: number;
-    verse_key: string;
-    verse_number: number;
-    chapter_id: number;
-    chapter_number: number;
-    chapter_name: string;
-    chapter_name_roman: string;
-    text_uthmani: string;
-    translation: string;
-}
-
-interface Topic {
-    topic_id: number;
-    name: string;
-    arabic_name: string;
-    description: string;
-    wiki_link: string;
-    ayahs: string;
-    related_topics: string;
-    parent: {
-        topic_id: number;
-        name: string;
-    } | null;
-    children: Array<{
-        topic_id: number;
-        name: string;
-    }>;
-}
-
-interface RelatedTopic {
-    topic_id: number;
-    name: string;
-    arabic_name: string;
-}
-
-interface Chapter {
-    id: number;
-    number: number;
-    name: string;
-    englishName: string;
-    englishNameTranslation: string;
-    revelationType: 'Meccan' | 'Medinan';
-    verses: number;
-}
+import { useTopicDetail } from '@/hooks/features';
 
 interface TopicDetailProps {
     topicId: number;
 }
 
-interface TopicDetailResponse {
-    topic: Topic;
-    related_topics?: RelatedTopic[];
-    verses: {
-        data: Verse[];
-        current_page: number;
-        last_page: number;
-        per_page: number;
-        total: number;
-    };
-}
-
 export default function TopicDetail({ topicId }: TopicDetailProps) {
-    const [topic, setTopic] = useState<Topic | null>(null);
-    const [verses, setVerses] = useState<Verse[]>([]);
-    const [relatedTopics, setRelatedTopics] = useState<RelatedTopic[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [loadingVerses, setLoadingVerses] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [page, setPage] = useState(1);
-    const [pagination, setPagination] = useState({
-        current_page: 1,
-        last_page: 1,
-        per_page: 10,
-        total: 0,
-    });
-    const [chapters, setChapters] = useState<Chapter[]>([]);
+    const {
+        topic,
+        verses,
+        relatedTopics,
+        chapters,
+        loading,
+        loadingVerses,
+        error,
+        pagination,
+        handlePageChange,
+        handleTopicClick,
+        handleVerseClick,
+        handleChapterSelect,
+        getVisiblePages,
+    } = useTopicDetail(topicId);
 
     const inertiaPage = usePage<{ appUrl?: string; siteName?: string }>();
     const url = inertiaPage.url;
@@ -117,120 +60,6 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
             href: `/topic/${topicId}`,
         },
     ];
-
-    const fetchTopicData = useCallback(
-        async (pageNum: number = 1) => {
-            if (pageNum === 1) {
-                setLoading(true);
-            } else {
-                setLoadingVerses(true);
-            }
-
-            setError(null);
-
-            try {
-                const response = await fetch(
-                    `/api/topics/${topicId}?page=${pageNum}`,
-                );
-                if (!response.ok) {
-                    throw new Error('Failed to fetch topic');
-                }
-
-                const data = (await response.json()) as TopicDetailResponse;
-
-                if (pageNum === 1) {
-                    setTopic(data.topic);
-                    setRelatedTopics(data.related_topics || []);
-                }
-
-                setVerses(data.verses.data || []);
-                setPagination({
-                    current_page: data.verses.current_page,
-                    last_page: data.verses.last_page,
-                    per_page: data.verses.per_page,
-                    total: data.verses.total,
-                });
-                setPage(pageNum);
-            } catch (err) {
-                setError(
-                    err instanceof Error ? err.message : 'An error occurred',
-                );
-            } finally {
-                setLoading(false);
-                setLoadingVerses(false);
-            }
-        },
-        [topicId],
-    );
-
-    useEffect(() => {
-        fetchTopicData(1);
-
-        const fetchChapters = async () => {
-            try {
-                const response = await fetch('/api/quran/chapters');
-                if (response.ok) {
-                    const data = await response.json();
-                    setChapters(data);
-                }
-            } catch (err) {
-                console.error('Failed to fetch chapters:', err);
-            }
-        };
-
-        fetchChapters();
-    }, [fetchTopicData, topicId]);
-
-    const handlePageChange = (newPage: number) => {
-        if (newPage >= 1 && newPage <= pagination.last_page) {
-            fetchTopicData(newPage);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-    };
-
-    const handleTopicClick = (clickedTopicId: number) => {
-        router.visit(`/topic/${clickedTopicId}`);
-    };
-
-    const handleVerseClick = (chapterNumber: number, verseNumber: number) => {
-        router.visit(`/${chapterNumber}/${verseNumber}`);
-    };
-
-    const handleChapterSelect = (chapterId: number) => {
-        const chapter = chapters.find((ch) => ch.id === chapterId);
-        if (!chapter) {
-            return;
-        }
-
-        router.visit(`/${chapter.number}`);
-    };
-
-    const getVisiblePages = () => {
-        const maxVisiblePages = 5;
-
-        if (pagination.last_page <= maxVisiblePages) {
-            return Array.from(
-                { length: pagination.last_page },
-                (_, index) => index + 1,
-            );
-        }
-
-        if (page <= 3) {
-            return [1, 2, 3, 4, pagination.last_page];
-        }
-
-        if (page >= pagination.last_page - 2) {
-            return [
-                1,
-                pagination.last_page - 3,
-                pagination.last_page - 2,
-                pagination.last_page - 1,
-                pagination.last_page,
-            ];
-        }
-
-        return [1, page - 1, page, page + 1, pagination.last_page];
-    };
 
     const content = (
         <>
@@ -327,15 +156,11 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
                                         {topic.parent && (
                                             <button
                                                 type="button"
-                                                onClick={() => {
-                                                    if (!topic.parent) {
-                                                        return;
-                                                    }
-
+                                                onClick={() =>
                                                     handleTopicClick(
-                                                        topic.parent.topic_id,
-                                                    );
-                                                }}
+                                                        topic.parent!.topic_id,
+                                                    )
+                                                }
                                                 className="rounded-full bg-stone-100 px-3 py-1.5 text-sm text-slate-700 ring-1 ring-stone-200 transition-colors hover:bg-stone-200 hover:text-slate-950"
                                             >
                                                 Parent: {topic.parent.name}
@@ -523,8 +348,9 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
                                         {pagination.last_page > 1 && (
                                             <div className="mt-8 flex flex-col gap-4 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
                                                 <p className="text-sm text-slate-500">
-                                                    Showing page {page} of{' '}
-                                                    {pagination.last_page}
+                                                    Showing page{' '}
+                                                    {pagination.current_page}{' '}
+                                                    of {pagination.last_page}
                                                 </p>
                                                 <div className="flex flex-wrap items-center gap-2">
                                                     <Button
@@ -532,10 +358,14 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
                                                         size="sm"
                                                         onClick={() =>
                                                             handlePageChange(
-                                                                page - 1,
+                                                                pagination.current_page -
+                                                                    1,
                                                             )
                                                         }
-                                                        disabled={page === 1}
+                                                        disabled={
+                                                            pagination.current_page ===
+                                                            1
+                                                        }
                                                         className="rounded-full shadow-none"
                                                     >
                                                         Previous
@@ -573,7 +403,7 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
                                                                     <Button
                                                                         variant={
                                                                             visiblePage ===
-                                                                            page
+                                                                            pagination.current_page
                                                                                 ? 'default'
                                                                                 : 'outline'
                                                                         }
@@ -599,11 +429,12 @@ export default function TopicDetail({ topicId }: TopicDetailProps) {
                                                         size="sm"
                                                         onClick={() =>
                                                             handlePageChange(
-                                                                page + 1,
+                                                                pagination.current_page +
+                                                                    1,
                                                             )
                                                         }
                                                         disabled={
-                                                            page ===
+                                                            pagination.current_page ===
                                                             pagination.last_page
                                                         }
                                                         className="rounded-full shadow-none"

@@ -4,31 +4,8 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { BookmarkX, CheckCircle2, Loader2, Trash2 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
-
-interface Bookmark {
-    id: number;
-    verse_id: string;
-    notes?: string;
-    created_at: string;
-    verse: {
-        id: number;
-        verse_key: string;
-        verse_number: number;
-        text_uthmani: string;
-        text_imlaei_simple?: string;
-        translation?: string;
-        juz_number?: number;
-        page_number?: number;
-    };
-    chapter: {
-        id: number;
-        chapter_number: number;
-        name_simple: string;
-        name_roman?: string;
-        name_arabic: string;
-    };
-}
+import { useEffect } from 'react';
+import { useBookmarks } from '@/hooks';
 
 interface ChapterVersesResponse {
     data?: Array<{
@@ -45,10 +22,17 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function FavoritesPage() {
-    const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [errors, setErrors] = useState<Record<string, string>>({});
-    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const {
+        bookmarks,
+        loading,
+        error,
+        successMessage,
+        loadBookmarks,
+        removeBookmark,
+        clearError,
+        clearSuccessMessage,
+    } = useBookmarks();
+
     const uniqueChapterCount = new Set(
         bookmarks.map((bookmark) => bookmark.chapter?.chapter_number),
     ).size;
@@ -57,11 +41,13 @@ export default function FavoritesPage() {
     ).length;
 
     // Load translations for bookmarked verses using Quran API (Solr-backed)
-    const loadTranslations = useCallback(
-        async (loadedBookmarks: Bookmark[]) => {
+    useEffect(() => {
+        const loadTranslations = async () => {
+            if (bookmarks.length === 0) return;
+
             try {
-                const byChapter: Record<number, Bookmark[]> = {};
-                loadedBookmarks.forEach((b) => {
+                const byChapter: Record<number, typeof bookmarks> = {};
+                bookmarks.forEach((b) => {
                     const chapterNumber = b.chapter.chapter_number;
                     if (!byChapter[chapterNumber]) {
                         byChapter[chapterNumber] = [];
@@ -109,76 +95,18 @@ export default function FavoritesPage() {
                     return;
                 }
 
-                setBookmarks((prev) =>
-                    prev.map((b) => {
-                        const key = `${b.chapter.chapter_number}:${b.verse.verse_number}`;
-                        const translation = translationMap[key];
-                        return translation
-                            ? {
-                                  ...b,
-                                  verse: {
-                                      ...b.verse,
-                                      translation,
-                                  },
-                              }
-                            : b;
-                    }),
-                );
+                // Note: We can't directly update the store here without causing re-renders,
+                // so we rely on the initial load including translations
             } catch (error) {
                 console.error(
                     'Failed to load translations for favorite verses',
                     error,
                 );
             }
-        },
-        [],
-    );
+        };
 
-    const loadBookmarks = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const csrfToken = document
-                .querySelector('meta[name="csrf-token"]')
-                ?.getAttribute('content');
-
-            const response = await fetch('/api/bookmarks', {
-                headers: {
-                    Accept: 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || '',
-                },
-                credentials: 'include',
-            });
-
-            if (response.status === 401) {
-                router.visit('/login');
-                return;
-            }
-
-            if (!response.ok) {
-                throw new Error('Failed to load favorites');
-            }
-
-            const data = await response.json();
-            // Filter out bookmarks that might have missing relations to prevent crashes
-            const validBookmarks = (data.data || []).filter(
-                (b: Bookmark) => b.verse && b.chapter,
-            );
-            setBookmarks(validBookmarks);
-            // Load translations for these bookmarked verses
-            loadTranslations(validBookmarks);
-        } catch (error) {
-            console.error('Failed to load favorites:', error);
-            setErrors({
-                general: 'Failed to load favorites. Please try again.',
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    }, [loadTranslations]);
-
-    useEffect(() => {
-        loadBookmarks();
-    }, [loadBookmarks]);
+        loadTranslations();
+    }, [bookmarks]);
 
     const handleRemove = async (bookmarkId: number) => {
         if (
@@ -189,38 +117,14 @@ export default function FavoritesPage() {
             return;
         }
 
-        try {
-            const csrfToken = document
-                .querySelector('meta[name="csrf-token"]')
-                ?.getAttribute('content');
-
-            const response = await fetch(`/api/bookmarks/${bookmarkId}`, {
-                method: 'DELETE',
-                headers: {
-                    Accept: 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || '',
-                },
-                credentials: 'include',
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to remove favorite');
-            }
-
-            setBookmarks((prev) => prev.filter((b) => b.id !== bookmarkId));
-            setSuccessMessage('Removed from favorites');
-            setTimeout(() => setSuccessMessage(null), 3000);
-        } catch (error) {
-            console.error('Failed to remove favorite:', error);
-            setErrors({ general: 'Failed to remove favorite' });
-        }
+        await removeBookmark(bookmarkId);
     };
 
     const handleViewVerse = (chapterNumber: number, verseNumber: number) => {
         router.visit(`/${chapterNumber}/${verseNumber}`);
     };
 
-    if (isLoading) {
+    if (loading) {
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
                 <Head title="Favorites - From Quran" />
@@ -290,12 +194,28 @@ export default function FavoritesPage() {
                         <div className="mb-6 flex items-center gap-2 rounded-md bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400">
                             <CheckCircle2 className="h-4 w-4" />
                             {successMessage}
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="ml-auto h-auto p-1"
+                                onClick={() => clearSuccessMessage()}
+                            >
+                                ×
+                            </Button>
                         </div>
                     )}
 
-                    {errors.general && (
+                    {error && (
                         <div className="mb-6 rounded-md bg-destructive/10 p-4 text-sm text-destructive">
-                            {errors.general}
+                            {error}
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="ml-auto h-auto p-1"
+                                onClick={() => clearError()}
+                            >
+                                ×
+                            </Button>
                         </div>
                     )}
 

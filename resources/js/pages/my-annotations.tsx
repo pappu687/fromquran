@@ -4,25 +4,7 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { BookText, Loader2, MoveRight, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-
-interface Annotation {
-    id: number;
-    verse_id: number;
-    start_offset: number;
-    end_offset: number;
-    selected_text: string;
-    note: string;
-    created_at: string;
-    updated_at: string;
-    verse?: {
-        id: number;
-        verse_key?: string;
-        verse_number?: number;
-        chapter_id?: number;
-        chapter_number?: number;
-    } | null;
-}
+import { useAnnotations } from '@/hooks';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -32,52 +14,15 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function MyAnnotationsPage() {
-    const [annotations, setAnnotations] = useState<Annotation[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [deletingAnnotationId, setDeletingAnnotationId] = useState<
-        number | null
-    >(null);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        const loadAnnotations = async () => {
-            setIsLoading(true);
-
-            try {
-                const csrfToken = document
-                    .querySelector('meta[name="csrf-token"]')
-                    ?.getAttribute('content');
-
-                const response = await fetch('/api/verse-annotations?all=1', {
-                    headers: {
-                        Accept: 'application/json',
-                        'X-CSRF-TOKEN': csrfToken || '',
-                    },
-                    credentials: 'include',
-                });
-
-                if (response.status === 401) {
-                    router.visit('/login');
-                    return;
-                }
-
-                if (!response.ok) {
-                    throw new Error('Failed to load annotations');
-                }
-
-                const payload: { data: Annotation[] } = await response.json();
-                setAnnotations(payload.data || []);
-                setError(null);
-            } catch (loadError) {
-                console.error('Failed to load annotations:', loadError);
-                setError('Failed to load annotations. Please try again.');
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        loadAnnotations();
-    }, []);
+    const {
+        annotations,
+        loading,
+        error,
+        successMessage,
+        deleteAnnotation,
+        clearError,
+        clearSuccessMessage,
+    } = useAnnotations();
 
     const goToVerse = (verseKey?: string) => {
         if (!verseKey) {
@@ -102,47 +47,10 @@ export default function MyAnnotationsPage() {
             return;
         }
 
-        setDeletingAnnotationId(annotationId);
-
-        try {
-            const csrfToken = document
-                .querySelector('meta[name="csrf-token"]')
-                ?.getAttribute('content');
-
-            const response = await fetch(
-                `/api/verse-annotations/${annotationId}`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        Accept: 'application/json',
-                        'X-CSRF-TOKEN': csrfToken || '',
-                    },
-                    credentials: 'include',
-                },
-            );
-
-            if (response.status === 401) {
-                router.visit('/login');
-                return;
-            }
-
-            if (!response.ok) {
-                throw new Error('Failed to delete annotation');
-            }
-
-            setAnnotations((current) =>
-                current.filter((annotation) => annotation.id !== annotationId),
-            );
-            setError(null);
-        } catch (deleteError) {
-            console.error('Failed to delete annotation:', deleteError);
-            setError('Failed to delete annotation. Please try again.');
-        } finally {
-            setDeletingAnnotationId(null);
-        }
+        await deleteAnnotation(annotationId);
     };
 
-    if (isLoading) {
+    if (loading) {
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
                 <Head title="My Annotations - From Quran" />
@@ -179,8 +87,30 @@ export default function MyAnnotationsPage() {
                     {error ? (
                         <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                             {error}
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="ml-auto h-auto p-1"
+                                onClick={() => clearError()}
+                            >
+                                ×
+                            </Button>
                         </div>
                     ) : null}
+
+                    {successMessage && (
+                        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                            {successMessage}
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="ml-auto h-auto p-1"
+                                onClick={() => clearSuccessMessage()}
+                            >
+                                ×
+                            </Button>
+                        </div>
+                    )}
 
                     <section className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                         <Card className="rounded-2xl border-slate-200/80 bg-white/90 shadow-none">
@@ -283,11 +213,7 @@ export default function MyAnnotationsPage() {
                                                             annotation.id,
                                                         )
                                                     }
-                                                    disabled={
-                                                        deletingAnnotationId ===
-                                                        annotation.id
-                                                    }
-                                                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                                                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
                                                     aria-label="Delete annotation"
                                                 >
                                                     <Trash2 className="h-4 w-4" />

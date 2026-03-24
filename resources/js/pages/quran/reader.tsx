@@ -3,13 +3,13 @@ import QuranReaderLayout from '@/layouts/quran-reader-layout';
 import { type ChapterSummary, type PaginatedVersesResponse } from '@/types/quran';
 import { Head, router, usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useState } from 'react';
+import { useChapters } from '@/hooks';
 
 interface QuranReaderProps {
     chapterNumber?: number;
     fromVerse?: number | null;
     toVerse?: number | null;
     chapter?: ChapterSummary; // Chapter provided by SSR
-    chapters?: ChapterSummary[]; // Chapters provided by SSR for sidebar
     initialVerses?: PaginatedVersesResponse;
 }
 
@@ -18,17 +18,12 @@ export default function QuranReader({
     fromVerse,
     toVerse,
     chapter: initialChapter,
-    chapters: initialChapters,
     initialVerses,
 }: QuranReaderProps) {
-    const [chapters, setChapters] = useState<ChapterSummary[]>(
-        initialChapters ?? [],
-    );
+    const { chapters, loading: chaptersLoading, getChapterById } = useChapters();
     const [selectedChapter, setSelectedChapter] = useState<
         ChapterSummary | undefined
-    >(
-        initialChapter,
-    );
+    >(initialChapter);
     const [loading, setLoading] = useState(!initialChapter);
     const [error, setError] = useState<string | null>(null);
     const [currentAyah, setCurrentAyah] = useState(fromVerse ?? 1);
@@ -80,53 +75,32 @@ export default function QuranReader({
 
     useEffect(() => {
         // If chapters were provided by the server, use them and avoid a client refetch
-        if (initialChapters && initialChapters.length) {
+        if (chapters.length > 0) {
             if (!initialChapter) {
                 setLoading(false);
             }
-            return;
         }
-
-        // Fallback: fetch chapters from API (needed for the dropdown/sidebar)
-        const fetchChapters = async () => {
-            try {
-                const response = await fetch('/api/quran/chapters');
-                const data = (await response.json()) as ChapterSummary[];
-                setChapters(data);
-                if (!initialChapter) {
-                    setLoading(false);
-                }
-            } catch {
-                if (!initialChapter) {
-                    setError('Failed to load chapters');
-                    setLoading(false);
-                }
-            }
-        };
-
-        fetchChapters();
-    }, [initialChapter, initialChapters]);
+    }, [chapters.length, initialChapter]);
 
     // Sync selected chapter with server-provided chapterNumber prop (for navigation)
     useEffect(() => {
         if (!chapters.length) return;
 
         if (chapterNumber) {
-            const byNumber = chapters.find((ch) => ch.number === chapterNumber);
-            const byId = chapters.find((ch) => ch.id === chapterNumber);
-            setSelectedChapter(byNumber ?? byId ?? chapters[0]);
-        } else if (!selectedChapter) {
+            const chapter = getChapterById(chapterNumber) || chapters[0];
+            setSelectedChapter(chapter);
+        } else if (!selectedChapter && chapters.length > 0) {
             setSelectedChapter(chapters[0]);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [chapters, chapterNumber]);
+    }, [chapters, chapterNumber, getChapterById]);
 
     useEffect(() => {
         setCurrentAyah(fromVerse ?? 1);
     }, [chapterNumber, fromVerse, toVerse]);
 
     const handleChapterSelect = (chapterId: number) => {
-        const chapter = chapters.find((ch) => ch.id === chapterId);
+        const chapter = getChapterById(chapterId);
         if (!chapter) return;
 
         // Update local state immediately for instant feedback

@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Head, router } from '@inertiajs/react';
 import { BookOpen, Search as SearchIcon } from 'lucide-react';
 import { FormEvent, useEffect, useState } from 'react';
+import { useChapters } from '@/hooks';
 
 interface VerseResult {
     id: number | null;
@@ -28,15 +29,6 @@ interface SearchPageProps {
     currentPage: number;
     perPage: number;
     total: number;
-    chapters: {
-        id: number;
-        number: number;
-        name: string;
-        englishName: string;
-        englishNameTranslation: string;
-        revelationType: 'Meccan' | 'Medinan';
-        verses: number;
-    }[];
 }
 
 export default function SearchPage({
@@ -46,8 +38,8 @@ export default function SearchPage({
     currentPage,
     perPage,
     total,
-    chapters,
 }: SearchPageProps) {
+    const { chapters } = useChapters();
     const [localQuery, setLocalQuery] = useState(query);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -78,18 +70,6 @@ export default function SearchPage({
     const showingFrom = total === 0 ? 0 : (currentPage - 1) * perPage + 1;
     const showingTo = total === 0 ? 0 : Math.min(currentPage * perPage, total);
 
-    const changePage = (page: number) => {
-        if (page < 1 || page > totalPages) {
-            return;
-        }
-
-        router.get(
-            '/search',
-            { query, page },
-            { preserveScroll: true, preserveState: true },
-        );
-    };
-
     const getVisiblePages = () => {
         const maxVisiblePages = 5;
 
@@ -112,6 +92,18 @@ export default function SearchPage({
         }
 
         return [1, currentPage - 1, currentPage, currentPage + 1, totalPages];
+    };
+
+    const changePage = (page: number) => {
+        if (page < 1 || page > totalPages) {
+            return;
+        }
+
+        router.get(
+            '/search',
+            { query, page },
+            { preserveScroll: true, preserveState: true },
+        );
     };
 
     return (
@@ -180,8 +172,8 @@ export default function SearchPage({
                                     </p>
                                     <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
                                         {hasResults
-                                            ? `Matches for “${query}”`
-                                            : `No results for “${query}”`}
+                                            ? `Matches for "${query}"`
+                                            : `No results for "${query}"`}
                                     </h2>
                                     <p className="mt-2 text-sm leading-7 text-slate-500">
                                         {hasResults
@@ -223,7 +215,7 @@ export default function SearchPage({
                                     No verses found
                                 </h2>
                                 <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-slate-500">
-                                    No matches were found for “{query}”. Try a
+                                    No matches were found for "{query}". Try a
                                     broader keyword or a shorter phrase.
                                 </p>
                             </section>

@@ -4,6 +4,7 @@ import QuranReaderLayout from '@/layouts/quran-reader-layout';
 import { Head, router, usePage } from '@inertiajs/react';
 import { Search, Tags } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useChapters } from '@/hooks';
 
 interface Topic {
     topic_id: number;
@@ -18,22 +19,13 @@ interface TopicNode {
     children?: TopicNode[];
 }
 
-interface Chapter {
-    id: number;
-    number: number;
-    name: string;
-    englishName: string;
-    englishNameTranslation: string;
-    revelationType: 'Meccan' | 'Medinan';
-    verses: number;
-}
-
 export default function Topics() {
     const [topics, setTopics] = useState<Topic[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
-    const [chapters, setChapters] = useState<Chapter[]>([]);
+
+    const { chapters, loading: chaptersLoading } = useChapters();
 
     const page = usePage<{ appUrl?: string; siteName?: string }>();
     const url = page.url;
@@ -86,20 +78,7 @@ export default function Topics() {
             }
         };
 
-        const fetchChapters = async () => {
-            try {
-                const response = await fetch('/api/quran/chapters');
-                if (response.ok) {
-                    const data = await response.json();
-                    setChapters(data);
-                }
-            } catch (err) {
-                console.error('Failed to fetch chapters:', err);
-            }
-        };
-
         fetchTopics();
-        fetchChapters();
     }, []);
 
     const handleChapterSelect = (chapterId: number) => {

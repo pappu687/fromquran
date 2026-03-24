@@ -16,7 +16,6 @@ import {
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@/contexts/auth-context';
 import QuranReaderLayout from '@/layouts/quran-reader-layout';
 import { Head, router, usePage } from '@inertiajs/react';
 import {
@@ -32,74 +31,9 @@ import {
     Tags,
     Video,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-
-interface ResourceType {
-    id: number;
-    slug: string;
-    name: string;
-}
-
-interface Resource {
-    id: string | number;
-    resource_type_id?: number;
-    resource_url: string;
-    resource_title: string | null;
-    comment: string | null;
-    is_truncated?: boolean;
-    resource_type: ResourceType;
-    user: {
-        name: string;
-    };
-    created_at?: string;
-}
-
-interface SimilarVerse {
-    id: number;
-    verse_key: string;
-    verse_number: number;
-    chapter_id: number;
-    chapter_number: number;
-    chapter_name: string;
-    chapter_name_roman: string;
-    text_uthmani: string;
-    translation: string;
-    translation_resource: string;
-    matched_words_count: number;
-    coverage: number;
-    score: number;
-    match_words_range: number[][];
-}
-
-interface Topic {
-    topic_id: number;
-    name: string;
-    arabic_name: string;
-}
-
-interface Chapter {
-    id: number;
-    number: number;
-    name: string;
-    englishName: string;
-    englishNameTranslation: string;
-    revelationType: 'Meccan' | 'Medinan';
-    verses: number;
-}
-
-interface MainVerse {
-    id: number;
-    chapterId: number;
-    chapterNumber?: number;
-    verseNumber: number;
-    text: string;
-    translation?: string;
-    audioUrl?: string;
-    juzNumber: number;
-    pageNumber: number;
-    hasResources?: boolean;
-    resourceCount?: number;
-}
+import { useEffect } from 'react';
+import { useRelatedVerse } from '@/hooks/features';
+import { useChapters } from '@/hooks';
 
 interface RelatedPageProps {
     chapterNumber: number;
@@ -122,27 +56,30 @@ export default function RelatedPage({
     previousVerse,
     nextVerse,
 }: RelatedPageProps) {
-    const { user } = useAuth();
-
-    const [resources, setResources] = useState<Resource[]>([]);
-    const [loadingResources, setLoadingResources] = useState(false);
-    const [loadingFullResourceId, setLoadingFullResourceId] = useState<
-        string | number | null
-    >(null);
-    const [selectedResource, setSelectedResource] = useState<{
-        title: string | null;
-        url: string | null;
-        comment: string;
-    } | null>(null);
-    const [similarVerses, setSimilarVerses] = useState<SimilarVerse[]>([]);
-    const [loadingSimilar, setLoadingSimilar] = useState(false);
-    const [topics, setTopics] = useState<Topic[]>([]);
-    const [loadingTopics, setLoadingTopics] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    const [chapters, setChapters] = useState<Chapter[]>([]);
-    const [mainVerse, setMainVerse] = useState<MainVerse | null>(null);
-    const [loadingMainVerse, setLoadingMainVerse] = useState(false);
+    const {
+        resources,
+        similarVerses,
+        topics,
+        mainVerse,
+        chapters,
+        loadingResources,
+        loadingSimilar,
+        loadingTopics,
+        loadingMainVerse,
+        loadingFullResourceId,
+        error,
+        selectedResource,
+        groupedResources,
+        refresh,
+        handleSeeMore,
+        handleVerseNavigate,
+        handleOpenInReader,
+        handleTopicClick,
+        handleChapterSelect,
+        formatMatchRange,
+        getResourceHighlight,
+        getDomainName,
+    } = useRelatedVerse(verseId, chapterNumber, verseNumber);
 
     const pageTitle = `Related Resources for Quran ${chapterNumber}:${verseNumber}`;
     const pageDescription = `Explore tafsir, fatwa, videos, articles, related verses, and topics for Quran ${chapterNumber}:${verseNumber} on From Quran.`;
@@ -160,239 +97,57 @@ export default function RelatedPage({
     const ogImage = `${baseUrl}/og-banner.png`;
     const fullTitle = `${pageTitle} | From Quran`;
 
-    useEffect(() => {
-        const fetchChapters = async () => {
-            try {
-                const response = await fetch('/api/quran/chapters');
-                if (!response.ok) {
-                    throw new Error('Failed to load chapters');
-                }
-                const data = await response.json();
-                setChapters(data);
-            } catch (err) {
-                console.error('Failed to fetch chapters:', err);
-            }
-        };
-
-        fetchChapters();
-    }, []);
-
-    useEffect(() => {
-        const fetchMainVerse = async () => {
-            if (!chapters.length) return;
-
-            const chapter = chapters.find((ch) => ch.number === chapterNumber);
-            if (!chapter) return;
-
-            setLoadingMainVerse(true);
-            try {
-                const params = new URLSearchParams({
-                    page: '1',
-                    limit: '1',
-                    edition: 'en.sahih',
-                    from: String(verseNumber),
-                    to: String(verseNumber),
-                });
-
-                const response = await fetch(
-                    `/api/quran/chapters/${chapter.id}/verses?${params.toString()}`,
-                );
-
-                if (!response.ok) {
-                    throw new Error('Failed to load verse');
-                }
-
-                const data = await response.json();
-                const verse = data.data?.[0];
-                if (verse) {
-                    setMainVerse({
-                        ...verse,
-                        chapterNumber,
-                    });
-                }
-            } catch (err) {
-                console.error('Failed to load main verse:', err);
-            } finally {
-                setLoadingMainVerse(false);
-            }
-        };
-
-        fetchMainVerse();
-    }, [chapters, chapterNumber, verseNumber]);
-
-    useEffect(() => {
-        const fetchAll = async () => {
-            setError(null);
-            await Promise.all([
-                fetchResources(),
-                fetchSimilarVerses(),
-                fetchTopics(),
-            ]);
-        };
-
-        fetchAll();
-    }, [verseId]);
-
-    const fetchResources = async () => {
-        setLoadingResources(true);
-        try {
-            // For the dedicated related page, we want all resources,
-            // so we pass a high limit value.
-            const response = await fetch(
-                `/api/verses/${verseId}/resources?limit=1000`,
-            );
-            if (!response.ok) {
-                throw new Error('Failed to fetch resources');
-            }
-            const data = await response.json();
-            setResources(data.data || []);
-        } catch (err) {
-            setError(
-                err instanceof Error
-                    ? err.message
-                    : 'Failed to load related resources.',
-            );
-        } finally {
-            setLoadingResources(false);
-        }
-    };
-
-    const fetchSimilarVerses = async () => {
-        setLoadingSimilar(true);
-        try {
-            const response = await fetch(`/api/verses/${verseId}/similar`);
-            if (!response.ok) {
-                throw new Error('Failed to fetch similar verses');
-            }
-            const data = await response.json();
-            setSimilarVerses(data.data || []);
-        } catch (err) {
-            console.error('Failed to fetch similar verses:', err);
-        } finally {
-            setLoadingSimilar(false);
-        }
-    };
-
-    const fetchTopics = async () => {
-        setLoadingTopics(true);
-        try {
-            const response = await fetch(`/api/verses/${verseId}/topics`);
-            if (!response.ok) {
-                throw new Error('Failed to fetch topics');
-            }
-            const data = await response.json();
-            setTopics(data.data || []);
-        } catch (err) {
-            console.error('Failed to fetch topics:', err);
-        } finally {
-            setLoadingTopics(false);
-        }
-    };
-
-    const handleSeeMore = async (resourceId: string | number) => {
-        setLoadingFullResourceId(resourceId);
-        try {
-            const response = await fetch(`/api/resources/${resourceId}`);
-            if (!response.ok) {
-                throw new Error('Failed to fetch full resource');
-            }
-            const data = await response.json();
-            setSelectedResource({
-                title: data.data.title || 'Full Description',
-                url: data.data.url || null,
-                comment: data.data.comment,
-            });
-        } catch (err) {
-            console.error('Failed to fetch full resource:', err);
-        } finally {
-            setLoadingFullResourceId(null);
-        }
-    };
-
-    const handleVerseNavigate = (
-        targetChapter: number,
-        targetVerse: number,
-    ) => {
-        router.visit(`/related/${targetChapter}/${targetVerse}`);
-    };
-
-    const handleOpenInReader = () => {
-        router.visit(`/${chapterNumber}/${verseNumber}`);
-    };
-
-    const handleTopicClick = (topicId: number) => {
-        router.visit(`/topic/${topicId}`);
-    };
-
-    const formatMatchRange = (range: number[][]): string => {
-        if (!range || range.length === 0) return '';
-        return range.map((r) => `words ${r[0]}-${r[1]}`).join(', ');
-    };
-
-    const groupedResources = resources.reduce(
-        (acc, resource) => {
-            const type = resource.resource_type?.name ?? 'Other';
-            if (!acc[type]) {
-                acc[type] = [];
-            }
-            acc[type].push(resource);
-            return acc;
-        },
-        {} as Record<string, Resource[]>,
-    );
-
-    const getResourceHighlight = (type: string) => {
-        const lowerType = type.toLowerCase();
-        if (lowerType.includes('fatwa'))
-            return {
-                color: 'text-amber-600 dark:text-amber-400',
-                bg: 'bg-amber-100 dark:bg-amber-900/30',
-                icon: Scale,
-            };
-        if (lowerType.includes('tafsir'))
-            return {
-                color: 'text-emerald-600 dark:text-emerald-400',
-                bg: 'bg-emerald-100 dark:bg-emerald-900/30',
-                icon: BookOpen,
-            };
-        if (lowerType.includes('video'))
-            return {
-                color: 'text-red-600 dark:text-red-400',
-                bg: 'bg-red-100 dark:bg-red-900/30',
-                icon: Video,
-            };
-        if (lowerType.includes('audio'))
-            return {
-                color: 'text-blue-600 dark:text-blue-400',
-                bg: 'bg-blue-100 dark:bg-blue-900/30',
-                icon: Play,
-            };
-        return { color: 'text-primary', bg: 'bg-primary/10', icon: FileText };
-    };
-
-    const getDomainName = (url: string) => {
-        try {
-            const domain = new URL(url).hostname;
-            return domain.replace('www.', '');
-        } catch (e) {
-            return 'Source';
-        }
-    };
-
-    const handleChapterSelect = (chapterId: number) => {
-        const chapter = chapters.find((ch) => ch.id === chapterId);
-        if (!chapter) return;
-
-        router.visit(`/${chapter.number}`, {
-            method: 'get',
-            preserveState: true,
-            preserveScroll: true,
-        });
-    };
-
     const selectedChapterId =
         chapters.find((ch) => ch.number === chapterNumber)?.id ??
         chapters.find((ch) => ch.id === chapterNumber)?.id;
+
+    // Set up event listeners for navigation
+    useEffect(() => {
+        const handleNavigateRelated = (e: Event) => {
+            const customEvent = e as CustomEvent<{
+                chapterNumber: number;
+                verseNumber: number;
+            }>;
+            router.visit(
+                `/related/${customEvent.detail.chapterNumber}/${customEvent.detail.verseNumber}`,
+            );
+        };
+
+        const handleNavigateReader = (e: Event) => {
+            const customEvent = e as CustomEvent<{
+                chapterNumber: number;
+                verseNumber: number;
+            }>;
+            router.visit(`/${customEvent.detail.chapterNumber}/${customEvent.detail.verseNumber}`);
+        };
+
+        const handleNavigateTopic = (e: Event) => {
+            const customEvent = e as CustomEvent<{ topicId: number }>;
+            router.visit(`/topic/${customEvent.detail.topicId}`);
+        };
+
+        const handleNavigateChapter = (e: Event) => {
+            const customEvent = e as CustomEvent<{ chapterId: number }>;
+            const chapter = chapters.find(
+                (ch) => ch.id === customEvent.detail.chapterId,
+            );
+            if (chapter) {
+                router.visit(`/${chapter.number}`);
+            }
+        };
+
+        window.addEventListener('navigate-related', handleNavigateRelated);
+        window.addEventListener('navigate-reader', handleNavigateReader);
+        window.addEventListener('navigate-topic', handleNavigateTopic);
+        window.addEventListener('navigate-chapter', handleNavigateChapter);
+
+        return () => {
+            window.removeEventListener('navigate-related', handleNavigateRelated);
+            window.removeEventListener('navigate-reader', handleNavigateReader);
+            window.removeEventListener('navigate-topic', handleNavigateTopic);
+            window.removeEventListener('navigate-chapter', handleNavigateChapter);
+        };
+    }, [chapters]);
 
     const content = (
         <>
@@ -459,12 +214,7 @@ export default function RelatedPage({
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => {
-                                    setError(null);
-                                    fetchResources();
-                                    fetchSimilarVerses();
-                                    fetchTopics();
-                                }}
+                                onClick={refresh}
                                 className="mt-2"
                             >
                                 Retry
@@ -472,7 +222,7 @@ export default function RelatedPage({
                         </div>
                     )}
 
-                    {/* Main verse (using shared VerseCard) */}
+                    {/* Main verse */}
                     <section className="mb-6">
                         {loadingMainVerse ? (
                             <div className="space-y-3 rounded-lg border bg-card p-4">
@@ -523,144 +273,166 @@ export default function RelatedPage({
                                 className="w-full"
                             >
                                 {Object.entries(groupedResources).map(
-                                    ([type, typeResources]) => (
-                                        <AccordionItem key={type} value={type}>
-                                            <AccordionTrigger>
-                                                {type} ({typeResources.length})
-                                            </AccordionTrigger>
-                                            <AccordionContent>
-                                                <div
-                                                    className="space-y-4 overflow-y-auto pr-2"
-                                                    style={{
-                                                        maxHeight: '500px',
-                                                    }}
-                                                >
-                                                    {typeResources.map(
-                                                        (resource) => (
-                                                            <div
-                                                                key={
-                                                                    resource.id
-                                                                }
-                                                                className="group relative flex flex-col gap-3 rounded-xl border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md"
-                                                            >
-                                                                <div className="flex items-start justify-between gap-4">
-                                                                    <div className="flex-1 space-y-1">
-                                                                        <a
-                                                                            href={
-                                                                                resource.resource_url
-                                                                            }
-                                                                            target="_blank"
-                                                                            rel="noopener noreferrer"
-                                                                            className="inline-flex items-center gap-2 text-base font-semibold text-foreground decoration-primary/30 underline-offset-4 transition-colors group-hover:text-primary hover:underline"
-                                                                        >
-                                                                            <span className="line-clamp-2">
-                                                                                {resource.resource_title ||
-                                                                                    resource.resource_url}
-                                                                            </span>
-                                                                            <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 opacity-50 transition-opacity group-hover:opacity-100" />
-                                                                        </a>
-                                                                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                                                            <span className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium tracking-wider uppercase">
-                                                                                <Globe className="h-3 w-3" />
-                                                                                {getDomainName(
-                                                                                    resource.resource_url,
-                                                                                )}
-                                                                            </span>
-                                                                            {resource.created_at && (
-                                                                                <span className="flex items-center gap-1 font-sans">
-                                                                                    <Calendar className="h-3 w-3" />
-                                                                                    {new Date(
-                                                                                        resource.created_at,
-                                                                                    ).toLocaleDateString(
-                                                                                        'en-US',
-                                                                                        {
-                                                                                            timeZone:
-                                                                                                'UTC',
-                                                                                            month: 'short',
-                                                                                            year: 'numeric',
-                                                                                        },
+                                    ([type, typeResources]) => {
+                                        const highlight =
+                                            getResourceHighlight(type);
+                                        const Icon = highlight.icon;
+
+                                        return (
+                                            <AccordionItem
+                                                key={type}
+                                                value={type}
+                                            >
+                                                <AccordionTrigger>
+                                                    <div className="flex items-center gap-2">
+                                                        <Icon
+                                                            className={`h-4 w-4 ${highlight.color}`}
+                                                        />
+                                                        <span>{type}</span>
+                                                        <Badge
+                                                            variant="secondary"
+                                                            className="ml-1 h-5 text-xs"
+                                                        >
+                                                            {
+                                                                typeResources.length
+                                                            }
+                                                        </Badge>
+                                                    </div>
+                                                </AccordionTrigger>
+                                                <AccordionContent>
+                                                    <div
+                                                        className="space-y-4 overflow-y-auto pr-2"
+                                                        style={{
+                                                            maxHeight: '500px',
+                                                        }}
+                                                    >
+                                                        {typeResources.map(
+                                                            (resource) => (
+                                                                <div
+                                                                    key={
+                                                                        resource.id
+                                                                    }
+                                                                    className="group relative flex flex-col gap-3 rounded-xl border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md"
+                                                                >
+                                                                    <div className="flex items-start justify-between gap-4">
+                                                                        <div className="flex-1 space-y-1">
+                                                                            <a
+                                                                                href={
+                                                                                    resource.resource_url
+                                                                                }
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                className="inline-flex items-center gap-2 text-base font-semibold text-foreground decoration-primary/30 underline-offset-4 transition-colors group-hover:text-primary hover:underline"
+                                                                            >
+                                                                                <span className="line-clamp-2">
+                                                                                    {resource.resource_title ||
+                                                                                        resource.resource_url}
+                                                                                </span>
+                                                                                <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 opacity-50 transition-opacity group-hover:opacity-100" />
+                                                                            </a>
+                                                                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                                                                <span className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium tracking-wider uppercase">
+                                                                                    <Globe className="h-3 w-3" />
+                                                                                    {getDomainName(
+                                                                                        resource.resource_url,
                                                                                     )}
                                                                                 </span>
+                                                                                {resource.created_at && (
+                                                                                    <span className="flex items-center gap-1 font-sans">
+                                                                                        <Calendar className="h-3 w-3" />
+                                                                                        {new Date(
+                                                                                            resource.created_at,
+                                                                                        ).toLocaleDateString(
+                                                                                            'en-US',
+                                                                                            {
+                                                                                                timeZone:
+                                                                                                    'UTC',
+                                                                                                month: 'short',
+                                                                                                year: 'numeric',
+                                                                                            },
+                                                                                        )}
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {resource.comment && (
+                                                                        <div className="relative">
+                                                                            <div
+                                                                                className={`text-sm leading-relaxed text-muted-foreground/90 ${!selectedResource ? 'line-clamp-3' : ''}`}
+                                                                                dangerouslySetInnerHTML={{
+                                                                                    __html: resource.comment,
+                                                                                }}
+                                                                            />
+                                                                            {resource.is_truncated && (
+                                                                                <Button
+                                                                                    variant="ghost"
+                                                                                    size="sm"
+                                                                                    className="mt-2 h-7 bg-muted/30 px-2 text-xs font-medium text-primary hover:bg-muted"
+                                                                                    disabled={
+                                                                                        loadingFullResourceId ===
+                                                                                        resource.id
+                                                                                    }
+                                                                                    onClick={() =>
+                                                                                        handleSeeMore(
+                                                                                            resource.id,
+                                                                                        )
+                                                                                    }
+                                                                                >
+                                                                                    {loadingFullResourceId ===
+                                                                                    resource.id
+                                                                                        ? 'Loading...'
+                                                                                        : 'Read Full Answer'}
+                                                                                </Button>
                                                                             )}
                                                                         </div>
-                                                                    </div>
-                                                                </div>
+                                                                    )}
 
-                                                                {resource.comment && (
-                                                                    <div className="relative">
-                                                                        <div
-                                                                            className={`text-sm leading-relaxed text-muted-foreground/90 ${!selectedResource ? 'line-clamp-3' : ''}`}
-                                                                            dangerouslySetInnerHTML={{
-                                                                                __html: resource.comment,
-                                                                            }}
-                                                                        />
-                                                                        {resource.is_truncated && (
-                                                                            <Button
-                                                                                variant="ghost"
-                                                                                size="sm"
-                                                                                className="mt-2 h-7 bg-muted/30 px-2 text-xs font-medium text-primary hover:bg-muted"
-                                                                                disabled={
-                                                                                    loadingFullResourceId ===
-                                                                                    resource.id
-                                                                                }
-                                                                                onClick={() =>
-                                                                                    handleSeeMore(
-                                                                                        resource.id,
+                                                                    <div className="mt-1 flex items-center justify-between border-t pt-3">
+                                                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+                                                                                {(
+                                                                                    resource
+                                                                                        .user
+                                                                                        ?.name ||
+                                                                                    'User'
+                                                                                )
+                                                                                    .charAt(
+                                                                                        0,
                                                                                     )
-                                                                                }
-                                                                            >
-                                                                                {loadingFullResourceId ===
-                                                                                resource.id
-                                                                                    ? 'Loading...'
-                                                                                    : 'Read Full Answer'}
-                                                                            </Button>
-                                                                        )}
-                                                                    </div>
-                                                                )}
-
-                                                                <div className="mt-1 flex items-center justify-between border-t pt-3">
-                                                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
-                                                                            {(
-                                                                                resource
+                                                                                    .toUpperCase()}
+                                                                            </div>
+                                                                            <span>
+                                                                                {resource
                                                                                     .user
                                                                                     ?.name ||
-                                                                                'User'
-                                                                            )
-                                                                                .charAt(
-                                                                                    0,
-                                                                                )
-                                                                                .toUpperCase()}
+                                                                                    'Anonymous'}
+                                                                            </span>
                                                                         </div>
-                                                                        <span>
-                                                                            {resource
-                                                                                .user
-                                                                                ?.name ||
-                                                                                'Anonymous'}
-                                                                        </span>
-                                                                    </div>
-                                                                    <div className="flex gap-2">
-                                                                        <Badge
-                                                                            variant="outline"
-                                                                            className="h-5 border-dashed text-[10px] font-normal opacity-60"
-                                                                        >
-                                                                            Verified
-                                                                        </Badge>
+                                                                        <div className="flex gap-2">
+                                                                            <Badge
+                                                                                variant="outline"
+                                                                                className="h-5 border-dashed text-[10px] font-normal opacity-60"
+                                                                            >
+                                                                                Verified
+                                                                            </Badge>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                            </div>
-                                                        ),
-                                                    )}
-                                                </div>
-                                            </AccordionContent>
-                                        </AccordionItem>
-                                    ),
+                                                            ),
+                                                        )}
+                                                    </div>
+                                                </AccordionContent>
+                                            </AccordionItem>
+                                        );
+                                    },
                                 )}
                             </Accordion>
                         )}
                     </section>
 
-                    {/* Topics (only show if loading or there are any) */}
+                    {/* Topics */}
                     {(loadingTopics || topics.length > 0) && (
                         <>
                             <Separator className="my-6" />
@@ -705,7 +477,7 @@ export default function RelatedPage({
                         </>
                     )}
 
-                    {/* Related Verses (only show if loading or there are any) */}
+                    {/* Related Verses */}
                     {(loadingSimilar || similarVerses.length > 0) && (
                         <>
                             <Separator className="my-6" />
@@ -845,7 +617,7 @@ export default function RelatedPage({
             {/* Full comment dialog */}
             <Dialog
                 open={!!selectedResource}
-                onOpenChange={(open) => !open && setSelectedResource(null)}
+                onOpenChange={(open) => !open && handleSeeMore(-1)}
             >
                 <DialogContent className="max-w-[80rem]">
                     <DialogHeader className="pr-8">
@@ -881,7 +653,7 @@ export default function RelatedPage({
                     <DialogFooter>
                         <Button
                             variant="outline"
-                            onClick={() => setSelectedResource(null)}
+                            onClick={() => handleSeeMore(-1)}
                         >
                             Close
                         </Button>
