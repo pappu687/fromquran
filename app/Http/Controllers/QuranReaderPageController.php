@@ -5,25 +5,29 @@ namespace App\Http\Controllers;
 use App\Models\Chapter;
 use App\Models\Verse;
 use App\Services\QuranDatabaseService;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class QuranReaderPageController extends Controller
 {
-    public function chapter(int $chapterNumber, QuranDatabaseService $quranService): Response
+    public function chapter(Request $request, int $chapterNumber, QuranDatabaseService $quranService): Response
     {
         $chapter = Chapter::where('chapter_number', $chapterNumber)->firstOrFail();
 
         $edition = config('quran.default_edition', 'en.sahih');
         $pageSize = config('quran.default_page_size', 10);
+        $startVerse = max(1, (int) $request->query('start-verse', 1));
+        $startPage = (int) max(1, ceil($startVerse / $pageSize));
+        $offset = ($startPage - 1) * $pageSize;
 
         // Fetch initial verses for SSR
         $versesData = $quranService->getVerses($chapter->id, 1, $pageSize, $edition);
 
         $initialVerses = [
-            'data' => array_slice($versesData, 0, $pageSize),
+            'data' => array_slice($versesData, $offset, $pageSize),
             'total' => count($versesData),
-            'has_more' => count($versesData) > $pageSize,
+            'has_more' => count($versesData) > ($offset + $pageSize),
         ];
 
         // Preload chapters for the sidebar to avoid client-side refetches.
@@ -119,6 +123,29 @@ class QuranReaderPageController extends Controller
             'nextVerse' => $next ? [
                 'chapterNumber' => $next->chapter->chapter_number,
                 'verseNumber' => $next->verse_number,
+            ] : null,
+        ]);
+    }
+
+    public function relatedChapter(int $chapterNumber): Response
+    {
+        $chapter = Chapter::where('chapter_number', $chapterNumber)->firstOrFail();
+
+        $previousChapter = Chapter::where('chapter_number', '<', $chapterNumber)
+            ->orderByDesc('chapter_number')
+            ->first();
+
+        $nextChapter = Chapter::where('chapter_number', '>', $chapterNumber)
+            ->orderBy('chapter_number')
+            ->first();
+
+        return Inertia::render('quran/related-chapter', [
+            'chapterNumber' => $chapterNumber,
+            'previousChapter' => $previousChapter ? [
+                'chapterNumber' => $previousChapter->chapter_number,
+            ] : null,
+            'nextChapter' => $nextChapter ? [
+                'chapterNumber' => $nextChapter->chapter_number,
             ] : null,
         ]);
     }

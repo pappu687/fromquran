@@ -1,5 +1,6 @@
 import { api, getErrorMessage } from '@/lib/api-client';
 import { useCallback, useEffect, useState } from 'react';
+import { BookOpen, FileText, Play, Scale, Video } from 'lucide-react';
 
 export interface ResourceType {
     id: number;
@@ -295,6 +296,12 @@ export function useRelatedVerse(
     }, [fetchResources, fetchSimilarVerses, fetchTopics]);
 
     const handleSeeMore = async (resourceId: string | number) => {
+        if (resourceId === -1 || resourceId === '-1') {
+            setSelectedResource(null);
+            setLoadingFullResourceId(null);
+            return;
+        }
+
         setLoadingFullResourceId(resourceId);
         try {
             const data = await api.getSingle<FullResource>(
@@ -366,9 +373,7 @@ export function useRelatedVerse(
 
     const getResourceHighlight = (type: string) => {
         const lowerType = type.toLowerCase();
-        // Import icons dynamically
-        const { Scale, BookOpen, Video, Play, FileText } = require('lucide-react');
-        
+
         if (lowerType.includes('fatwa')) {
             return {
                 color: 'text-amber-600 dark:text-amber-400',

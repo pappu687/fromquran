@@ -34,7 +34,7 @@ export function VerseGraphModal({
         setLoading(true);
         try {
             const response = await fetch(
-                `/api/verses/${verseId}/resources?limit=5`,
+                `/api/verses/${verseId}/resources?limit=5&include_chapter_resources=0`,
             );
             if (response.ok) {
                 const json =

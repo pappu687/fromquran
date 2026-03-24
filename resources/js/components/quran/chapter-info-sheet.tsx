@@ -7,6 +7,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { router } from '@inertiajs/react';
 import {
     Accordion,
     AccordionContent,
@@ -48,6 +49,48 @@ interface ChapterInfoSheetProps {
     chapterNumber: number;
     chapterName?: string;
 }
+
+const getYoutubeVideoId = (url: string) => {
+    try {
+        const parsedUrl = new URL(url);
+        const hostname = parsedUrl.hostname.replace(/^www\./, '');
+
+        if (hostname === 'youtu.be') {
+            return parsedUrl.pathname.split('/').filter(Boolean)[0] || null;
+        }
+
+        if (
+            hostname === 'youtube.com' ||
+            hostname === 'm.youtube.com' ||
+            hostname === 'youtube-nocookie.com' ||
+            hostname.endsWith('.youtube.com') ||
+            hostname.endsWith('.youtube-nocookie.com')
+        ) {
+            if (parsedUrl.pathname === '/watch') {
+                return (
+                    parsedUrl.searchParams.get('v') ||
+                    parsedUrl.searchParams.get('vi')
+                );
+            }
+
+            const pathParts = parsedUrl.pathname.split('/').filter(Boolean);
+            const [firstSegment, secondSegment] = pathParts;
+
+            if (
+                (firstSegment === 'embed' || firstSegment === 'shorts') &&
+                secondSegment
+            ) {
+                return secondSegment;
+            }
+
+            return pathParts.at(-1) || null;
+        }
+    } catch {
+        return null;
+    }
+
+    return null;
+};
 
 export function ChapterInfoSheet({
     open,
@@ -195,17 +238,30 @@ export function ChapterInfoSheet({
                                     <h3 className="text-sm font-medium tracking-wider text-muted-foreground uppercase">
                                         Resources for this Surah
                                     </h3>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="gap-1"
-                                        onClick={() =>
-                                            setIsResourceModalOpen(true)
-                                        }
-                                    >
-                                        <Plus className="h-4 w-4" />
-                                        Add a resource
-                                    </Button>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() =>
+                                                router.visit(
+                                                    `/related/${chapterNumber}`,
+                                                )
+                                            }
+                                        >
+                                            All resources
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="gap-1"
+                                            onClick={() =>
+                                                setIsResourceModalOpen(true)
+                                            }
+                                        >
+                                            <Plus className="h-4 w-4" />
+                                            Add a resource
+                                        </Button>
+                                    </div>
                                 </div>
                                 {loadingResources ? (
                                     <div className="space-y-4">
@@ -249,36 +305,86 @@ export function ChapterInfoSheet({
                                                     <AccordionContent className="px-1 pt-4">
                                                         <div className="space-y-4">
                                                             {typeResources.map(
-                                                                (resource) => (
-                                                                    <div
-                                                                        key={
-                                                                            resource.id
-                                                                        }
-                                                                        className="rounded-lg border bg-card p-4"
-                                                                    >
-                                                                        <a
-                                                                            href={
-                                                                                resource.resource_url
+                                                                (
+                                                                    resource,
+                                                                ) => {
+                                                                    const youtubeVideoId =
+                                                                        getYoutubeVideoId(
+                                                                            resource.resource_url,
+                                                                        );
+                                                                    const youtubeThumbnailUrl =
+                                                                        youtubeVideoId
+                                                                            ? `https://i.ytimg.com/vi/${youtubeVideoId}/hqdefault.jpg`
+                                                                            : null;
+
+                                                                    return (
+                                                                        <div
+                                                                            key={
+                                                                                resource.id
                                                                             }
-                                                                            target="_blank"
-                                                                            rel="noopener noreferrer"
-                                                                            className="group mb-2 flex items-start gap-2 text-sm font-medium text-primary hover:underline"
+                                                                            className="rounded-lg border bg-card p-4"
                                                                         >
-                                                                            <ExternalLink className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                                                                            <span className="break-all italic">
-                                                                                {resource.resource_title ||
-                                                                                    resource.resource_url}
-                                                                            </span>
-                                                                        </a>
-                                                                        {resource.comment && (
-                                                                            <p className="mt-2 text-sm leading-relaxed text-foreground/80">
-                                                                                {
-                                                                                    resource.comment
-                                                                                }
-                                                                            </p>
-                                                                        )}
-                                                                    </div>
-                                                                ),
+                                                                            {youtubeThumbnailUrl ? (
+                                                                                <a
+                                                                                    href={
+                                                                                        resource.resource_url
+                                                                                    }
+                                                                                    target="_blank"
+                                                                                    rel="noopener noreferrer"
+                                                                                    className="group mb-2 flex items-start gap-3 rounded-lg transition-colors hover:bg-muted/40"
+                                                                                >
+                                                                                    <div className="relative aspect-video w-28 flex-shrink-0 overflow-hidden rounded-md border bg-muted">
+                                                                                        <img
+                                                                                            src={
+                                                                                                youtubeThumbnailUrl
+                                                                                            }
+                                                                                            alt={
+                                                                                                resource.resource_title ||
+                                                                                                'YouTube thumbnail'
+                                                                                            }
+                                                                                            className="h-full w-full object-cover"
+                                                                                            loading="lazy"
+                                                                                        />
+                                                                                        <div className="absolute right-2 bottom-2 rounded bg-black/80 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                                                                                            YouTube
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div className="min-w-0 pt-0.5">
+                                                                                        <div className="flex items-start gap-2 text-sm font-medium text-primary group-hover:underline">
+                                                                                            <span className="line-clamp-2">
+                                                                                                {resource.resource_title ||
+                                                                                                    resource.resource_url}
+                                                                                            </span>
+                                                                                            <ExternalLink className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </a>
+                                                                            ) : (
+                                                                                <a
+                                                                                    href={
+                                                                                        resource.resource_url
+                                                                                    }
+                                                                                    target="_blank"
+                                                                                    rel="noopener noreferrer"
+                                                                                    className="group mb-2 flex items-start gap-2 text-sm font-medium text-primary hover:underline"
+                                                                                >
+                                                                                    <ExternalLink className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                                                                                    <span className="break-all italic">
+                                                                                        {resource.resource_title ||
+                                                                                            resource.resource_url}
+                                                                                    </span>
+                                                                                </a>
+                                                                            )}
+                                                                            {resource.comment && (
+                                                                                <p className="mt-2 text-sm leading-relaxed text-foreground/80">
+                                                                                    {
+                                                                                        resource.comment
+                                                                                    }
+                                                                                </p>
+                                                                            )}
+                                                                        </div>
+                                                                    );
+                                                                },
                                                             )}
                                                         </div>
                                                     </AccordionContent>

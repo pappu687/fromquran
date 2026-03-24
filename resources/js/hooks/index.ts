@@ -27,7 +27,7 @@ export * from './features';
 // Utility hooks (existing)
 export { useStorage } from './use-storage';
 export { useClipboard } from './use-clipboard';
-export { useMobile } from './use-mobile';
+export { useIsMobile } from './use-mobile';
 export { useVersesPanel } from './use-verses-panel';
 export { useAppearance } from './use-appearance';
 export { useInitials } from './use-initials';

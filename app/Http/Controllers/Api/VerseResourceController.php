@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\UserChapterResource;
 use App\Models\UserVerseResource;
 use App\Models\Verse;
 use Illuminate\Http\Request;
@@ -73,6 +74,7 @@ class VerseResourceController extends Controller
     public function show(Request $request, $verseId)
     {
         $limit = (int) $request->query('limit', 5);
+        $includeChapterResources = $request->boolean('include_chapter_resources', true);
         $verse = Verse::find($verseId);
         $chapterId = $verse ? $verse->chapter_id : null;
 
@@ -98,7 +100,7 @@ class VerseResourceController extends Controller
 
         // Query for verse-specific and chapter-level resources only.
         $q = "(document_type_s:user_verse_resource AND verse_id_i:{$verseId})";
-        if ($chapterId) {
+        if ($includeChapterResources && $chapterId) {
             $q .= " OR (document_type_s:user_chapter_resource AND chapter_id_i:{$chapterId})";
         }
 
@@ -272,18 +274,32 @@ class VerseResourceController extends Controller
         }
 
         // Fallback to DB if not found in Solr or not a Solr ID
-        $resource = UserVerseResource::with(['user:id,name', 'verse.chapter'])->findOrFail($id);
+        $resource = UserVerseResource::with(['user:id,name', 'verse.chapter'])->find($id);
 
-        $comment = nl2br($resource->comment);
-        if ($resource->verse && $resource->verse->chapter) {
-            $comment = $this->applyVerseHighlight($comment, $resource->verse->chapter->chapter_number, $resource->verse->verse_number);
+        if ($resource) {
+            $comment = nl2br($resource->comment);
+            if ($resource->verse && $resource->verse->chapter) {
+                $comment = $this->applyVerseHighlight($comment, $resource->verse->chapter->chapter_number, $resource->verse->verse_number);
+            }
+
+            return response()->json([
+                'data' => [
+                    'id' => $resource->id,
+                    'title' => $resource->resource_title,
+                    'url' => $resource->resource_url,
+                    'comment' => '<p>' . $comment . '</p>',
+                ],
+            ]);
         }
+
+        $chapterResource = UserChapterResource::findOrFail($id);
+        $comment = nl2br($chapterResource->comment);
 
         return response()->json([
             'data' => [
-                'id' => $resource->id,
-                'title' => $resource->resource_title,
-                'url' => $resource->resource_url,
+                'id' => $chapterResource->id,
+                'title' => $chapterResource->resource_title,
+                'url' => $chapterResource->resource_url,
                 'comment' => '<p>' . $comment . '</p>',
             ],
         ]);

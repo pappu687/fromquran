@@ -22,10 +22,9 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/auth-context';
 import { router } from '@inertiajs/react';
+import { QuranResourceCard } from './quran-resource-card';
 import {
     BookOpen,
-    Calendar,
-    CheckCircle,
     ExternalLink,
     FileText,
     Globe,
@@ -38,6 +37,7 @@ import { useEffect, useState } from 'react';
 import { LoginModal } from '../auth/login-modal';
 import { AddResourceModal } from './add-resource-modal';
 import { ReportErrorModal } from './report-error-modal';
+import { useResourcesSheet } from '@/hooks/features';
 
 interface ResourceType {
     id: number;
@@ -91,6 +91,42 @@ interface ResourcesSheetProps {
     initialActiveSection?: string;
 }
 
+// Icon mapping for resource highlights
+const getResourceHighlight = (type: string) => {
+    const lowerType = type.toLowerCase();
+    if (lowerType.includes('fatwa'))
+        return {
+            color: 'text-amber-600 dark:text-amber-400',
+            bg: 'bg-amber-100 dark:bg-amber-900/30',
+            icon: Scale,
+        };
+    if (lowerType.includes('tafsir'))
+        return {
+            color: 'text-emerald-600 dark:text-emerald-400',
+            bg: 'bg-emerald-100 dark:bg-emerald-900/30',
+            icon: BookOpen,
+        };
+    if (lowerType.includes('video'))
+        return {
+            color: 'text-red-600 dark:text-red-400',
+            bg: 'bg-red-100 dark:bg-red-900/30',
+            icon: Video,
+        };
+    if (lowerType.includes('audio') || lowerType.includes('lecture'))
+        return {
+            color: 'text-blue-600 dark:text-blue-400',
+            bg: 'bg-blue-100 dark:bg-blue-900/30',
+            icon: Headphones,
+        };
+    if (lowerType.includes('article'))
+        return {
+            color: 'text-purple-600 dark:text-purple-400',
+            bg: 'bg-purple-100 dark:bg-purple-900/30',
+            icon: FileText,
+        };
+    return { color: 'text-primary', bg: 'bg-primary/10', icon: Globe };
+};
+
 export function ResourcesSheet({
     open,
     onOpenChange,
@@ -99,197 +135,47 @@ export function ResourcesSheet({
     chapterNumber,
     initialActiveSection,
 }: ResourcesSheetProps) {
-    const [resources, setResources] = useState<Resource[]>([]);
-    const [totalResources, setTotalResources] = useState<number>(0);
-    const [loading, setLoading] = useState(false);
-    const [loadingFullResourceId, setLoadingFullResourceId] = useState<
-        string | number | null
-    >(null);
+    const { user } = useAuth();
+    const [isAddResourceOpen, setIsAddResourceOpen] = useState(false);
+    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const [selectedResource, setSelectedResource] = useState<{
         title: string | null;
         url: string | null;
         comment: string;
     } | null>(null);
-    const [similarVerses, setSimilarVerses] = useState<SimilarVerse[]>([]);
-    const [topics, setTopics] = useState<Topic[]>([]);
-    const [hasMore, setHasMore] = useState(false);
-    const [isAddResourceOpen, setIsAddResourceOpen] = useState(false);
-    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-    const [activeSection, setActiveSection] = useState<string | undefined>(
-        undefined,
-    );
-    const [resourceCounts, setResourceCounts] = useState<
-        Record<string, number>
-    >({});
 
-    const { user } = useAuth();
+    const {
+        resources,
+        similarVerses,
+        topics,
+        resourceCounts,
+        groupedResources,
+        loading,
+        hasMore,
+        totalResources,
+        activeSection,
+        loadingFullResourceId,
+        setActiveSection,
+        handleVerseClick,
+        handleSeeMore,
+        getDomainName,
+        isVerifiedSource,
+        formatMatchRange,
+    } = useResourcesSheet({
+        open,
+        verseId,
+        verseNumber,
+        chapterNumber,
+        initialActiveSection,
+        onOpenChange,
+    });
 
     const handleReportErrorClick = () => {
         if (user) {
             setIsReportModalOpen(true);
         } else {
             setIsLoginModalOpen(true);
-        }
-    };
-
-    const fetchAllRelated = async () => {
-        setLoading(true);
-        try {
-            const response = await fetch(
-                `/api/verses/${verseId}/resources?limit=5`,
-            );
-            if (response.ok) {
-                const data = await response.json();
-
-                // Set resources (resources are at data)
-                setResources(data.data || []);
-                setTotalResources(data.meta?.total || 0);
-                setHasMore(Boolean(data.meta?.hasMore));
-
-                // Store actual server-side counts of resource types
-                if (data.meta?.counts?.resource_types) {
-                    setResourceCounts(data.meta.counts.resource_types);
-                }
-
-                // Set similar verses (now included in the response)
-                setSimilarVerses(data.similar_verses?.data || []);
-
-                // Set topics (now included in the response)
-                setTopics(data.topics?.data || []);
-            }
-        } catch (error) {
-            console.error('Failed to fetch related data:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        if (open) {
-            fetchAllRelated();
-        }
-    }, [open, verseId]);
-
-    // Handle initial active section sync when sheet opens or resources change
-    useEffect(() => {
-        if (open) {
-            if (initialActiveSection) {
-                setActiveSection(initialActiveSection);
-            } else if (
-                Object.keys(groupedResources).length > 0 &&
-                !activeSection
-            ) {
-                setActiveSection(Object.keys(groupedResources)[0]);
-            }
-        } else {
-            // reset when closed if desired, or keep it
-            if (!open) {
-                // Optional: reset on close
-                // setActiveSection(undefined);
-            }
-        }
-    }, [open, initialActiveSection, resources.length]);
-
-    // Group resources by type
-    const groupedResources = resources.reduce(
-        (acc, resource) => {
-            const type = resource.resource_type.name;
-            if (!acc[type]) {
-                acc[type] = [];
-            }
-            acc[type].push(resource);
-            return acc;
-        },
-        {} as Record<string, Resource[]>,
-    );
-
-    // Handle verse click - navigate to the verse
-    const handleVerseClick = (chapterNumber: number, verseNumber: number) => {
-        router.visit(`/${chapterNumber}/${verseNumber}`, {
-            method: 'get',
-        });
-        onOpenChange(false);
-    };
-
-    // Format match words range for display
-    const formatMatchRange = (range: number[][]): string => {
-        if (!range || range.length === 0) return '';
-        return range.map((r) => `words ${r[0]}-${r[1]}`).join(', ');
-    };
-
-    const getResourceHighlight = (type: string) => {
-        const lowerType = type.toLowerCase();
-        if (lowerType.includes('fatwa'))
-            return {
-                color: 'text-amber-600 dark:text-amber-400',
-                bg: 'bg-amber-100 dark:bg-amber-900/30',
-                icon: Scale,
-            };
-        if (lowerType.includes('tafsir'))
-            return {
-                color: 'text-emerald-600 dark:text-emerald-400',
-                bg: 'bg-emerald-100 dark:bg-emerald-900/30',
-                icon: BookOpen,
-            };
-        if (lowerType.includes('video'))
-            return {
-                color: 'text-red-600 dark:text-red-400',
-                bg: 'bg-red-100 dark:bg-red-900/30',
-                icon: Video,
-            };
-        if (lowerType.includes('audio') || lowerType.includes('lecture'))
-            return {
-                color: 'text-blue-600 dark:text-blue-400',
-                bg: 'bg-blue-100 dark:bg-blue-900/30',
-                icon: Headphones,
-            };
-        if (lowerType.includes('article'))
-            return {
-                color: 'text-purple-600 dark:text-purple-400',
-                bg: 'bg-purple-100 dark:bg-purple-900/30',
-                icon: FileText,
-            };
-        return { color: 'text-primary', bg: 'bg-primary/10', icon: Globe };
-    };
-
-    const getDomainName = (url: string) => {
-        try {
-            const domain = new URL(url).hostname;
-            return domain.replace('www.', '');
-        } catch (e) {
-            return 'Source';
-        }
-    };
-
-    const isVerifiedSource = (url: string) => {
-        const domain = getDomainName(url).toLowerCase();
-        const verifiedDomains = [
-            'islamqa.info',
-            'sunnah.com',
-            'quran.com',
-            'tafsir.net',
-            'kingfahdcomplex.gov.sa',
-        ];
-        return verifiedDomains.includes(domain);
-    };
-
-    const handleSeeMore = async (resourceId: string | number) => {
-        setLoadingFullResourceId(resourceId);
-        try {
-            const response = await fetch(`/api/resources/${resourceId}`);
-            if (response.ok) {
-                const data = await response.json();
-                setSelectedResource({
-                    title: data.data.title || 'Full Description',
-                    url: data.data.url || null,
-                    comment: data.data.comment,
-                });
-            }
-        } catch (error) {
-            console.error('Failed to fetch full resource:', error);
-        } finally {
-            setLoadingFullResourceId(null);
         }
     };
 
@@ -462,95 +348,30 @@ export function ResourcesSheet({
                                                     ) : (
                                                         typeResources.map(
                                                             (resource) => (
-                                                                <div
+                                                                <QuranResourceCard
                                                                     key={
                                                                         resource.id
                                                                     }
-                                                                    className="group relative flex flex-col gap-3 rounded-xl border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md"
-                                                                >
-                                                                    <div className="flex items-start justify-between gap-4">
-                                                                        <div className="flex-1 space-y-1">
-                                                                            <a
-                                                                                href={
-                                                                                    resource.resource_url
-                                                                                }
-                                                                                target="_blank"
-                                                                                rel="noopener noreferrer"
-                                                                                className="inline-flex items-center gap-2 text-base font-semibold text-foreground decoration-primary/30 underline-offset-4 transition-colors group-hover:text-primary hover:underline"
-                                                                            >
-                                                                                <span className="line-clamp-2">
-                                                                                    {resource.resource_title ||
-                                                                                        resource.resource_url}
-                                                                                </span>
-                                                                                <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 opacity-50 transition-opacity group-hover:opacity-100" />
-                                                                            </a>
-                                                                            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                                                                <span className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium tracking-wider uppercase">
-                                                                                    <Globe className="h-3 w-3" />
-                                                                                    {getDomainName(
-                                                                                        resource.resource_url,
-                                                                                    )}
-                                                                                </span>
-                                                                                {isVerifiedSource(
-                                                                                    resource.resource_url,
-                                                                                ) && (
-                                                                                    <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600 ring-1 ring-emerald-500/20 dark:bg-emerald-950/30">
-                                                                                        <CheckCircle className="h-3 w-3" />
-                                                                                        Verified
-                                                                                    </span>
-                                                                                )}
-                                                                                {resource.created_at && (
-                                                                                    <span className="flex items-center gap-1">
-                                                                                        <Calendar className="h-3 w-3" />
-                                                                                        {new Date(
-                                                                                            resource.created_at,
-                                                                                        ).toLocaleDateString(
-                                                                                            'en-US',
-                                                                                            {
-                                                                                                timeZone:
-                                                                                                    'UTC',
-                                                                                                month: 'short',
-                                                                                                year: 'numeric',
-                                                                                            },
-                                                                                        )}
-                                                                                    </span>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    {resource.comment && (
-                                                                        <div className="relative">
-                                                                            <div
-                                                                                className={`text-sm leading-relaxed text-muted-foreground/90 ${!selectedResource ? 'line-clamp-3' : ''}`}
-                                                                                dangerouslySetInnerHTML={{
-                                                                                    __html: resource.comment,
-                                                                                }}
-                                                                            />
-                                                                            {resource.is_truncated && (
-                                                                                <Button
-                                                                                    variant="ghost"
-                                                                                    size="sm"
-                                                                                    className="mt-2 h-7 bg-muted/30 px-2 text-xs font-medium text-primary hover:bg-muted"
-                                                                                    disabled={
-                                                                                        loadingFullResourceId ===
-                                                                                        resource.id
-                                                                                    }
-                                                                                    onClick={() =>
-                                                                                        handleSeeMore(
-                                                                                            resource.id,
-                                                                                        )
-                                                                                    }
-                                                                                >
-                                                                                    {loadingFullResourceId ===
-                                                                                    resource.id
-                                                                                        ? 'Loading...'
-                                                                                        : 'Read Full Answer'}
-                                                                                </Button>
-                                                                            )}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
+                                                                    resource={
+                                                                        resource
+                                                                    }
+                                                                    loadingFullResourceId={
+                                                                        loadingFullResourceId
+                                                                    }
+                                                                    selectedResourceOpen={
+                                                                        !!selectedResource
+                                                                    }
+                                                                    getDomainName={
+                                                                        getDomainName
+                                                                    }
+                                                                    onSeeMore={
+                                                                        handleSeeMore
+                                                                    }
+                                                                    isVerifiedSource={
+                                                                        isVerifiedSource
+                                                                    }
+                                                                    verifiedBadgeMode="metadata"
+                                                                />
                                                             ),
                                                         )
                                                     )}

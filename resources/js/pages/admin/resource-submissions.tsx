@@ -34,15 +34,15 @@ interface ResourceType {
 
 interface Submission {
     id: number;
-    user: User;
-    verse: Verse;
+    user: User | null;
+    verse: Verse | null;
     resource_type_id: number;
     resource_url: string;
     resource_title: string | null;
     comment: string | null;
     status: 'pending' | 'approved' | 'rejected';
     created_at: string;
-    resource_type: ResourceType;
+    resource_type: ResourceType | null;
 }
 
 interface PaginationLink {
@@ -463,16 +463,10 @@ export default function ResourceSubmissions({
                                                 <td className="px-4 py-4 md:px-5">
                                                     <div className="space-y-1">
                                                         <div className="font-medium text-foreground">
-                                                            {
-                                                                submission.user
-                                                                    .name
-                                                            }
+                                                            {submission.user?.name || 'Unknown User'}
                                                         </div>
                                                         <div className="text-sm text-muted-foreground">
-                                                            {
-                                                                submission.user
-                                                                    .email
-                                                            }
+                                                            {submission.user?.email || 'Unknown Email'}
                                                         </div>
                                                     </div>
                                                 </td>
@@ -481,10 +475,7 @@ export default function ResourceSubmissions({
                                                         variant="outline"
                                                         className="rounded-md border-border/70 bg-background"
                                                     >
-                                                        {
-                                                            submission.verse
-                                                                .verse_key
-                                                        }
+                                                        {submission.verse?.verse_key || 'Unknown'}
                                                     </Badge>
                                                 </td>
                                                 <td className="px-4 py-4 md:px-5">

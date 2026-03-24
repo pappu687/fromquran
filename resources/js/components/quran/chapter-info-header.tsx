@@ -1,3 +1,5 @@
+import { Button } from '@/components/ui/button';
+import { router } from '@inertiajs/react';
 import { BookOpen, MapPin } from 'lucide-react';
 
 interface Chapter {
@@ -60,6 +62,17 @@ export function ChapterInfoHeader({ chapter }: ChapterInfoHeaderProps) {
                             <BookOpen className="h-3 w-3" />
                             <span>{chapter.verses} verses</span>
                         </div>
+                    </div>
+                    <div className="mt-4">
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                                router.visit(`/related/${chapter.number}`)
+                            }
+                        >
+                            All resources
+                        </Button>
                     </div>
                 </div>
             </div>

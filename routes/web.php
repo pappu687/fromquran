@@ -74,6 +74,10 @@ Route::get('topic/{topicId}', function (int $topicId) {
 })->whereNumber('topicId')->name('topics.show');
 
 // Related resources for a specific verse
+Route::get('related/{chapterNumber}', [QuranReaderPageController::class, 'relatedChapter'])
+    ->whereNumber('chapterNumber')
+    ->name('related.chapter');
+
 Route::get('related/{chapterNumber}/{verseNumber}', [QuranReaderPageController::class, 'related'])
     ->whereNumber('chapterNumber')
     ->whereNumber('verseNumber')

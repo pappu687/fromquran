@@ -24,14 +24,22 @@ class ChapterResourceController extends Controller
         try {
             $resultset = $this->client->select($query);
             $resources = collect($resultset)->map(function ($doc) {
+                $comment = $doc->description_t;
+                $isTruncated = \Illuminate\Support\Str::wordCount($comment) > 50;
+                $truncatedComment = \Illuminate\Support\Str::words($comment, 50, '...');
+
                 return [
-                    'id' => (int) str_replace('ucr_', '', $doc->id),
+                    'id' => $doc->id,
+                    'real_id' => str_replace('ucr_', '', $doc->id),
                     'chapter_id' => $doc->chapter_id_i,
                     'resource_title' => $doc->title_t,
-                    'comment' => $doc->description_t,
+                    'comment' => $truncatedComment,
+                    'full_comment' => $comment,
+                    'is_truncated' => $isTruncated,
                     'resource_url' => $doc->resource_url_s,
                     'thumbnail_url' => $doc->thumbnail_url_s,
                     'resource_type' => [
+                        'slug' => $doc->resource_type_slug_s ?? null,
                         'name' => $doc->resource_type_name_s,
                     ],
                     'user' => [

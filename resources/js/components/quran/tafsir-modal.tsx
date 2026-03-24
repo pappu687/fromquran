@@ -21,50 +21,8 @@ import {
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import { VerseCard } from '@/components/quran/verse-card';
-
-interface TafseerBook {
-    id: number;
-    name: string;
-    slug: string;
-    description: string;
-}
-
-interface Chapter {
-    id: number;
-    number: number;
-    name: string;
-    englishName: string;
-    englishNameTranslation: string;
-    revelationType: 'Meccan' | 'Medinan';
-    verses: number;
-}
-
-interface MainVerse {
-    id: number;
-    chapterId: number;
-    chapterNumber?: number;
-    verseNumber: number;
-    text: string;
-    translation?: string;
-    audioUrl?: string;
-    juzNumber: number;
-    pageNumber: number;
-}
-
-interface TafsirData {
-    tafsirId: number;
-    bookName: string;
-    bookSlug: string;
-    ayahKey: string;
-    text: string;
-    fromAyah?: string;
-    toAyah?: string;
-    ayahKeys: string[];
-    chapterId: number;
-    verseNumber: number;
-}
+import { useTafsirModal } from '@/hooks/features';
 
 interface TafsirModalProps {
     open: boolean;
@@ -83,200 +41,30 @@ export function TafsirModal({
     chapterNumber,
     totalVerses = 1,
 }: TafsirModalProps) {
-    const [tafseerBooks, setTafseerBooks] = useState<TafseerBook[]>([]);
-    const [selectedBookSlug, setSelectedBookSlug] = useState<string>('en-ibn-katheer');
-    const [tafsirData, setTafsirData] = useState<TafsirData | null>(null);
-    const [previousTafsirData, setPreviousTafsirData] = useState<TafsirData | null>(null);
-    const [isLoadingBooks, setIsLoadingBooks] = useState(false);
-    const [isLoadingTafsir, setIsLoadingTafsir] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [currentVerse, setCurrentVerse] = useState({ chapterId, verseNumber });
-    const [isTransitioning, setIsTransitioning] = useState(false);
-    const [isNavigating, setIsNavigating] = useState(false);
-
-    const [chapters, setChapters] = useState<Chapter[]>([]);
-    const [mainVerse, setMainVerse] = useState<MainVerse | null>(null);
-    const [loadingMainVerse, setLoadingMainVerse] = useState(false);
-
-    // Fetch tafseer books when modal opens
-    useEffect(() => {
-        if (open && tafseerBooks.length === 0) {
-            fetchTafseerBooks();
-        }
-    }, [open]);
-
-    // Fetch chapters when modal opens
-    useEffect(() => {
-        if (open && chapters.length === 0) {
-            fetchChapters();
-        }
-    }, [open]);
-
-    // Fetch main verse when chapters are loaded
-    useEffect(() => {
-        if (open && chapters.length > 0) {
-            fetchMainVerse();
-        }
-    }, [chapters, currentVerse, open]);
-
-    // Fetch tafsir when selected book or verse changes
-    useEffect(() => {
-        if (open && selectedBookSlug) {
-            fetchTafsir();
-        }
-    }, [selectedBookSlug, currentVerse, open]);
-
-    const fetchTafseerBooks = async () => {
-        setIsLoadingBooks(true);
-        setError(null);
-        try {
-            const response = await fetch('/api/quran/tafseer-books');
-            if (response.ok) {
-                const data = await response.json();
-                setTafseerBooks(data);
-            } else {
-                setError('Failed to fetch tafseer books');
-            }
-        } catch (err) {
-            console.error('Failed to fetch tafseer books:', err);
-            setError('Network error. Please try again.');
-        } finally {
-            setIsLoadingBooks(false);
-        }
-    };
-
-    const fetchChapters = async () => {
-        try {
-            const response = await fetch('/api/quran/chapters');
-            if (!response.ok) {
-                throw new Error('Failed to load chapters');
-            }
-            const data = await response.json();
-            setChapters(data);
-        } catch (err) {
-            console.error('Failed to fetch chapters:', err);
-        }
-    };
-
-    const fetchMainVerse = async () => {
-        if (!chapters.length) return;
-
-        const chapter = chapters.find((ch) => ch.id === currentVerse.chapterId);
-        if (!chapter) return;
-
-        setLoadingMainVerse(true);
-        try {
-            const params = new URLSearchParams({
-                page: '1',
-                limit: '1',
-                edition: 'en.sahih',
-                from: String(currentVerse.verseNumber),
-                to: String(currentVerse.verseNumber),
-            });
-
-            const response = await fetch(
-                `/api/quran/chapters/${chapter.id}/verses?${params.toString()}`,
-            );
-
-            if (!response.ok) {
-                throw new Error('Failed to load verse');
-            }
-
-            const data = await response.json();
-            const verse = data.data?.[0];
-            if (verse) {
-                setMainVerse({
-                    ...verse,
-                    chapterNumber: chapter.number,
-                });
-            }
-        } catch (err) {
-            console.error('Failed to load main verse:', err);
-        } finally {
-            setLoadingMainVerse(false);
-        }
-    };
-
-    const fetchTafsir = async () => {
-        // Keep previous content visible during loading
-        if (tafsirData) {
-            setPreviousTafsirData(tafsirData);
-        }
-        setIsLoadingTafsir(true);
-        setIsTransitioning(true);
-        setError(null);
-        try {
-            const response = await fetch(
-                `/api/quran/tafsir/${currentVerse.chapterId}/${currentVerse.verseNumber}?tafsir=${selectedBookSlug}`
-            );
-            if (response.ok) {
-                const data = await response.json();
-                setTafsirData(data);
-            } else if (response.status === 404) {
-                setTafsirData(null);
-                setError('No tafsir found for this verse in the selected book.');
-            } else {
-                setError('Failed to fetch tafsir');
-            }
-        } catch (err) {
-            console.error('Failed to fetch tafsir:', err);
-            setError('Network error. Please try again.');
-        } finally {
-            setIsLoadingTafsir(false);
-            setIsTransitioning(false);
-            setIsNavigating(false);
-        }
-    };
-
-    const handleNextVerse = () => {
-        if (isNavigating || isLoadingTafsir) return;
-
-        // If current tafsir spans multiple verses, jump to the verse after the range
-        if (tafsirData?.toAyah) {
-            const [, toVerseNum] = tafsirData.toAyah.split(':').map(Number);
-            const nextVerse = toVerseNum + 1;
-            if (nextVerse <= totalVerses) {
-                setIsNavigating(true);
-                setCurrentVerse({
-                    ...currentVerse,
-                    verseNumber: nextVerse,
-                });
-            }
-        } else if (currentVerse.verseNumber + 1 <= totalVerses) {
-            setIsNavigating(true);
-            setCurrentVerse({
-                ...currentVerse,
-                verseNumber: currentVerse.verseNumber + 1,
-            });
-        }
-    };
-
-    const handlePrevVerse = () => {
-        if (isNavigating || isLoadingTafsir) return;
-
-        // If current tafsir spans multiple verses, jump to the verse before the range
-        if (tafsirData?.fromAyah) {
-            const [, fromVerseNum] = tafsirData.fromAyah.split(':').map(Number);
-            const prevVerse = fromVerseNum - 1;
-            if (prevVerse >= 1) {
-                setIsNavigating(true);
-                setCurrentVerse({
-                    ...currentVerse,
-                    verseNumber: prevVerse,
-                });
-            }
-        } else if (currentVerse.verseNumber - 1 >= 1) {
-            setIsNavigating(true);
-            setCurrentVerse({
-                ...currentVerse,
-                verseNumber: currentVerse.verseNumber - 1,
-            });
-        }
-    };
-
-    const handleBookChange = (slug: string) => {
-        setSelectedBookSlug(slug);
-    };
+    const {
+        tafseerBooks,
+        chapters,
+        mainVerse,
+        tafsirData,
+        isLoadingBooks,
+        isLoadingTafsir,
+        loadingMainVerse,
+        error,
+        isTransitioning,
+        isNavigating,
+        currentVerse,
+        selectedBookSlug,
+        setSelectedBookSlug,
+        setCurrentVerse,
+        handleNextVerse,
+        handlePrevVerse,
+        handleBookChange,
+    } = useTafsirModal({
+        open,
+        chapterId,
+        verseNumber,
+        totalVerses,
+    });
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>

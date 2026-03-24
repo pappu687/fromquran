@@ -1,4 +1,8 @@
+import { LoginModal } from '@/components/auth/login-modal';
+import { AddResourceModal } from '@/components/quran/add-resource-modal';
+import { ReportErrorModal } from '@/components/quran/report-error-modal';
 import { VerseCard } from '@/components/quran/verse-card';
+import { QuranResourceCard } from '@/components/quran/quran-resource-card';
 import {
     Accordion,
     AccordionContent,
@@ -16,22 +20,18 @@ import {
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/contexts/auth-context';
 import QuranReaderLayout from '@/layouts/quran-reader-layout';
 import { Head, router, usePage } from '@inertiajs/react';
 import {
     BookOpen,
-    Calendar,
     ChevronLeft,
     ChevronRight,
     ExternalLink,
-    FileText,
-    Globe,
-    Play,
-    Scale,
     Tags,
-    Video,
 } from 'lucide-react';
 import { useEffect } from 'react';
+import { useState } from 'react';
 import { useRelatedVerse } from '@/hooks/features';
 import { useChapters } from '@/hooks';
 
@@ -56,6 +56,10 @@ export default function RelatedPage({
     previousVerse,
     nextVerse,
 }: RelatedPageProps) {
+    const { user } = useAuth();
+    const [isAddResourceOpen, setIsAddResourceOpen] = useState(false);
+    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const {
         resources,
         similarVerses,
@@ -80,6 +84,14 @@ export default function RelatedPage({
         getResourceHighlight,
         getDomainName,
     } = useRelatedVerse(verseId, chapterNumber, verseNumber);
+
+    const handleReportErrorClick = () => {
+        if (user) {
+            setIsReportModalOpen(true);
+        } else {
+            setIsLoginModalOpen(true);
+        }
+    };
 
     const pageTitle = `Related Resources for Quran ${chapterNumber}:${verseNumber}`;
     const pageDescription = `Explore tafsir, fatwa, videos, articles, related verses, and topics for Quran ${chapterNumber}:${verseNumber} on From Quran.`;
@@ -243,14 +255,32 @@ export default function RelatedPage({
                     {/* Resources */}
                     <section className="mb-8">
                         <div className="mb-4 flex items-center justify-between">
-                            <h1 className="text-xl font-semibold">
-                                Related Resources ({chapterNumber}:{verseNumber}
-                                )
-                            </h1>
-                            <span className="text-sm text-muted-foreground">
-                                {resources.length} resource
-                                {resources.length === 1 ? '' : 's'}
-                            </span>
+                            <div>
+                                <h1 className="text-xl font-semibold">
+                                    Related Resources ({chapterNumber}:
+                                    {verseNumber})
+                                </h1>
+                                <span className="text-sm text-muted-foreground">
+                                    {resources.length} resource
+                                    {resources.length === 1 ? '' : 's'}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setIsAddResourceOpen(true)}
+                                >
+                                    Add a resource
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleReportErrorClick}
+                                >
+                                    Report Error
+                                </Button>
+                            </div>
                         </div>
 
                         {loadingResources ? (
@@ -260,7 +290,7 @@ export default function RelatedPage({
                                 <Skeleton className="h-12 w-full" />
                             </div>
                         ) : resources.length === 0 ? (
-                            <div className="flex h-40 items-center justify-center text-center">
+                            <div className="flex h-40 flex-col items-center justify-center gap-3 text-center">
                                 <p className="text-muted-foreground">
                                     No resources available yet for this verse.
                                 </p>
@@ -306,121 +336,97 @@ export default function RelatedPage({
                                                             maxHeight: '500px',
                                                         }}
                                                     >
-                                                        {typeResources.map(
-                                                            (resource) => (
-                                                                <div
-                                                                    key={
-                                                                        resource.id
-                                                                    }
-                                                                    className="group relative flex flex-col gap-3 rounded-xl border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md"
-                                                                >
-                                                                    <div className="flex items-start justify-between gap-4">
-                                                                        <div className="flex-1 space-y-1">
-                                                                            <a
-                                                                                href={
-                                                                                    resource.resource_url
-                                                                                }
-                                                                                target="_blank"
-                                                                                rel="noopener noreferrer"
-                                                                                className="inline-flex items-center gap-2 text-base font-semibold text-foreground decoration-primary/30 underline-offset-4 transition-colors group-hover:text-primary hover:underline"
-                                                                            >
-                                                                                <span className="line-clamp-2">
-                                                                                    {resource.resource_title ||
-                                                                                        resource.resource_url}
-                                                                                </span>
-                                                                                <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 opacity-50 transition-opacity group-hover:opacity-100" />
-                                                                            </a>
-                                                                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                                                                <span className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium tracking-wider uppercase">
-                                                                                    <Globe className="h-3 w-3" />
-                                                                                    {getDomainName(
-                                                                                        resource.resource_url,
-                                                                                    )}
-                                                                                </span>
-                                                                                {resource.created_at && (
-                                                                                    <span className="flex items-center gap-1 font-sans">
-                                                                                        <Calendar className="h-3 w-3" />
-                                                                                        {new Date(
-                                                                                            resource.created_at,
-                                                                                        ).toLocaleDateString(
-                                                                                            'en-US',
+                                                        {type ===
+                                                        'Similar Verses' ? (
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {typeResources.map(
+                                                                    (
+                                                                        resource,
+                                                                    ) => {
+                                                                        let matchedKeys: string[] =
+                                                                            [];
+                                                                        try {
+                                                                            if (
+                                                                                resource.comment
+                                                                            ) {
+                                                                                matchedKeys =
+                                                                                    JSON.parse(
+                                                                                        resource.comment,
+                                                                                    );
+                                                                            }
+                                                                        } catch (e) {
+                                                                            console.error(
+                                                                                'Failed to parse similar verses JSON',
+                                                                                e,
+                                                                            );
+                                                                        }
+
+                                                                        return matchedKeys.map(
+                                                                            (
+                                                                                key,
+                                                                                idx,
+                                                                            ) => {
+                                                                                const parts =
+                                                                                    key.split(
+                                                                                        ':',
+                                                                                    );
+                                                                                if (
+                                                                                    parts.length ===
+                                                                                    2
+                                                                                ) {
+                                                                                    return (
+                                                                                        <Badge
+                                                                                            key={`${resource.id}-${idx}`}
+                                                                                            variant="secondary"
+                                                                                            className="cursor-pointer border-primary/20 bg-primary/10 px-3 py-1 text-sm text-primary transition-colors hover:bg-primary/20"
+                                                                                            onClick={() =>
+                                                                                                router.visit(
+                                                                                                    `/${Number(parts[0])}/${Number(parts[1])}`,
+                                                                                                    {
+                                                                                                        method: 'get',
+                                                                                                    },
+                                                                                                )
+                                                                                            }
+                                                                                        >
+                                                                                            <BookOpen className="mr-1.5 h-3.5 w-3.5" />
                                                                                             {
-                                                                                                timeZone:
-                                                                                                    'UTC',
-                                                                                                month: 'short',
-                                                                                                year: 'numeric',
-                                                                                            },
-                                                                                        )}
-                                                                                    </span>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
+                                                                                                key
+                                                                                            }
+                                                                                        </Badge>
+                                                                                    );
+                                                                                }
 
-                                                                    {resource.comment && (
-                                                                        <div className="relative">
-                                                                            <div
-                                                                                className={`text-sm leading-relaxed text-muted-foreground/90 ${!selectedResource ? 'line-clamp-3' : ''}`}
-                                                                                dangerouslySetInnerHTML={{
-                                                                                    __html: resource.comment,
-                                                                                }}
-                                                                            />
-                                                                            {resource.is_truncated && (
-                                                                                <Button
-                                                                                    variant="ghost"
-                                                                                    size="sm"
-                                                                                    className="mt-2 h-7 bg-muted/30 px-2 text-xs font-medium text-primary hover:bg-muted"
-                                                                                    disabled={
-                                                                                        loadingFullResourceId ===
-                                                                                        resource.id
-                                                                                    }
-                                                                                    onClick={() =>
-                                                                                        handleSeeMore(
-                                                                                            resource.id,
-                                                                                        )
-                                                                                    }
-                                                                                >
-                                                                                    {loadingFullResourceId ===
-                                                                                    resource.id
-                                                                                        ? 'Loading...'
-                                                                                        : 'Read Full Answer'}
-                                                                                </Button>
-                                                                            )}
-                                                                        </div>
-                                                                    )}
-
-                                                                    <div className="mt-1 flex items-center justify-between border-t pt-3">
-                                                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
-                                                                                {(
-                                                                                    resource
-                                                                                        .user
-                                                                                        ?.name ||
-                                                                                    'User'
-                                                                                )
-                                                                                    .charAt(
-                                                                                        0,
-                                                                                    )
-                                                                                    .toUpperCase()}
-                                                                            </div>
-                                                                            <span>
-                                                                                {resource
-                                                                                    .user
-                                                                                    ?.name ||
-                                                                                    'Anonymous'}
-                                                                            </span>
-                                                                        </div>
-                                                                        <div className="flex gap-2">
-                                                                            <Badge
-                                                                                variant="outline"
-                                                                                className="h-5 border-dashed text-[10px] font-normal opacity-60"
-                                                                            >
-                                                                                Verified
-                                                                            </Badge>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            ),
+                                                                                return null;
+                                                                            },
+                                                                        );
+                                                                    },
+                                                                )}
+                                                            </div>
+                                                        ) : (
+                                                            typeResources.map(
+                                                                (resource) => (
+                                                                    <QuranResourceCard
+                                                                        key={
+                                                                            resource.id
+                                                                        }
+                                                                        resource={
+                                                                            resource
+                                                                        }
+                                                                        loadingFullResourceId={
+                                                                            loadingFullResourceId
+                                                                        }
+                                                                        selectedResourceOpen={
+                                                                            !!selectedResource
+                                                                        }
+                                                                        getDomainName={
+                                                                            getDomainName
+                                                                        }
+                                                                        onSeeMore={
+                                                                            handleSeeMore
+                                                                        }
+                                                                    />
+                                                                ),
+                                                            )
                                                         )}
                                                     </div>
                                                 </AccordionContent>
@@ -660,6 +666,25 @@ export default function RelatedPage({
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <AddResourceModal
+                open={isAddResourceOpen}
+                onOpenChange={setIsAddResourceOpen}
+                verseId={verseId}
+            />
+
+            <ReportErrorModal
+                open={isReportModalOpen}
+                onOpenChange={setIsReportModalOpen}
+                verseId={verseId}
+                chapterId={selectedChapterId ?? chapterNumber}
+                verseNumber={verseNumber}
+            />
+
+            <LoginModal
+                open={isLoginModalOpen}
+                onOpenChange={setIsLoginModalOpen}
+            />
         </>
     );
 

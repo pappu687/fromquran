@@ -110,6 +110,7 @@ export function CollectionsModal({
     const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(
         null,
     );
+    const [isContentReady, setIsContentReady] = useState(false);
     const nameInputRef = useRef<HTMLInputElement>(null);
 
     const loadCollections = useCallback(async () => {
@@ -180,9 +181,25 @@ export function CollectionsModal({
         }
     }, []);
 
-    // Load collections when modal opens
+    // Wait until the dialog content has fully opened before starting fetches.
     useEffect(() => {
         if (open) {
+            if (typeof window !== 'undefined') {
+                const prefersReducedMotion = window.matchMedia(
+                    '(prefers-reduced-motion: reduce)',
+                ).matches;
+
+                if (prefersReducedMotion) {
+                    setIsContentReady(true);
+                }
+            }
+        } else {
+            setIsContentReady(false);
+        }
+    }, [open]);
+
+    useEffect(() => {
+        if (open && isContentReady) {
             loadCollections();
             loadAvailableTags();
             if (verseNumber) {
@@ -190,7 +207,13 @@ export function CollectionsModal({
                 setToVerse(verseNumber);
             }
         }
-    }, [loadAvailableTags, loadCollections, open, verseNumber]);
+    }, [
+        isContentReady,
+        loadAvailableTags,
+        loadCollections,
+        open,
+        verseNumber,
+    ]);
 
     // Focus name input when new collection form opens
     useEffect(() => {
@@ -375,6 +398,7 @@ export function CollectionsModal({
             onOpenChange(newOpen);
             if (!newOpen) {
                 // Reset state when closing
+                setIsContentReady(false);
                 setShowNewCollectionForm(false);
                 setNewCollectionName('');
                 setNewCollectionDescription('');
@@ -393,7 +417,18 @@ export function CollectionsModal({
     return (
         <>
             <Dialog open={open} onOpenChange={handleOpenChange}>
-                <DialogContent className="sm:max-w-[600px]">
+                <DialogContent
+                    className="sm:max-w-[600px]"
+                    onAnimationEnd={(event) => {
+                        if (
+                            open &&
+                            event.currentTarget === event.target &&
+                            event.currentTarget.dataset.state === 'open'
+                        ) {
+                            setIsContentReady(true);
+                        }
+                    }}
+                >
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <BookmarkPlus className="h-5 w-5" />

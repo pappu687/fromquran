@@ -61,6 +61,7 @@ export const useVersesPanel = ({
     const hasScrolledToStartRef = useRef(false);
     const currentChapterIdRef = useRef<number | null>(chapter?.id || null);
     const lastTranslationIdsRef = useRef('');
+    const lastStartVerseRef = useRef<number | null>(startFromVerse ?? null);
 
     // Core state
     const [verses, setVerses] = useState<VerseListItem[]>(
@@ -148,12 +149,16 @@ export const useVersesPanel = ({
 
         // Reset if translations or chapter changes
         const currentTranslationIds = settings.selectedTranslations.join(',');
+        const startVerseChanged =
+            (startFromVerse ?? null) !== lastStartVerseRef.current;
         if (
             chapter.id !== currentChapterIdRef.current ||
-            lastTranslationIdsRef.current !== currentTranslationIds
+            lastTranslationIdsRef.current !== currentTranslationIds ||
+            startVerseChanged
         ) {
             currentChapterIdRef.current = chapter.id;
             lastTranslationIdsRef.current = currentTranslationIds;
+            lastStartVerseRef.current = startFromVerse ?? null;
             setVerses([]);
             setHasMore(true);
             hasScrolledToStartRef.current = false;
