@@ -1,21 +1,23 @@
-import {
-    Sheet,
-    SheetContent,
-    SheetHeader,
-    SheetTitle,
-} from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { router } from '@inertiajs/react';
+import { FullResourceDialog } from '@/components/quran/full-resource-dialog';
+import { QuranResourceCard } from '@/components/quran/quran-resource-card';
 import {
     Accordion,
     AccordionContent,
     AccordionItem,
     AccordionTrigger,
 } from '@/components/ui/accordion';
-import { ExternalLink, Info, Link as LinkIcon, Plus } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+} from '@/components/ui/sheet';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { router } from '@inertiajs/react';
+import { Info, Link as LinkIcon, Plus } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 import { AddResourceModal } from './add-resource-modal';
 
 interface ChapterInfo {
@@ -32,11 +34,13 @@ interface ResourceType {
 }
 
 interface ChapterResource {
-    id: number;
+    id: string | number;
     resource_type_id: number;
     resource_url: string;
     resource_title?: string;
     comment: string | null;
+    is_truncated?: boolean;
+    created_at?: string;
     resource_type: ResourceType;
     user: {
         name: string;
@@ -50,48 +54,6 @@ interface ChapterInfoSheetProps {
     chapterName?: string;
 }
 
-const getYoutubeVideoId = (url: string) => {
-    try {
-        const parsedUrl = new URL(url);
-        const hostname = parsedUrl.hostname.replace(/^www\./, '');
-
-        if (hostname === 'youtu.be') {
-            return parsedUrl.pathname.split('/').filter(Boolean)[0] || null;
-        }
-
-        if (
-            hostname === 'youtube.com' ||
-            hostname === 'm.youtube.com' ||
-            hostname === 'youtube-nocookie.com' ||
-            hostname.endsWith('.youtube.com') ||
-            hostname.endsWith('.youtube-nocookie.com')
-        ) {
-            if (parsedUrl.pathname === '/watch') {
-                return (
-                    parsedUrl.searchParams.get('v') ||
-                    parsedUrl.searchParams.get('vi')
-                );
-            }
-
-            const pathParts = parsedUrl.pathname.split('/').filter(Boolean);
-            const [firstSegment, secondSegment] = pathParts;
-
-            if (
-                (firstSegment === 'embed' || firstSegment === 'shorts') &&
-                secondSegment
-            ) {
-                return secondSegment;
-            }
-
-            return pathParts.at(-1) || null;
-        }
-    } catch {
-        return null;
-    }
-
-    return null;
-};
-
 export function ChapterInfoSheet({
     open,
     onOpenChange,
@@ -104,18 +66,21 @@ export function ChapterInfoSheet({
     const [loadingResources, setLoadingResources] = useState(false);
     const [activeTab, setActiveTab] = useState('intro');
     const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
+    const [loadingFullResourceId, setLoadingFullResourceId] = useState<
+        string | number | null
+    >(null);
+    const [selectedResource, setSelectedResource] = useState<{
+        title: string | null;
+        url: string | null;
+        comment: string;
+    } | null>(null);
 
-    useEffect(() => {
-        if (open && chapterNumber) {
-            fetchChapterInfo();
-            fetchChapterResources();
-        }
-    }, [open, chapterNumber]);
-
-    const fetchChapterInfo = async () => {
+    const fetchChapterInfo = useCallback(async () => {
         setLoadingInfo(true);
         try {
-            const response = await fetch(`/api/quran/chapters/${chapterNumber}/info`);
+            const response = await fetch(
+                `/api/quran/chapters/${chapterNumber}/info`,
+            );
             if (response.ok) {
                 const data = await response.json();
                 setInfo(data);
@@ -125,12 +90,14 @@ export function ChapterInfoSheet({
         } finally {
             setLoadingInfo(false);
         }
-    };
+    }, [chapterNumber]);
 
-    const fetchChapterResources = async () => {
+    const fetchChapterResources = useCallback(async () => {
         setLoadingResources(true);
         try {
-            const response = await fetch(`/api/quran/chapters/${chapterNumber}/resources`);
+            const response = await fetch(
+                `/api/quran/chapters/${chapterNumber}/resources`,
+            );
             if (response.ok) {
                 const data = await response.json();
                 setResources(data.data || []);
@@ -139,6 +106,48 @@ export function ChapterInfoSheet({
             console.error('Failed to fetch chapter resources:', error);
         } finally {
             setLoadingResources(false);
+        }
+    }, [chapterNumber]);
+
+    useEffect(() => {
+        if (open && chapterNumber) {
+            void fetchChapterInfo();
+            void fetchChapterResources();
+        }
+    }, [chapterNumber, fetchChapterInfo, fetchChapterResources, open]);
+
+    const handleSeeMore = async (resourceId: string | number) => {
+        if (resourceId === -1 || resourceId === '-1') {
+            setSelectedResource(null);
+            setLoadingFullResourceId(null);
+            return;
+        }
+
+        setLoadingFullResourceId(resourceId);
+        try {
+            const response = await fetch(`/api/resources/${resourceId}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch full resource');
+            }
+
+            const data = await response.json();
+            setSelectedResource({
+                title: data.data?.title || 'Full Description',
+                url: data.data?.url || null,
+                comment: data.data?.comment || '',
+            });
+        } catch (error) {
+            console.error('Failed to fetch full resource:', error);
+        } finally {
+            setLoadingFullResourceId(null);
+        }
+    };
+
+    const getDomainName = (url: string) => {
+        try {
+            return new URL(url).hostname.replace(/^www\./, '');
+        } catch {
+            return url;
         }
     };
 
@@ -305,86 +314,31 @@ export function ChapterInfoSheet({
                                                     <AccordionContent className="px-1 pt-4">
                                                         <div className="space-y-4">
                                                             {typeResources.map(
-                                                                (
-                                                                    resource,
-                                                                ) => {
-                                                                    const youtubeVideoId =
-                                                                        getYoutubeVideoId(
-                                                                            resource.resource_url,
-                                                                        );
-                                                                    const youtubeThumbnailUrl =
-                                                                        youtubeVideoId
-                                                                            ? `https://i.ytimg.com/vi/${youtubeVideoId}/hqdefault.jpg`
-                                                                            : null;
-
-                                                                    return (
-                                                                        <div
-                                                                            key={
-                                                                                resource.id
-                                                                            }
-                                                                            className="rounded-lg border bg-card p-4"
-                                                                        >
-                                                                            {youtubeThumbnailUrl ? (
-                                                                                <a
-                                                                                    href={
-                                                                                        resource.resource_url
-                                                                                    }
-                                                                                    target="_blank"
-                                                                                    rel="noopener noreferrer"
-                                                                                    className="group mb-2 flex items-start gap-3 rounded-lg transition-colors hover:bg-muted/40"
-                                                                                >
-                                                                                    <div className="relative aspect-video w-28 flex-shrink-0 overflow-hidden rounded-md border bg-muted">
-                                                                                        <img
-                                                                                            src={
-                                                                                                youtubeThumbnailUrl
-                                                                                            }
-                                                                                            alt={
-                                                                                                resource.resource_title ||
-                                                                                                'YouTube thumbnail'
-                                                                                            }
-                                                                                            className="h-full w-full object-cover"
-                                                                                            loading="lazy"
-                                                                                        />
-                                                                                        <div className="absolute right-2 bottom-2 rounded bg-black/80 px-1.5 py-0.5 text-[10px] font-semibold text-white">
-                                                                                            YouTube
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <div className="min-w-0 pt-0.5">
-                                                                                        <div className="flex items-start gap-2 text-sm font-medium text-primary group-hover:underline">
-                                                                                            <span className="line-clamp-2">
-                                                                                                {resource.resource_title ||
-                                                                                                    resource.resource_url}
-                                                                                            </span>
-                                                                                            <ExternalLink className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </a>
-                                                                            ) : (
-                                                                                <a
-                                                                                    href={
-                                                                                        resource.resource_url
-                                                                                    }
-                                                                                    target="_blank"
-                                                                                    rel="noopener noreferrer"
-                                                                                    className="group mb-2 flex items-start gap-2 text-sm font-medium text-primary hover:underline"
-                                                                                >
-                                                                                    <ExternalLink className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                                                                                    <span className="break-all italic">
-                                                                                        {resource.resource_title ||
-                                                                                            resource.resource_url}
-                                                                                    </span>
-                                                                                </a>
-                                                                            )}
-                                                                            {resource.comment && (
-                                                                                <p className="mt-2 text-sm leading-relaxed text-foreground/80">
-                                                                                    {
-                                                                                        resource.comment
-                                                                                    }
-                                                                                </p>
-                                                                            )}
-                                                                        </div>
-                                                                    );
-                                                                },
+                                                                (resource) => (
+                                                                    <QuranResourceCard
+                                                                        key={
+                                                                            resource.id
+                                                                        }
+                                                                        resource={{
+                                                                            ...resource,
+                                                                            resource_title:
+                                                                                resource.resource_title ??
+                                                                                null,
+                                                                        }}
+                                                                        loadingFullResourceId={
+                                                                            loadingFullResourceId
+                                                                        }
+                                                                        selectedResourceOpen={
+                                                                            !!selectedResource
+                                                                        }
+                                                                        getDomainName={
+                                                                            getDomainName
+                                                                        }
+                                                                        onSeeMore={
+                                                                            handleSeeMore
+                                                                        }
+                                                                    />
+                                                                ),
                                                             )}
                                                         </div>
                                                     </AccordionContent>
@@ -402,6 +356,13 @@ export function ChapterInfoSheet({
                     open={isResourceModalOpen}
                     onOpenChange={setIsResourceModalOpen}
                     chapterId={chapterNumber}
+                />
+
+                <FullResourceDialog
+                    open={!!selectedResource}
+                    resource={selectedResource}
+                    onOpenChange={(open) => !open && void handleSeeMore(-1)}
+                    onClose={() => void handleSeeMore(-1)}
                 />
             </SheetContent>
         </Sheet>

@@ -7,13 +7,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-    Dialog,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import {
     Sheet,
     SheetContent,
     SheetHeader,
@@ -21,11 +14,10 @@ import {
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/auth-context';
+import { useResourcesSheet } from '@/hooks/features';
 import { router } from '@inertiajs/react';
-import { QuranResourceCard } from './quran-resource-card';
 import {
     BookOpen,
-    ExternalLink,
     FileText,
     Globe,
     Headphones,
@@ -33,54 +25,12 @@ import {
     Tags,
     Video,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { LoginModal } from '../auth/login-modal';
 import { AddResourceModal } from './add-resource-modal';
+import { FullResourceDialog } from './full-resource-dialog';
+import { QuranResourceCard } from './quran-resource-card';
 import { ReportErrorModal } from './report-error-modal';
-import { useResourcesSheet } from '@/hooks/features';
-
-interface ResourceType {
-    id: number;
-    slug: string;
-    name: string;
-}
-
-interface Resource {
-    id: string | number;
-    resource_type_id?: number;
-    resource_url: string;
-    resource_title: string | null;
-    comment: string | null;
-    is_truncated?: boolean;
-    resource_type: ResourceType;
-    user: {
-        name: string;
-    };
-    created_at?: string;
-}
-
-interface SimilarVerse {
-    id: number;
-    verse_key: string;
-    verse_number: number;
-    chapter_id: number;
-    chapter_number: number;
-    chapter_name: string;
-    chapter_name_roman: string;
-    text_uthmani: string;
-    translation: string;
-    translation_resource: string;
-    matched_words_count: number;
-    coverage: number;
-    score: number;
-    match_words_range: number[][];
-}
-
-interface Topic {
-    topic_id: number;
-    name: string;
-    arabic_name: string;
-}
 
 interface ResourcesSheetProps {
     open: boolean;
@@ -515,51 +465,13 @@ export function ResourcesSheet({
                 </div>
             </SheetContent>
 
-            <Dialog
+            <FullResourceDialog
                 open={!!selectedResource}
+                resource={selectedResource}
                 onOpenChange={(open) => !open && setSelectedResource(null)}
-            >
-                <DialogContent className="h-screen w-screen max-w-none p-4 sm:h-auto sm:w-auto sm:max-w-[80rem] sm:p-6">
-                    <DialogHeader className="pr-8">
-                        <DialogTitle className="text-base sm:text-[1.05rem]">
-                            {selectedResource?.title || 'Full Description'}
-                        </DialogTitle>
-                        {selectedResource?.url && (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="mt-2 h-7 w-fit gap-1.5 px-2.5 text-[11px] font-medium"
-                                asChild
-                            >
-                                <a
-                                    href={selectedResource.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    <ExternalLink className="h-3.5 w-3.5" />
-                                    Source
-                                </a>
-                            </Button>
-                        )}
-                    </DialogHeader>
-                    <div className="no-scrollbar -mx-4 max-h-[calc(100vh-12rem)] overflow-y-auto px-4 sm:max-h-[50vh]">
-                        <div
-                            className="text-sm whitespace-pre-wrap text-foreground"
-                            dangerouslySetInnerHTML={{
-                                __html: selectedResource?.comment || '',
-                            }}
-                        />
-                    </div>
-                    <DialogFooter>
-                        <Button
-                            variant="outline"
-                            onClick={() => setSelectedResource(null)}
-                        >
-                            Close
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                onClose={() => setSelectedResource(null)}
+                mobileFullscreen
+            />
             <AddResourceModal
                 open={isAddResourceOpen}
                 onOpenChange={setIsAddResourceOpen}

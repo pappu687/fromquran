@@ -1,4 +1,6 @@
 import { AddResourceModal } from '@/components/quran/add-resource-modal';
+import { FullResourceDialog } from '@/components/quran/full-resource-dialog';
+import { QuranResourceCard } from '@/components/quran/quran-resource-card';
 import {
     Accordion,
     AccordionContent,
@@ -7,24 +9,12 @@ import {
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { QuranResourceCard } from '@/components/quran/quran-resource-card';
-import {
-    Dialog,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRelatedChapter } from '@/hooks/features';
 import QuranReaderLayout from '@/layouts/quran-reader-layout';
 import { Head, router, usePage } from '@inertiajs/react';
-import {
-    ChevronLeft,
-    ChevronRight,
-    ExternalLink,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface RelatedChapterPageProps {
@@ -275,7 +265,9 @@ export default function RelatedChapterPage({
                                 <Accordion
                                     type="single"
                                     collapsible
-                                    defaultValue={Object.keys(groupedResources)[0]}
+                                    defaultValue={
+                                        Object.keys(groupedResources)[0]
+                                    }
                                     className="w-full"
                                 >
                                     {Object.entries(groupedResources).map(
@@ -382,51 +374,12 @@ export default function RelatedChapterPage({
                     </div>
                 </div>
 
-                <Dialog
+                <FullResourceDialog
                     open={!!selectedResource}
+                    resource={selectedResource}
                     onOpenChange={(open) => !open && void handleSeeMore(-1)}
-                >
-                    <DialogContent className="max-w-[80rem]">
-                        <DialogHeader className="pr-8">
-                            <DialogTitle className="text-base leading-tight sm:text-[1.05rem]">
-                                {selectedResource?.title || 'Full Description'}
-                            </DialogTitle>
-                            {selectedResource?.url && (
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="mt-2 h-7 w-fit gap-1.5 px-2.5 text-[11px] font-medium"
-                                    asChild
-                                >
-                                    <a
-                                        href={selectedResource.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                    >
-                                        <ExternalLink className="h-3.5 w-3.5" />
-                                        Source
-                                    </a>
-                                </Button>
-                            )}
-                        </DialogHeader>
-                        <div className="no-scrollbar -mx-4 max-h-[50vh] overflow-y-auto px-4">
-                            <div
-                                className="text-sm whitespace-pre-wrap text-foreground"
-                                dangerouslySetInnerHTML={{
-                                    __html: selectedResource?.comment || '',
-                                }}
-                            />
-                        </div>
-                        <DialogFooter>
-                            <Button
-                                variant="outline"
-                                onClick={() => void handleSeeMore(-1)}
-                            >
-                                Close
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+                    onClose={() => void handleSeeMore(-1)}
+                />
 
                 <AddResourceModal
                     open={isAddResourceOpen}

@@ -1,8 +1,9 @@
 import { LoginModal } from '@/components/auth/login-modal';
 import { AddResourceModal } from '@/components/quran/add-resource-modal';
+import { FullResourceDialog } from '@/components/quran/full-resource-dialog';
+import { QuranResourceCard } from '@/components/quran/quran-resource-card';
 import { ReportErrorModal } from '@/components/quran/report-error-modal';
 import { VerseCard } from '@/components/quran/verse-card';
-import { QuranResourceCard } from '@/components/quran/quran-resource-card';
 import {
     Accordion,
     AccordionContent,
@@ -11,29 +12,14 @@ import {
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/auth-context';
+import { useRelatedVerse } from '@/hooks/features';
 import QuranReaderLayout from '@/layouts/quran-reader-layout';
 import { Head, router, usePage } from '@inertiajs/react';
-import {
-    BookOpen,
-    ChevronLeft,
-    ChevronRight,
-    ExternalLink,
-    Tags,
-} from 'lucide-react';
-import { useEffect } from 'react';
-import { useState } from 'react';
-import { useRelatedVerse } from '@/hooks/features';
-import { useChapters } from '@/hooks';
+import { BookOpen, ChevronLeft, ChevronRight, Tags } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface RelatedPageProps {
     chapterNumber: number;
@@ -130,7 +116,9 @@ export default function RelatedPage({
                 chapterNumber: number;
                 verseNumber: number;
             }>;
-            router.visit(`/${customEvent.detail.chapterNumber}/${customEvent.detail.verseNumber}`);
+            router.visit(
+                `/${customEvent.detail.chapterNumber}/${customEvent.detail.verseNumber}`,
+            );
         };
 
         const handleNavigateTopic = (e: Event) => {
@@ -154,10 +142,16 @@ export default function RelatedPage({
         window.addEventListener('navigate-chapter', handleNavigateChapter);
 
         return () => {
-            window.removeEventListener('navigate-related', handleNavigateRelated);
+            window.removeEventListener(
+                'navigate-related',
+                handleNavigateRelated,
+            );
             window.removeEventListener('navigate-reader', handleNavigateReader);
             window.removeEventListener('navigate-topic', handleNavigateTopic);
-            window.removeEventListener('navigate-chapter', handleNavigateChapter);
+            window.removeEventListener(
+                'navigate-chapter',
+                handleNavigateChapter,
+            );
         };
     }, [chapters]);
 
@@ -621,51 +615,12 @@ export default function RelatedPage({
             </div>
 
             {/* Full comment dialog */}
-            <Dialog
+            <FullResourceDialog
                 open={!!selectedResource}
                 onOpenChange={(open) => !open && handleSeeMore(-1)}
-            >
-                <DialogContent className="max-w-[80rem]">
-                    <DialogHeader className="pr-8">
-                        <DialogTitle className="text-base leading-tight sm:text-[1.05rem]">
-                            {selectedResource?.title || 'Full Description'}
-                        </DialogTitle>
-                        {selectedResource?.url && (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="mt-2 h-7 w-fit gap-1.5 px-2.5 text-[11px] font-medium"
-                                asChild
-                            >
-                                <a
-                                    href={selectedResource.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    <ExternalLink className="h-3.5 w-3.5" />
-                                    Source
-                                </a>
-                            </Button>
-                        )}
-                    </DialogHeader>
-                    <div className="no-scrollbar -mx-4 max-h-[50vh] overflow-y-auto px-4">
-                        <div
-                            className="text-sm whitespace-pre-wrap text-foreground"
-                            dangerouslySetInnerHTML={{
-                                __html: selectedResource?.comment || '',
-                            }}
-                        />
-                    </div>
-                    <DialogFooter>
-                        <Button
-                            variant="outline"
-                            onClick={() => handleSeeMore(-1)}
-                        >
-                            Close
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                resource={selectedResource}
+                onClose={() => handleSeeMore(-1)}
+            />
 
             <AddResourceModal
                 open={isAddResourceOpen}

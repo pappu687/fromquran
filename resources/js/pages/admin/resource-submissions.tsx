@@ -82,7 +82,9 @@ export default function ResourceSubmissions({
     filters,
     resourceTypeLabels,
 }: Props) {
+    const COMMENT_PREVIEW_LENGTH = 140;
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [expandedComments, setExpandedComments] = useState<number[]>([]);
     const [searchInput, setSearchInput] = useState(filters.search);
     const [isProcessing, setIsProcessing] = useState(false);
 
@@ -213,6 +215,14 @@ export default function ResourceSubmissions({
             <Badge variant="outline" className={classes[status] || ''}>
                 {status.charAt(0).toUpperCase() + status.slice(1)}
             </Badge>
+        );
+    };
+
+    const toggleComment = (id: number) => {
+        setExpandedComments((current) =>
+            current.includes(id)
+                ? current.filter((commentId) => commentId !== id)
+                : [...current, id],
         );
     };
 
@@ -463,10 +473,14 @@ export default function ResourceSubmissions({
                                                 <td className="px-4 py-4 md:px-5">
                                                     <div className="space-y-1">
                                                         <div className="font-medium text-foreground">
-                                                            {submission.user?.name || 'Unknown User'}
+                                                            {submission.user
+                                                                ?.name ||
+                                                                'Unknown User'}
                                                         </div>
                                                         <div className="text-sm text-muted-foreground">
-                                                            {submission.user?.email || 'Unknown Email'}
+                                                            {submission.user
+                                                                ?.email ||
+                                                                'Unknown Email'}
                                                         </div>
                                                     </div>
                                                 </td>
@@ -475,7 +489,9 @@ export default function ResourceSubmissions({
                                                         variant="outline"
                                                         className="rounded-md border-border/70 bg-background"
                                                     >
-                                                        {submission.verse?.verse_key || 'Unknown'}
+                                                        {submission.verse
+                                                            ?.verse_key ||
+                                                            'Unknown'}
                                                     </Badge>
                                                 </td>
                                                 <td className="px-4 py-4 md:px-5">
@@ -509,10 +525,44 @@ export default function ResourceSubmissions({
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-4 md:px-5">
-                                                    <span className="block max-w-xs text-sm leading-6 text-muted-foreground">
-                                                        {submission.comment ||
-                                                            '-'}
-                                                    </span>
+                                                    {submission.comment ? (
+                                                        <div className="max-w-xs">
+                                                            <span className="block text-sm leading-6 text-muted-foreground">
+                                                                {expandedComments.includes(
+                                                                    submission.id,
+                                                                ) ||
+                                                                submission
+                                                                    .comment
+                                                                    .length <=
+                                                                    COMMENT_PREVIEW_LENGTH
+                                                                    ? submission.comment
+                                                                    : `${submission.comment.slice(0, COMMENT_PREVIEW_LENGTH)}...`}
+                                                            </span>
+                                                            {submission.comment
+                                                                .length >
+                                                                COMMENT_PREVIEW_LENGTH && (
+                                                                <button
+                                                                    type="button"
+                                                                    className="mt-1 text-xs font-medium text-primary hover:underline"
+                                                                    onClick={() =>
+                                                                        toggleComment(
+                                                                            submission.id,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    {expandedComments.includes(
+                                                                        submission.id,
+                                                                    )
+                                                                        ? 'show less'
+                                                                        : '... more'}
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="block max-w-xs text-sm leading-6 text-muted-foreground">
+                                                            -
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td className="px-4 py-4 md:px-5">
                                                     {getStatusBadge(

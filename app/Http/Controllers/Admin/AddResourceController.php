@@ -3,14 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ResourceType;
+use App\Models\UserChapterResource;
+use App\Models\UserVerseResource;
+use App\Services\ResourceScraper\SearchAdapterFactory;
+use App\Services\Solr\ResourceIndexer;
+use App\Services\Solr\VerseIndexer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
-use App\Models\UserVerseResource;
-use App\Models\UserChapterResource;
-use App\Models\ResourceType;
-use App\Services\ResourceScraper\SearchAdapterFactory;
 
 class AddResourceController extends Controller
 {
@@ -32,7 +34,7 @@ class AddResourceController extends Controller
 
         return Inertia::render('admin/add-resource', [
             'resourceTypes' => $resourceTypes,
-            'chapters' => $chapters
+            'chapters' => $chapters,
         ]);
     }
 
@@ -40,7 +42,7 @@ class AddResourceController extends Controller
     {
         $request->validate([
             'term' => 'required|string',
-            'type' => 'required'
+            'type' => 'required',
         ]);
 
         $term = $request->term;
@@ -54,7 +56,7 @@ class AddResourceController extends Controller
                 $results = $adapter->search($term);
 
                 // Highlight search term in results
-                $pattern = '/' . preg_quote($term, '/') . '/i';
+                $pattern = '/'.preg_quote($term, '/').'/i';
                 $replacement = '<span style="background-color: #f97316; color: white; padding: 0 4px; border-radius: 4px; font-weight: bold;">$0</span>';
 
                 foreach ($results as &$res) {
@@ -69,13 +71,13 @@ class AddResourceController extends Controller
                 Log::info("No search adapter found for resource type slug: {$resourceType->slug}");
             }
         } catch (\Exception $e) {
-            Log::error('Search failed: ' . $e->getMessage());
+            Log::error('Search failed: '.$e->getMessage());
         }
 
         return response()->json(['results' => $results]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, ResourceIndexer $resourceIndexer, VerseIndexer $verseIndexer)
     {
         $request->validate([
             'chapter_id' => 'required',
@@ -83,6 +85,7 @@ class AddResourceController extends Controller
             'resources' => 'required|array',
             'resources.*.url' => 'required|url',
             'resources.*.title' => 'required|string',
+            'resources.*.description' => 'nullable|string',
             'resources.*.thumbnail_url' => 'nullable|url',
         ]);
 
@@ -94,25 +97,33 @@ class AddResourceController extends Controller
 
         foreach ($request->resources as $res) {
             if ($verseId && $verseId !== 'all') {
-                UserVerseResource::create([
+                $resource = UserVerseResource::create([
                     'user_id' => $userId,
                     'verse_id' => $verseId,
                     'resource_type_id' => $resourceTypeId,
                     'resource_url' => $res['url'],
                     'resource_title' => $res['title'],
+                    'comment' => $res['description'] ?? null,
                     'thumbnail_url' => $res['thumbnail_url'] ?? null,
                     'status' => 'approved', // Admin adds default to approved
                 ]);
+
+                $resourceIndexer->indexVerseResource($resource);
+                $verseIndexer->reindexVerse((int) $verseId);
             } else {
-                UserChapterResource::create([
+                $resource = UserChapterResource::create([
                     'user_id' => $userId,
                     'chapter_id' => $chapterId,
                     'resource_type_id' => $resourceTypeId,
                     'resource_url' => $res['url'],
                     'resource_title' => $res['title'],
+                    'comment' => $res['description'] ?? null,
                     'thumbnail_url' => $res['thumbnail_url'] ?? null,
                     'status' => 'approved',
                 ]);
+
+                $resourceIndexer->indexChapterResource($resource);
+                $verseIndexer->reindexChapter((int) $chapterId);
             }
         }
 

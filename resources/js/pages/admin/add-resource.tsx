@@ -58,7 +58,17 @@ interface Props {
 export default function AddResource({ resourceTypes, chapters }: Props) {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedResourceTypeId, setSelectedResourceTypeId] =
-        useState<string>('');
+        useState<string>(() => {
+            const youTubeType = resourceTypes.find(
+                (type) => type.slug === 'youtube_tafseer',
+            );
+
+            if (youTubeType) {
+                return youTubeType.id.toString();
+            }
+
+            return resourceTypes[0]?.id.toString() ?? '';
+        });
 
     // Chain dropdown state
     const [selectedChapterId, setSelectedChapterId] = useState<string>('all');
@@ -71,31 +81,19 @@ export default function AddResource({ resourceTypes, chapters }: Props) {
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    useEffect(() => {
-        if (!selectedResourceTypeId) {
-            // Find youtube_tafseer and select it by default
-            const ytType = resourceTypes.find((t) => t.slug === 'youtube_tafseer');
-            if (ytType) {
-                setSelectedResourceTypeId(ytType.id.toString());
-            } else if (resourceTypes.length > 0) {
-                setSelectedResourceTypeId(resourceTypes[0].id.toString());
-            }
-        }
-    }, [resourceTypes, selectedResourceTypeId]);
+    const selectedResourcePreviews = searchResults.filter((result) =>
+        selectedResults.includes(result.id),
+    );
 
     useEffect(() => {
         if (selectedChapterId && selectedChapterId !== 'all') {
             // Fetch verses
-            setSelectedVerseId('all');
             axios
-                .get(`/api/verses?chapter_id=${selectedChapterId}`)
+                .get(`/api/quran/verses?chapter_id=${selectedChapterId}`)
                 .then((res) => {
                     setVerses(res.data);
                 })
                 .catch((err) => console.error(err));
-        } else {
-            setVerses([]);
-            setSelectedVerseId('all');
         }
     }, [selectedChapterId]);
 
@@ -223,7 +221,13 @@ export default function AddResource({ resourceTypes, chapters }: Props) {
                                         </label>
                                         <Select
                                             value={selectedChapterId}
-                                            onValueChange={setSelectedChapterId}
+                                            onValueChange={(value) => {
+                                                setSelectedChapterId(value);
+                                                setSelectedVerseId('all');
+                                                if (value === 'all') {
+                                                    setVerses([]);
+                                                }
+                                            }}
                                         >
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Select Chapter" />
@@ -423,6 +427,60 @@ export default function AddResource({ resourceTypes, chapters }: Props) {
                                         </tbody>
                                     </table>
                                 </div>
+
+                                {selectedResourcePreviews.length > 0 && (
+                                    <div className="mt-6 rounded-lg border bg-muted/30 p-4">
+                                        <div className="mb-3 flex items-center justify-between gap-3">
+                                            <div>
+                                                <h3 className="text-sm font-semibold">
+                                                    Selected Resources Preview
+                                                </h3>
+                                                <p className="text-xs text-muted-foreground">
+                                                    The description below will
+                                                    be saved into the `comment`
+                                                    field.
+                                                </p>
+                                            </div>
+                                            <div className="text-xs text-muted-foreground">
+                                                {
+                                                    selectedResourcePreviews.length
+                                                }{' '}
+                                                selected
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            {selectedResourcePreviews.map(
+                                                (result) => (
+                                                    <div
+                                                        key={`preview-${result.id}`}
+                                                        className="rounded-md border bg-background p-3"
+                                                    >
+                                                        <div
+                                                            className="text-sm font-semibold"
+                                                            dangerouslySetInnerHTML={{
+                                                                __html: result.title,
+                                                            }}
+                                                        />
+                                                        <div className="mt-2 rounded-md bg-muted/60 p-3 text-sm text-muted-foreground">
+                                                            <div className="mb-1 text-[11px] font-medium tracking-wide text-foreground/70 uppercase">
+                                                                Comment Preview
+                                                            </div>
+                                                            <div
+                                                                className="line-clamp-4"
+                                                                dangerouslySetInnerHTML={{
+                                                                    __html:
+                                                                        result.description ||
+                                                                        '<span class="italic text-muted-foreground">No description available</span>',
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                ),
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="mt-6 flex justify-end">
                                     <Button

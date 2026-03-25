@@ -1,30 +1,41 @@
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/contexts/auth-context';
 import { cn, isSameUrl, resolveUrl } from '@/lib/utils';
 import { edit } from '@/routes/profile';
 import { edit as editPassword } from '@/routes/user-password';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
+import { ShieldCheck } from 'lucide-react';
 import { type PropsWithChildren } from 'react';
-
-const sidebarNavItems: NavItem[] = [
-    {
-        title: 'Profile',
-        href: edit(),
-        icon: null,
-    },
-    {
-        title: 'Password',
-        href: editPassword(),
-        icon: null,
-    },
-];
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
     const { url } = usePage();
+    const { hasRole } = useAuth();
 
     const currentPath = url.split('?')[0];
+    const sidebarNavItems: NavItem[] = [
+        {
+            title: 'Profile',
+            href: edit(),
+            icon: null,
+        },
+        {
+            title: 'Password',
+            href: editPassword(),
+            icon: null,
+        },
+        ...(hasRole('Admin')
+            ? [
+                  {
+                      title: 'Admin Panel',
+                      href: '/admin',
+                      icon: ShieldCheck,
+                  } satisfies NavItem,
+              ]
+            : []),
+    ];
 
     return (
         <div className="flex flex-1 flex-col bg-gradient-to-b from-background to-muted/20">
