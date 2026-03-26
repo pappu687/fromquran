@@ -11,5 +11,5 @@ interface SearchAdapterInterface
      * @param int $limit
      * @return array Array of arrays containing keys: id, title, description, url, thumbnail_url
      */
-    public function search(string $term, int $limit = 15): array;
+    public function search(string $term, int $limit = 20): array;
 }

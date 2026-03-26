@@ -48,7 +48,7 @@ class IndexTafsirToSolr extends Command
         // Clear existing tafsir documents from Solr
         $this->info('Clearing existing tafsir documents from Solr index...');
         $deleteUpdate = $this->client->createUpdate();
-        $deleteUpdate->addDeleteQuery('type_s:tafsir');
+        $deleteUpdate->addDeleteQuery('document_type_s:tafsir OR type_s:tafsir');
         $deleteUpdate->addCommit();
         $this->client->update($deleteUpdate);
 
@@ -74,8 +74,9 @@ class IndexTafsirToSolr extends Command
                     // Create unique document id using tafseer_id and ayah_key
                     $doc->id = 'tafsir_' . $content->tafsir_id . '_' . str_replace(':', '_', $content->ayah_key ?? '');
 
-                    // Type field to distinguish from verses
-                    $doc->type_s = 'tafsir';
+                    // Use the same document type fields as other non-verse Solr documents.
+                    $doc->document_type_t = 'tafsir';
+                    $doc->document_type_s = 'tafsir';
 
                     // Tafseer book info
                     $doc->tafsir_id_i = (int) $content->tafsir_id;
@@ -113,7 +114,8 @@ class IndexTafsirToSolr extends Command
                         $doc->ayah_keys_ss = $content->ayah_keys;
                     }
 
-                    // The actual tafsir text content
+                    // Keep tafsir text in the shared searchable field and the legacy field.
+                    $doc->description_t = $content->text;
                     $doc->text_t = $content->text;
 
                     $update->addDocument($doc);

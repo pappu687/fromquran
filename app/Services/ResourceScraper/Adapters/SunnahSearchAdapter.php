@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 
 class SunnahSearchAdapter implements SearchAdapterInterface
 {
-    public function search(string $term, int $limit = 15): array
+    public function search(string $term, int $limit = 20): array
     {
         $results = [];
         

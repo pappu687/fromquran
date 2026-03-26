@@ -43,9 +43,11 @@ class AddResourceController extends Controller
         $request->validate([
             'term' => 'required|string',
             'type' => 'required',
+            'limit' => 'nullable|integer|in:10,20,30,40,50,60,70,80,90,100',
         ]);
 
         $term = $request->term;
+        $limit = (int) $request->integer('limit', 20);
         $results = [];
 
         try {
@@ -53,7 +55,7 @@ class AddResourceController extends Controller
             $adapter = SearchAdapterFactory::make($resourceType->slug);
 
             if ($adapter) {
-                $results = $adapter->search($term);
+                $results = $adapter->search($term, $limit);
 
                 // Highlight search term in results
                 $pattern = '/'.preg_quote($term, '/').'/i';

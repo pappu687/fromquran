@@ -32,6 +32,7 @@ interface Verse {
 
 interface SearchResult {
     id: number;
+    documentType?: string;
     verseNumber: number;
     chapterId: number;
     text: string;
@@ -81,7 +82,12 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             fetch(`/api/quran/search?${params}`)
                 .then((res) => res.json())
                 .then((data) => {
-                    setSearchResults(data.data || []);
+                    setSearchResults(
+                        (data.data || []).filter(
+                            (result: SearchResult) =>
+                                result.documentType === 'verse',
+                        ),
+                    );
                     setLoading(false);
                 })
                 .catch((err) => {

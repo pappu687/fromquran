@@ -1,8 +1,8 @@
 <?php
 namespace App\Services;
 
-use App\Models\Chapter;
 use App\Models\ResourceContent;
+use App\Models\Chapter;
 use App\Models\TafseerBook;
 use App\Models\Translation;
 use App\Models\Verse;
@@ -445,12 +445,24 @@ class QuranDatabaseService {
 
             $select       = $this->solrClient->createSelect();
             $escapedQuery = addcslashes( $query, '+-&|!(){}[]^"~*?:\\/' );
+            $resourceQuery = sprintf(
+                '((document_type_s:(user_verse_resource user_chapter_resource translation tafsir) AND description_t:%1$s) OR (type_s:tafsir AND text_t:%1$s))',
+                $escapedQuery
+            );
 
             if ( $translationResourceId ) {
                 $fieldName = 'translation_' . $translationResourceId . '_t';
-                $select->setQuery( sprintf( '(%s:%s) OR (text_uthmani_t:%s)', $fieldName, $escapedQuery, $escapedQuery ) );
+                $select->setQuery(
+                    sprintf(
+                        '((%s:%s) OR (text_uthmani_t:%s)) OR %s',
+                        $fieldName,
+                        $escapedQuery,
+                        $escapedQuery,
+                        $resourceQuery
+                    )
+                );
             } else {
-                $select->setQuery( sprintf( 'text_uthmani_t:%s', $escapedQuery ) );
+                $select->setQuery( sprintf( '(text_uthmani_t:%s) OR %s', $escapedQuery, $resourceQuery ) );
             }
 
             $select->addSort( 'score', $select::SORT_DESC );
@@ -463,10 +475,15 @@ class QuranDatabaseService {
             }
 
             $verseKeys = array(  );
+            $chapterIds = array(  );
 
             foreach ( $resultSet as $doc ) {
                 if ( isset( $doc[ 'verse_key_s' ] ) ) {
                     $verseKeys[  ] = $doc[ 'verse_key_s' ];
+                }
+
+                if ( isset( $doc[ 'chapter_id_i' ] ) ) {
+                    $chapterIds[  ] = (int) $doc[ 'chapter_id_i' ];
                 }
             }
 
@@ -474,11 +491,39 @@ class QuranDatabaseService {
                 ->with( 'chapter' )
                 ->get()
                 ->keyBy( 'verse_key' );
+            $chapters = Chapter::whereIn( 'id', array_values( array_unique( $chapterIds ) ) )
+                ->get()
+                ->keyBy( 'id' );
 
             $results = array(  );
 
             foreach ( $resultSet as $doc ) {
+                $documentType = $doc[ 'document_type_s' ] ?? ( ( $doc[ 'type_s' ] ?? null ) === 'tafsir' ? 'tafsir' : 'verse' );
                 $verseKey = $doc[ 'verse_key_s' ] ?? null;
+                $chapterId = isset( $doc[ 'chapter_id_i' ] ) ? (int) $doc[ 'chapter_id_i' ] : null;
+                $chapter = $chapterId ? $chapters->get( $chapterId ) : null;
+
+                if ( $documentType !== 'verse' ) {
+                    $results[  ] = array(
+                        'id'                 => $doc[ 'id' ] ?? null,
+                        'documentType'       => $documentType,
+                        'chapterId'          => $chapterId,
+                        'chapterName'        => $chapter?->name_roman,
+                        'chapterNumber'      => $chapter?->chapter_number,
+                        'verseNumber'        => isset( $doc[ 'verse_number_i' ] ) ? (int) $doc[ 'verse_number_i' ] : null,
+                        'title'              => $doc[ 'title_t' ] ?? $doc[ 'tafsir_book_name_s' ] ?? null,
+                        'description'        => $doc[ 'description_t' ] ?? $doc[ 'text_t' ] ?? null,
+                        'resourceUrl'        => $doc[ 'resource_url_s' ] ?? null,
+                        'resourceTypeName'   => $doc[ 'resource_type_name_s' ] ?? null,
+                        'tafsirBookName'     => $doc[ 'tafsir_book_name_s' ] ?? null,
+                        'tafsirBookSlug'     => $doc[ 'tafsir_book_slug_s' ] ?? null,
+                        'fromAyah'           => $doc[ 'from_ayah_s' ] ?? null,
+                        'toAyah'             => $doc[ 'to_ayah_s' ] ?? null,
+                        'ayahKey'            => $doc[ 'ayah_key_s' ] ?? null,
+                    );
+
+                    continue;
+                }
 
                 if ( ! $verseKey ) {
                     continue;
@@ -499,6 +544,7 @@ class QuranDatabaseService {
 
                 $results[  ] = array(
                     'id'            => $verse->id,
+                    'documentType'  => 'verse',
                     'chapterId'     => $verse->chapter->id,
                     'chapterName'   => $verse->chapter->name_roman,
                     'chapterNumber' => $verse->chapter->chapter_number,
@@ -593,7 +639,7 @@ class QuranDatabaseService {
             $select = $this->solrClient->createSelect();
             $select->setQuery( '*:*' );
             $select->createFilterQuery( 'type' )
-                ->setQuery( 'type_s:tafsir' );
+                ->setQuery( '(document_type_s:tafsir OR type_s:tafsir)' );
             $select->createFilterQuery( 'tafsir' )
                 ->setQuery( 'tafsir_id_i:' . $tafsirId );
             $select->createFilterQuery( 'ayah' )
@@ -636,7 +682,7 @@ class QuranDatabaseService {
             $select = $this->solrClient->createSelect();
             $select->setQuery( '*:*' );
             $select->createFilterQuery( 'type' )
-                ->setQuery( 'type_s:tafsir' );
+                ->setQuery( '(document_type_s:tafsir OR type_s:tafsir)' );
             $select->createFilterQuery( 'slug' )
                 ->setQuery( sprintf( 'tafsir_book_slug_s:"%s"', $tafsirSlug ) );
             $select->createFilterQuery( 'ayah' )

@@ -1,12 +1,13 @@
-import { useState } from 'react';
-import { Search, X, BookOpen, ExternalLink } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { BookOpen, ExternalLink, Search, X } from 'lucide-react';
+import { useState } from 'react';
 
 interface SearchResult {
     id: number;
+    documentType?: string;
     chapterId: number;
     chapterName: string;
     verseNumber: number;
@@ -38,7 +39,7 @@ export function QuranSearch({ onVerseSelect, className }: QuranSearchProps) {
 
         try {
             const response = await fetch(
-                `/api/quran/search?query=${encodeURIComponent(searchQuery)}&limit=20`
+                `/api/quran/search?query=${encodeURIComponent(searchQuery)}&limit=20`,
             );
 
             if (!response.ok) {
@@ -46,7 +47,11 @@ export function QuranSearch({ onVerseSelect, className }: QuranSearchProps) {
             }
 
             const data = await response.json();
-            setResults(data.data || []);
+            setResults(
+                (data.data || []).filter(
+                    (result: SearchResult) => result.documentType === 'verse',
+                ),
+            );
         } catch (err) {
             setError('Failed to search. Please try again.');
             setResults([]);
@@ -78,7 +83,7 @@ export function QuranSearch({ onVerseSelect, className }: QuranSearchProps) {
         return parts.map((part, index) => {
             if (part.toLowerCase() === highlight.toLowerCase()) {
                 return (
-                    <mark key={index} className="bg-yellow-200 px-0.5 rounded">
+                    <mark key={index} className="rounded bg-yellow-200 px-0.5">
                         {part}
                     </mark>
                 );
@@ -94,17 +99,19 @@ export function QuranSearch({ onVerseSelect, className }: QuranSearchProps) {
                 onClick={() => setIsOpen(true)}
                 className={className}
             >
-                <Search className="h-4 w-4 mr-2" />
+                <Search className="mr-2 h-4 w-4" />
                 Search Quran
             </Button>
         );
     }
 
     return (
-        <div className={`fixed inset-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 ${className}`}>
-            <div className="container mx-auto h-full flex flex-col max-w-4xl p-4">
+        <div
+            className={`fixed inset-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 ${className}`}
+        >
+            <div className="container mx-auto flex h-full max-w-4xl flex-col p-4">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-6">
+                <div className="mb-6 flex items-center justify-between">
                     <h2 className="text-xl font-semibold">Search Quran</h2>
                     <Button
                         variant="ghost"
@@ -123,7 +130,7 @@ export function QuranSearch({ onVerseSelect, className }: QuranSearchProps) {
                 <form onSubmit={handleSubmit} className="mb-6">
                     <div className="flex gap-2">
                         <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
                             <Input
                                 placeholder="Search in English or Arabic..."
                                 value={query}
@@ -140,7 +147,7 @@ export function QuranSearch({ onVerseSelect, className }: QuranSearchProps) {
 
                 {/* Error Message */}
                 {error && (
-                    <div className="bg-destructive/10 text-destructive p-4 rounded-lg mb-4">
+                    <div className="mb-4 rounded-lg bg-destructive/10 p-4 text-destructive">
                         {error}
                     </div>
                 )}
@@ -156,10 +163,10 @@ export function QuranSearch({ onVerseSelect, className }: QuranSearchProps) {
                             {results.map((result) => (
                                 <div
                                     key={result.id}
-                                    className="border rounded-lg p-4 cursor-pointer hover:bg-accent/50 transition-colors"
+                                    className="cursor-pointer rounded-lg border p-4 transition-colors hover:bg-accent/50"
                                     onClick={() => handleVerseClick(result)}
                                 >
-                                    <div className="flex items-start justify-between mb-2">
+                                    <div className="mb-2 flex items-start justify-between">
                                         <div className="flex items-center gap-2">
                                             <Badge variant="secondary">
                                                 {result.chapterName}
@@ -172,36 +179,43 @@ export function QuranSearch({ onVerseSelect, className }: QuranSearchProps) {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <div className="text-right text-lg leading-relaxed" dir="rtl">
+                                        <div
+                                            className="text-right text-lg leading-relaxed"
+                                            dir="rtl"
+                                        >
                                             {highlightText(result.text, query)}
                                         </div>
                                         {result.translation && (
-                                            <div className="text-sm text-muted-foreground leading-relaxed">
-                                                {highlightText(result.translation, query)}
+                                            <div className="text-sm leading-relaxed text-muted-foreground">
+                                                {highlightText(
+                                                    result.translation,
+                                                    query,
+                                                )}
                                             </div>
                                         )}
                                     </div>
 
                                     <Separator className="mt-3" />
-                                    <div className="text-xs text-muted-foreground pt-2">
+                                    <div className="pt-2 text-xs text-muted-foreground">
                                         Click to open this verse
                                     </div>
                                 </div>
                             ))}
                         </div>
                     ) : query && !loading ? (
-                        <div className="text-center text-muted-foreground py-8">
-                            <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <div className="py-8 text-center text-muted-foreground">
+                            <BookOpen className="mx-auto mb-4 h-12 w-12 opacity-50" />
                             <p>No results found for "{query}"</p>
-                            <p className="text-sm mt-2">
-                                Try using different keywords or search in Arabic or English
+                            <p className="mt-2 text-sm">
+                                Try using different keywords or search in Arabic
+                                or English
                             </p>
                         </div>
                     ) : !query ? (
-                        <div className="text-center text-muted-foreground py-8">
-                            <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <div className="py-8 text-center text-muted-foreground">
+                            <Search className="mx-auto mb-4 h-12 w-12 opacity-50" />
                             <p>Enter keywords to search the Quran</p>
-                            <p className="text-sm mt-2">
+                            <p className="mt-2 text-sm">
                                 You can search in English or Arabic
                             </p>
                         </div>

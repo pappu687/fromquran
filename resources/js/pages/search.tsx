@@ -1,15 +1,24 @@
+import { FullResourceDialog } from '@/components/quran/full-resource-dialog';
 import { VerseCard } from '@/components/quran/verse-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useChapters } from '@/hooks';
 import QuranReaderLayout from '@/layouts/quran-reader-layout';
 import { cn } from '@/lib/utils';
 import { Head, router } from '@inertiajs/react';
-import { BookOpen, Search as SearchIcon } from 'lucide-react';
+import {
+    BookOpen,
+    ExternalLink,
+    FileText,
+    Languages,
+    ScrollText,
+    Search as SearchIcon,
+} from 'lucide-react';
 import { FormEvent, useEffect, useState } from 'react';
-import { useChapters } from '@/hooks';
 
-interface VerseResult {
+interface VerseSearchResult {
     id: number | null;
+    documentType: 'verse';
     chapterId: number;
     chapterName?: string;
     chapterNumber?: number;
@@ -22,10 +31,34 @@ interface VerseResult {
     resourceCount?: number;
 }
 
+interface ResourceSearchResult {
+    id: string | null;
+    documentType:
+        | 'translation'
+        | 'user_verse_resource'
+        | 'user_chapter_resource'
+        | 'tafsir';
+    chapterId?: number | null;
+    chapterName?: string;
+    chapterNumber?: number;
+    verseNumber?: number | null;
+    title?: string | null;
+    description?: string | null;
+    resourceUrl?: string | null;
+    resourceTypeName?: string | null;
+    tafsirBookName?: string | null;
+    tafsirBookSlug?: string | null;
+    fromAyah?: string | null;
+    toAyah?: string | null;
+    ayahKey?: string | null;
+}
+
+type SearchResult = VerseSearchResult | ResourceSearchResult;
+
 interface SearchPageProps {
     query?: string;
     edition: string;
-    results: VerseResult[];
+    results: SearchResult[];
     currentPage: number;
     perPage: number;
     total: number;
@@ -42,6 +75,11 @@ export default function SearchPage({
     const { chapters } = useChapters();
     const [localQuery, setLocalQuery] = useState(query);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [selectedResource, setSelectedResource] = useState<{
+        title: string | null;
+        url: string | null;
+        comment: string;
+    } | null>(null);
 
     useEffect(() => {
         setLocalQuery(query);
@@ -69,6 +107,72 @@ export default function SearchPage({
     const hasResults = results.length > 0;
     const showingFrom = total === 0 ? 0 : (currentPage - 1) * perPage + 1;
     const showingTo = total === 0 ? 0 : Math.min(currentPage * perPage, total);
+
+    const getResultLabel = (result: ResourceSearchResult) => {
+        switch (result.documentType) {
+            case 'translation':
+                return 'Translation';
+            case 'user_verse_resource':
+                return result.resourceTypeName || 'Verse Resource';
+            case 'user_chapter_resource':
+                return result.resourceTypeName || 'Chapter Resource';
+            case 'tafsir':
+                return result.tafsirBookName || 'Tafsir';
+        }
+    };
+
+    const getResultIcon = (result: ResourceSearchResult) => {
+        switch (result.documentType) {
+            case 'translation':
+                return Languages;
+            case 'tafsir':
+                return ScrollText;
+            default:
+                return FileText;
+        }
+    };
+
+    const getResultTarget = (result: ResourceSearchResult) => {
+        if (
+            result.documentType === 'user_verse_resource' &&
+            result.resourceUrl
+        ) {
+            return result.resourceUrl;
+        }
+
+        if (
+            result.documentType === 'user_chapter_resource' &&
+            result.resourceUrl
+        ) {
+            return result.resourceUrl;
+        }
+
+        if (result.chapterNumber && result.verseNumber) {
+            return `/${result.chapterNumber}#${result.verseNumber}`;
+        }
+
+        if (result.chapterNumber) {
+            return `/${result.chapterNumber}`;
+        }
+
+        return null;
+    };
+
+    const getExcerpt = (value?: string | null) => {
+        if (!value) {
+            return '';
+        }
+
+        const plainText = value
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/&nbsp;/gi, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        return plainText.length > 280
+            ? `${plainText.slice(0, 280)}...`
+            : plainText;
+    };
 
     const getVisiblePages = () => {
         const maxVisiblePages = 5;
@@ -203,7 +307,8 @@ export default function SearchPage({
                                 </h2>
                                 <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-slate-500">
                                     Enter a name, phrase, or topic to explore
-                                    matching verses.
+                                    matching verses, translations, resources,
+                                    and tafsir.
                                 </p>
                             </section>
                         )}
@@ -212,7 +317,7 @@ export default function SearchPage({
                             <section className="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center shadow-none">
                                 <SearchIcon className="mx-auto h-10 w-10 text-slate-300" />
                                 <h2 className="mt-4 text-xl font-semibold text-slate-950">
-                                    No verses found
+                                    No results found
                                 </h2>
                                 <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-slate-500">
                                     No matches were found for "{query}". Try a
@@ -223,58 +328,167 @@ export default function SearchPage({
 
                         {hasResults && (
                             <main className="space-y-5">
-                                {results.map((verse) => (
-                                    <div
-                                        key={`${verse.chapterId}-${verse.verseNumber}-${verse.id ?? 'n'}`}
-                                        className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-none"
-                                    >
-                                        <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-4">
-                                            <span className="rounded-full bg-stone-100 px-3 py-1 text-[11px] font-semibold tracking-[0.16em] text-slate-600 uppercase">
-                                                {verse.chapterName ??
-                                                    `Surah ${verse.chapterId}`}
-                                            </span>
-                                            <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-200">
-                                                Ayah {verse.verseNumber}
-                                            </span>
-                                        </div>
+                                {results.map((result) => {
+                                    if (result.documentType === 'verse') {
+                                        return (
+                                            <div
+                                                key={`${result.chapterId}-${result.verseNumber}-${result.id ?? 'n'}`}
+                                                className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-none"
+                                            >
+                                                <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-4">
+                                                    <span className="rounded-full bg-stone-100 px-3 py-1 text-[11px] font-semibold tracking-[0.16em] text-slate-600 uppercase">
+                                                        {result.chapterName ??
+                                                            `Surah ${result.chapterId}`}
+                                                    </span>
+                                                    <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-200">
+                                                        Ayah{' '}
+                                                        {result.verseNumber}
+                                                    </span>
+                                                </div>
 
-                                        <VerseCard
-                                            verse={{
-                                                id: verse.id ?? 0,
-                                                chapterId: verse.chapterId,
-                                                chapterNumber:
-                                                    verse.chapterNumber ??
-                                                    verse.chapterId,
-                                                verseNumber: verse.verseNumber,
-                                                text: verse.text,
-                                                translations: verse.translation
-                                                    ? [
-                                                          {
-                                                              resource_id: 0,
-                                                              text: verse.translation,
-                                                          },
-                                                      ]
-                                                    : undefined,
-                                                juzNumber: verse.juzNumber ?? 0,
-                                                pageNumber:
-                                                    verse.pageNumber ?? 0,
-                                                resourceCount:
-                                                    verse.resourceCount ?? 0,
-                                            }}
-                                            hasResources={
-                                                verse.hasResources ?? false
+                                                <VerseCard
+                                                    verse={{
+                                                        id: result.id ?? 0,
+                                                        chapterId:
+                                                            result.chapterId,
+                                                        chapterNumber:
+                                                            result.chapterNumber ??
+                                                            result.chapterId,
+                                                        verseNumber:
+                                                            result.verseNumber,
+                                                        text: result.text,
+                                                        translations:
+                                                            result.translation
+                                                                ? [
+                                                                      {
+                                                                          resource_id: 0,
+                                                                          text: result.translation,
+                                                                      },
+                                                                  ]
+                                                                : undefined,
+                                                        juzNumber:
+                                                            result.juzNumber ??
+                                                            0,
+                                                        pageNumber:
+                                                            result.pageNumber ??
+                                                            0,
+                                                        resourceCount:
+                                                            result.resourceCount ??
+                                                            0,
+                                                    }}
+                                                    hasResources={
+                                                        result.hasResources ??
+                                                        false
+                                                    }
+                                                    resourceCount={
+                                                        result.resourceCount ??
+                                                        0
+                                                    }
+                                                    showTranslation
+                                                    hideHeaderActions={false}
+                                                    className={cn(
+                                                        'border-0 bg-transparent p-5 pt-3 shadow-none',
+                                                    )}
+                                                />
+                                            </div>
+                                        );
+                                    }
+
+                                    const Icon = getResultIcon(result);
+                                    const target = getResultTarget(result);
+                                    const title =
+                                        result.title ||
+                                        result.tafsirBookName ||
+                                        'Search result';
+
+                                    return (
+                                        <article
+                                            key={
+                                                result.id ??
+                                                `${result.documentType}-${result.chapterId ?? 'c'}-${result.verseNumber ?? 'v'}`
                                             }
-                                            resourceCount={
-                                                verse.resourceCount ?? 0
-                                            }
-                                            showTranslation
-                                            hideHeaderActions={false}
-                                            className={cn(
-                                                'border-0 bg-transparent p-5 pt-3 shadow-none',
-                                            )}
-                                        />
-                                    </div>
-                                ))}
+                                            className="rounded-3xl border border-slate-200 bg-white p-5 shadow-none"
+                                        >
+                                            <div className="flex flex-wrap items-start justify-between gap-3">
+                                                <div className="space-y-3">
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <span className="inline-flex items-center gap-2 rounded-full bg-stone-100 px-3 py-1 text-[11px] font-semibold tracking-[0.16em] text-slate-600 uppercase">
+                                                            <Icon className="h-3.5 w-3.5" />
+                                                            {getResultLabel(
+                                                                result,
+                                                            )}
+                                                        </span>
+                                                        {result.chapterName && (
+                                                            <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-200">
+                                                                {
+                                                                    result.chapterName
+                                                                }
+                                                                {result.verseNumber
+                                                                    ? ` ${result.verseNumber}`
+                                                                    : ''}
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    <div>
+                                                        {target ? (
+                                                            <a
+                                                                href={target}
+                                                                target={
+                                                                    result.resourceUrl
+                                                                        ? '_blank'
+                                                                        : undefined
+                                                                }
+                                                                rel={
+                                                                    result.resourceUrl
+                                                                        ? 'noreferrer'
+                                                                        : undefined
+                                                                }
+                                                                className="inline-flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-950 transition-colors hover:text-slate-700"
+                                                            >
+                                                                <span>
+                                                                    {title}
+                                                                </span>
+                                                                <ExternalLink className="h-4 w-4" />
+                                                            </a>
+                                                        ) : (
+                                                            <h3 className="text-lg font-semibold tracking-tight text-slate-950">
+                                                                {title}
+                                                            </h3>
+                                                        )}
+                                                        <p className="mt-2 text-sm leading-7 text-slate-600">
+                                                            {getExcerpt(
+                                                                result.description,
+                                                            )}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                {result.description && (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            setSelectedResource(
+                                                                {
+                                                                    title,
+                                                                    url:
+                                                                        result.resourceUrl ??
+                                                                        target,
+                                                                    comment:
+                                                                        result.description,
+                                                                },
+                                                            )
+                                                        }
+                                                        className="rounded-full"
+                                                    >
+                                                        Quick view
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </article>
+                                    );
+                                })}
 
                                 {totalPages > 1 && (
                                     <section className="flex flex-col gap-4 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
@@ -357,6 +571,16 @@ export default function SearchPage({
                     </div>
                 </div>
             </QuranReaderLayout>
+            <FullResourceDialog
+                open={selectedResource !== null}
+                resource={selectedResource}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setSelectedResource(null);
+                    }
+                }}
+                onClose={() => setSelectedResource(null)}
+            />
         </>
     );
 }
