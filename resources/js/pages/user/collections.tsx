@@ -7,19 +7,19 @@ import {
     CardFooter,
     CardHeader,
 } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import PublicLayout from '@/layouts/public-layout';
+import { api } from '@/lib/api-client';
 import { type CollectionTag } from '@/types/collections';
 import { Head, router, usePage } from '@inertiajs/react';
 import {
     ChevronRight,
     Folder,
     FolderPlus,
-    Globe,
     Loader2,
-    Lock,
+    Search,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { api } from '@/lib/api-client';
+import { useEffect, useMemo, useState } from 'react';
 
 interface Collection {
     id: number;
@@ -62,6 +62,7 @@ export default function CollectionsPage() {
     const [selectedTagSlugs, setSelectedTagSlugs] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         const queryString = page.url.split('?')[1] ?? '';
@@ -116,46 +117,43 @@ export default function CollectionsPage() {
         );
     };
 
+    const clearFilters = () => {
+        setSelectedTagSlugs([]);
+        setSearchQuery('');
+    };
+
     const handleViewCollection = (slug: string) => {
-        router.visit(`/public-collections/${slug}`);
+        router.visit(`/collections/${slug}`);
     };
 
-    const getStatusBadge = (status: Collection['status']) => {
-        if (status === 'approved') {
-            return (
-                <Badge className="rounded-full bg-emerald-600 px-2.5 py-1 text-white hover:bg-emerald-700">
-                    Approved
-                </Badge>
-            );
-        }
+    const filteredCollections = useMemo(() => {
+        const normalizedSearch = searchQuery.trim().toLowerCase();
 
-        if (status === 'rejected') {
-            return (
-                <Badge
-                    variant="destructive"
-                    className="rounded-full px-2.5 py-1"
-                >
-                    Rejected
-                </Badge>
-            );
-        }
+        return collections.filter((collection) => {
+            if (!normalizedSearch) {
+                return true;
+            }
 
-        return (
-            <Badge
-                variant="secondary"
-                className="rounded-full bg-stone-100 px-2.5 py-1 text-stone-700"
-            >
-                Pending
-            </Badge>
-        );
-    };
+            const matchesName = collection.name
+                .toLowerCase()
+                .includes(normalizedSearch);
+            const matchesDescription = (collection.description ?? '')
+                .toLowerCase()
+                .includes(normalizedSearch);
+            const matchesTag = collection.tags.some((tag) =>
+                tag.name.toLowerCase().includes(normalizedSearch),
+            );
+
+            return matchesName || matchesDescription || matchesTag;
+        });
+    }, [collections, searchQuery]);
 
     if (isLoading) {
         return (
             <PublicLayout>
                 <Head title="Public Collections - From Quran" />
                 <div className="flex flex-1 flex-col bg-[#fafaf8]">
-                    <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center justify-center gap-4 px-4 py-10 sm:px-6">
+                    <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center gap-4 px-4 py-10 sm:px-6">
                         <Loader2 className="h-7 w-7 animate-spin text-slate-500" />
                         <p className="text-sm text-slate-500">
                             Loading collections...
@@ -170,29 +168,47 @@ export default function CollectionsPage() {
         <PublicLayout>
             <Head title="Public Collections - From Quran" />
             <div className="flex flex-1 flex-col bg-[#fafaf8]">
-                <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10">
-                    <section className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-end sm:justify-between">
-                        <div>
-                            <p className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">
-                                Public Collections
-                            </p>
-                            <h1 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-4xl">
-                                Community collections
-                            </h1>
-                            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-500 sm:text-base">
-                                Explore collections curated by the community.
-                                Discover themed verses and insights from fellow
-                                readers.
-                            </p>
+                <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10">
+                    <section className="border-b border-slate-200 pb-6">
+                        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+                            <div>
+                                <h1 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-4xl">
+                                    Community collections
+                                </h1>
+                                <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-500 sm:text-base">
+                                    Explore collections curated by the
+                                    community. Discover themed verses gathered
+                                    for reflection, study, and remembrance.
+                                </p>
+                            </div>
+                            <Button
+                                onClick={() => router.visit('/')}
+                                className="gap-2 self-start rounded-full px-5 sm:self-auto"
+                            >
+                                <FolderPlus className="h-4 w-4" />
+                                Browse Quran
+                                <ChevronRight className="h-4 w-4" />
+                            </Button>
                         </div>
-                        <Button
-                            onClick={() => router.visit('/')}
-                            className="gap-2 self-start rounded-full px-5 sm:self-auto"
-                        >
-                            <FolderPlus className="h-4 w-4" />
-                            Browse Quran
-                            <ChevronRight className="h-4 w-4" />
-                        </Button>
+
+                        <div className="mt-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                            <div className="relative">
+                                <Search className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                                <Input
+                                    type="search"
+                                    placeholder="Search collections by title, description, or tag..."
+                                    value={searchQuery}
+                                    onChange={(event) =>
+                                        setSearchQuery(event.target.value)
+                                    }
+                                    className="h-11 rounded-full border-slate-200 bg-white pr-4 pl-11 shadow-none focus-visible:ring-slate-300"
+                                />
+                            </div>
+                            <div className="text-sm text-slate-500">
+                                {filteredCollections.length} collection
+                                {filteredCollections.length === 1 ? '' : 's'}
+                            </div>
+                        </div>
                     </section>
 
                     {errors.general && (
@@ -202,7 +218,7 @@ export default function CollectionsPage() {
                     )}
 
                     {availableTags.length > 0 && (
-                        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-none">
+                        <section>
                             <div className="flex flex-wrap items-center gap-2">
                                 <p className="mr-2 text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">
                                     Filter by tag
@@ -220,21 +236,22 @@ export default function CollectionsPage() {
                                             }
                                             className={
                                                 isSelected
-                                                    ? 'rounded-full border border-slate-900 bg-slate-900 px-3 py-1 text-xs font-medium text-white'
-                                                    : 'rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600 hover:border-slate-300 hover:bg-white'
+                                                    ? 'rounded-full border border-slate-900 bg-slate-900 px-3 py-1.5 text-xs font-medium text-white'
+                                                    : 'rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-white'
                                             }
                                         >
                                             {tag.name}
                                         </button>
                                     );
                                 })}
-                                {selectedTagSlugs.length > 0 && (
+                                {(selectedTagSlugs.length > 0 ||
+                                    searchQuery) && (
                                     <Button
                                         type="button"
                                         variant="ghost"
                                         size="sm"
                                         className="rounded-full px-3 text-slate-500"
-                                        onClick={() => setSelectedTagSlugs([])}
+                                        onClick={clearFilters}
                                     >
                                         Clear
                                     </Button>
@@ -243,33 +260,38 @@ export default function CollectionsPage() {
                         </section>
                     )}
 
-                    {collections.length === 0 ? (
-                        <Card className="rounded-3xl border-slate-200 bg-white shadow-none">
+                    {filteredCollections.length === 0 ? (
+                        <Card className="rounded-3xl border-slate-200 bg-white shadow-sm">
                             <CardContent className="py-16 text-center">
                                 <Folder className="mx-auto h-12 w-12 text-slate-300" />
                                 <h2 className="mt-4 text-xl font-semibold text-slate-950">
-                                    No collections yet
+                                    No collections found
                                 </h2>
                                 <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-slate-500">
                                     No public collections match your current
-                                    filters.
+                                    filters or search.
                                 </p>
-                                {selectedTagSlugs.length > 0 && (
+                                {(selectedTagSlugs.length > 0 ||
+                                    searchQuery) && (
                                     <Button
-                                        onClick={() => setSelectedTagSlugs([])}
+                                        onClick={clearFilters}
                                         className="mt-6 rounded-full px-5"
                                     >
-                                        Clear Filters
+                                        Clear filters
                                     </Button>
                                 )}
                             </CardContent>
                         </Card>
                     ) : (
                         <section className="grid gap-4 sm:grid-cols-2">
-                            {collections.map((collection) => (
+                            {filteredCollections.map((collection, index) => (
                                 <article
                                     key={collection.id}
-                                    className="rounded-3xl border border-slate-200 bg-white p-5 shadow-none transition-colors hover:border-slate-300"
+                                    className={
+                                        index % 2 === 0
+                                            ? 'rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md'
+                                            : 'rounded-3xl border border-slate-200 bg-slate-50/70 p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white hover:shadow-md'
+                                    }
                                 >
                                     <CardHeader className="p-0">
                                         <div className="flex items-start justify-between gap-4">
@@ -302,47 +324,28 @@ export default function CollectionsPage() {
                                                         )}
                                                     </p>
                                                 )}
-                                                <CollectionTagList
-                                                    tags={collection.tags}
-                                                    className="mt-3"
-                                                    getHref={(tag) =>
-                                                        `/public-collections?tags[]=${encodeURIComponent(tag.slug)}`
-                                                    }
-                                                />
                                             </button>
+
+                                            <Badge
+                                                variant="secondary"
+                                                className="rounded-full bg-slate-100 px-3 py-1 text-slate-600"
+                                            >
+                                                {collection.verses_count} Ayah
+                                                {collection.verses_count === 1
+                                                    ? ''
+                                                    : 's'}
+                                            </Badge>
                                         </div>
                                     </CardHeader>
 
-                                    <CardContent className="mt-5 p-0">
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <Badge
-                                                variant="secondary"
-                                                className="rounded-full bg-stone-100 px-2.5 py-1 text-slate-600"
-                                            >
-                                                <Folder className="mr-1 h-3 w-3" />
-                                                {collection.verses_count}{' '}
-                                                {collection.verses_count === 1
-                                                    ? 'verse'
-                                                    : 'verses'}
-                                            </Badge>
-                                            <Badge
-                                                variant="secondary"
-                                                className="rounded-full bg-stone-100 px-2.5 py-1 text-slate-600"
-                                            >
-                                                {collection.is_public ? (
-                                                    <>
-                                                        <Globe className="mr-1 h-3 w-3" />
-                                                        Public
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Lock className="mr-1 h-3 w-3" />
-                                                        Private
-                                                    </>
-                                                )}
-                                            </Badge>
-                                            {getStatusBadge(collection.status)}
-                                        </div>
+                                    <CardContent className="mt-4 p-0">
+                                        <CollectionTagList
+                                            tags={collection.tags}
+                                            className="mt-0"
+                                            getHref={(tag) =>
+                                                `/collections?tags[]=${encodeURIComponent(tag.slug)}`
+                                            }
+                                        />
                                     </CardContent>
 
                                     <CardFooter className="mt-6 flex items-center justify-between border-t border-slate-200 pt-4">
@@ -360,7 +363,7 @@ export default function CollectionsPage() {
                                                 )
                                             }
                                         >
-                                            Open
+                                            View collection
                                             <ChevronRight className="h-4 w-4" />
                                         </Button>
                                     </CardFooter>

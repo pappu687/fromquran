@@ -183,6 +183,14 @@ export default function HomePage() {
                             >
                                 Explore topics
                             </Button>
+                            <Button
+                                size="lg"
+                                variant="outline"
+                                onClick={() => router.visit('/collections')}
+                                className="h-12 rounded-full border-slate-200 bg-white px-6 shadow-none"
+                            >
+                                Explore Collections
+                            </Button>
                         </div>
 
                         <div className="mt-10 grid grid-cols-2 gap-3 sm:max-w-md">
