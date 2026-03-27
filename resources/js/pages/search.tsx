@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { useChapters } from '@/hooks';
 import QuranReaderLayout from '@/layouts/quran-reader-layout';
 import { cn } from '@/lib/utils';
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import {
     BookOpen,
     ExternalLink,
@@ -132,6 +132,21 @@ export default function SearchPage({
         }
     };
 
+    const getQuranTarget = (result: {
+        chapterNumber?: number;
+        verseNumber?: number | null;
+    }) => {
+        if (result.chapterNumber && result.verseNumber) {
+            return `/${result.chapterNumber}/${result.verseNumber}`;
+        }
+
+        if (result.chapterNumber) {
+            return `/${result.chapterNumber}`;
+        }
+
+        return null;
+    };
+
     const getResultTarget = (result: ResourceSearchResult) => {
         if (
             result.documentType === 'user_verse_resource' &&
@@ -147,15 +162,7 @@ export default function SearchPage({
             return result.resourceUrl;
         }
 
-        if (result.chapterNumber && result.verseNumber) {
-            return `/${result.chapterNumber}#${result.verseNumber}`;
-        }
-
-        if (result.chapterNumber) {
-            return `/${result.chapterNumber}`;
-        }
-
-        return null;
+        return getQuranTarget(result);
     };
 
     const getExcerpt = (value?: string | null) => {
@@ -229,16 +236,11 @@ export default function SearchPage({
             >
                 <div className="flex flex-1 flex-col bg-[#fafaf8] px-4 py-5">
                     <div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-8 py-4 sm:gap-10 sm:py-6">
-                        <section className="border-b border-slate-200 pb-6 sm:pb-8">
+                        <section className="pb-6 sm:pb-8">
                             <div className="max-w-3xl">
                                 <h1 className="font-young mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-4xl">
                                     Search the Qur&apos;an with context
                                 </h1>
-                                <p className="mt-3 text-sm leading-7 text-slate-500 sm:text-base">
-                                    Find verses quickly, keep the Arabic and
-                                    translation readable, and jump straight into
-                                    the full reading context.
-                                </p>
                             </div>
 
                             <form
@@ -267,7 +269,6 @@ export default function SearchPage({
                                 </div>
                             </form>
                         </section>
-
                         {query && (
                             <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                                 <div>
@@ -285,7 +286,6 @@ export default function SearchPage({
                                             : 'Try a shorter phrase, another spelling, or a broader term.'}
                                     </p>
                                 </div>
-
                                 {hasResults && (
                                     <div className="flex flex-wrap gap-2">
                                         <div className="rounded-full bg-white px-3 py-1.5 text-sm text-slate-600 ring-1 ring-slate-200">
@@ -298,52 +298,48 @@ export default function SearchPage({
                                 )}
                             </section>
                         )}
-
-                        {!query && (
-                            <section className="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center shadow-none">
-                                <BookOpen className="mx-auto h-10 w-10 text-slate-300" />
-                                <h2 className="mt-4 text-xl font-semibold text-slate-950">
-                                    Start with a search
-                                </h2>
-                                <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-slate-500">
-                                    Enter a name, phrase, or topic to explore
-                                    matching verses, translations, resources,
-                                    and tafsir.
-                                </p>
-                            </section>
-                        )}
-
-                        {query && !hasResults && (
-                            <section className="rounded-3xl border border-slate-200 bg-white px-6 py-10 text-center shadow-none">
-                                <SearchIcon className="mx-auto h-10 w-10 text-slate-300" />
-                                <h2 className="mt-4 text-xl font-semibold text-slate-950">
-                                    No results found
-                                </h2>
-                                <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-slate-500">
-                                    No matches were found for "{query}". Try a
-                                    broader keyword or a shorter phrase.
-                                </p>
-                            </section>
-                        )}
-
                         {hasResults && (
                             <main className="space-y-5">
                                 {results.map((result) => {
                                     if (result.documentType === 'verse') {
+                                        const verseTarget = getQuranTarget(
+                                            result,
+                                        );
+
                                         return (
                                             <div
                                                 key={`${result.chapterId}-${result.verseNumber}-${result.id ?? 'n'}`}
                                                 className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-none"
                                             >
                                                 <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-4">
-                                                    <span className="rounded-full bg-stone-100 px-3 py-1 text-[11px] font-semibold tracking-[0.16em] text-slate-600 uppercase">
-                                                        {result.chapterName ??
-                                                            `Surah ${result.chapterId}`}
-                                                    </span>
-                                                    <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-200">
-                                                        Ayah{' '}
-                                                        {result.verseNumber}
-                                                    </span>
+                                                    {verseTarget ? (
+                                                        <Link
+                                                            href={verseTarget}
+                                                            className="rounded-full bg-stone-100 px-3 py-1 text-[11px] font-semibold tracking-[0.16em] text-slate-600 uppercase transition-colors hover:bg-stone-200"
+                                                        >
+                                                            {result.chapterName ??
+                                                                `Surah ${result.chapterId}`}
+                                                        </Link>
+                                                    ) : (
+                                                        <span className="rounded-full bg-stone-100 px-3 py-1 text-[11px] font-semibold tracking-[0.16em] text-slate-600 uppercase">
+                                                            {result.chapterName ??
+                                                                `Surah ${result.chapterId}`}
+                                                        </span>
+                                                    )}
+                                                    {verseTarget ? (
+                                                        <Link
+                                                            href={verseTarget}
+                                                            className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-200 transition-colors hover:bg-slate-50"
+                                                        >
+                                                            Ayah{' '}
+                                                            {result.verseNumber}
+                                                        </Link>
+                                                    ) : (
+                                                        <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-200">
+                                                            Ayah{' '}
+                                                            {result.verseNumber}
+                                                        </span>
+                                                    )}
                                                 </div>
 
                                                 <VerseCard
@@ -396,6 +392,7 @@ export default function SearchPage({
 
                                     const Icon = getResultIcon(result);
                                     const target = getResultTarget(result);
+                                    const quranTarget = getQuranTarget(result);
                                     const title =
                                         result.title ||
                                         result.tafsirBookName ||
@@ -419,14 +416,30 @@ export default function SearchPage({
                                                             )}
                                                         </span>
                                                         {result.chapterName && (
-                                                            <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-200">
-                                                                {
-                                                                    result.chapterName
-                                                                }
-                                                                {result.verseNumber
-                                                                    ? ` ${result.verseNumber}`
-                                                                    : ''}
-                                                            </span>
+                                                            quranTarget ? (
+                                                                <Link
+                                                                    href={
+                                                                        quranTarget
+                                                                    }
+                                                                    className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-200 transition-colors hover:bg-slate-50"
+                                                                >
+                                                                    {
+                                                                        result.chapterName
+                                                                    }
+                                                                    {result.verseNumber
+                                                                        ? ` ${result.verseNumber}`
+                                                                        : ''}
+                                                                </Link>
+                                                            ) : (
+                                                                <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-200">
+                                                                    {
+                                                                        result.chapterName
+                                                                    }
+                                                                    {result.verseNumber
+                                                                        ? ` ${result.verseNumber}`
+                                                                        : ''}
+                                                                </span>
+                                                            )
                                                         )}
                                                     </div>
 
@@ -474,9 +487,11 @@ export default function SearchPage({
                                                                     title,
                                                                     url:
                                                                         result.resourceUrl ??
-                                                                        target,
+                                                                        target ??
+                                                                        null,
                                                                     comment:
-                                                                        result.description,
+                                                                        result.description ??
+                                                                        '',
                                                                 },
                                                             )
                                                         }

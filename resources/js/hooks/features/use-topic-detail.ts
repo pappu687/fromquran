@@ -1,4 +1,5 @@
 import { api, isApiError, getErrorMessage } from '@/lib/api-client';
+import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useState } from 'react';
 
 export interface TopicVerse {
@@ -223,37 +224,28 @@ export function useTopicDetail(
 
     const handleTopicClick = useCallback(
         (clickedTopicId: number) => {
-            // This will be handled by the router in the component
-            // The hook just provides the callback for consistency
-            window.dispatchEvent(
-                new CustomEvent('navigate-topic', {
-                    detail: { topicId: clickedTopicId },
-                }),
-            );
+            router.visit(`/topic/${clickedTopicId}`);
         },
         [],
     );
 
     const handleVerseClick = useCallback(
         (chapterNumber: number, verseNumber: number) => {
-            window.dispatchEvent(
-                new CustomEvent('navigate-verse', {
-                    detail: { chapterNumber, verseNumber },
-                }),
-            );
+            router.visit(`/${chapterNumber}/${verseNumber}`);
         },
         [],
     );
 
     const handleChapterSelect = useCallback(
         (chapterId: number) => {
-            window.dispatchEvent(
-                new CustomEvent('navigate-chapter', {
-                    detail: { chapterId },
-                }),
-            );
+            const chapter = chapters.find((item) => item.id === chapterId);
+            if (!chapter) {
+                return;
+            }
+
+            router.visit(`/${chapter.number}`);
         },
-        [],
+        [chapters],
     );
 
     const getVisiblePages = useCallback(() => {

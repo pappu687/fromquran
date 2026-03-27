@@ -89,11 +89,6 @@ export function ResourcesSheet({
     const [isAddResourceOpen, setIsAddResourceOpen] = useState(false);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-    const [selectedResource, setSelectedResource] = useState<{
-        title: string | null;
-        url: string | null;
-        comment: string;
-    } | null>(null);
 
     const {
         resources,
@@ -105,6 +100,7 @@ export function ResourcesSheet({
         hasMore,
         totalResources,
         activeSection,
+        selectedResource,
         loadingFullResourceId,
         setActiveSection,
         handleVerseClick,
@@ -468,8 +464,8 @@ export function ResourcesSheet({
             <FullResourceDialog
                 open={!!selectedResource}
                 resource={selectedResource}
-                onOpenChange={(open) => !open && setSelectedResource(null)}
-                onClose={() => setSelectedResource(null)}
+                onOpenChange={(open) => !open && void handleSeeMore(-1)}
+                onClose={() => void handleSeeMore(-1)}
                 mobileFullscreen
             />
             <AddResourceModal

@@ -8,6 +8,97 @@ import {
 } from '@/types/quran';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+interface VersesRequestOptions {
+    chapterId: number;
+    apiUrl: string;
+    pageNum: number;
+    pageSize: number;
+    selectedEdition: string;
+    translationIds: number[];
+    fromVerse?: number;
+    toVerse?: number;
+}
+
+const versesPageCache = new Map<string, PaginatedVersesResponse>();
+const pendingVersesRequests = new Map<string, Promise<PaginatedVersesResponse>>();
+
+const buildVersesRequestKey = ({
+    chapterId,
+    apiUrl,
+    pageNum,
+    pageSize,
+    selectedEdition,
+    translationIds,
+    fromVerse,
+    toVerse,
+}: VersesRequestOptions) =>
+    [
+        apiUrl,
+        chapterId,
+        pageNum,
+        pageSize,
+        selectedEdition,
+        translationIds.join(','),
+        fromVerse ?? '',
+        toVerse ?? '',
+    ].join('|');
+
+const requestVersesPage = async (
+    options: VersesRequestOptions,
+): Promise<PaginatedVersesResponse> => {
+    const cacheKey = buildVersesRequestKey(options);
+    const cachedResponse = versesPageCache.get(cacheKey);
+    if (cachedResponse) {
+        return cachedResponse;
+    }
+
+    const pendingResponse = pendingVersesRequests.get(cacheKey);
+    if (pendingResponse) {
+        return pendingResponse;
+    }
+
+    const requestPromise = (async () => {
+        const params = new URLSearchParams({
+            page: String(options.pageNum),
+            limit: String(options.pageSize),
+            edition: options.selectedEdition,
+        });
+
+        options.translationIds.forEach((id) => {
+            params.append('translations[]', String(id));
+        });
+
+        if (options.fromVerse && options.toVerse) {
+            params.set('from', String(options.fromVerse));
+            params.set('to', String(options.toVerse));
+        }
+
+        const response = await fetch(
+            `${options.apiUrl}/chapters/${options.chapterId}/verses?${params.toString()}`,
+        );
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch verses');
+        }
+
+        const data = (await response.json()) as PaginatedVersesResponse;
+        versesPageCache.set(cacheKey, data);
+        return data;
+    })();
+
+    pendingVersesRequests.set(cacheKey, requestPromise);
+
+    try {
+        return await requestPromise;
+    } finally {
+        pendingVersesRequests.delete(cacheKey);
+    }
+};
+
+export const prefetchVersesPage = (options: VersesRequestOptions) => {
+    void requestVersesPage(options).catch(() => undefined);
+};
+
 interface UseVersesPanelOptions {
     chapter?: ChapterSummary;
     initialVerses?: PaginatedVersesResponse;
@@ -63,6 +154,17 @@ export const useVersesPanel = ({
     const lastTranslationIdsRef = useRef('');
     const lastStartVerseRef = useRef<number | null>(startFromVerse ?? null);
 
+    const { settings } = useReaderSettings();
+    // Keep a stable ref so fetchVerses can read the latest translations
+    // without needing them as a useCallback dependency.
+    // Updated synchronously during render so the reset effect always reads
+    // the latest value without itself depending on the array.
+    const selectedTranslationsRef = useRef(settings.selectedTranslations);
+    selectedTranslationsRef.current = settings.selectedTranslations;
+    // A stable primitive we CAN safely include in useEffect deps instead of
+    // the array (which gets a new reference every render).
+    const translationIds = settings.selectedTranslations.join(',');
+
     // Core state
     const [verses, setVerses] = useState<VerseListItem[]>(
         initialVerses?.data || [],
@@ -87,8 +189,6 @@ export const useVersesPanel = ({
     const [showSuccessAlert, setShowSuccessAlert] = useState(false);
     const [successAlertMessage, setSuccessAlertMessage] = useState('');
 
-    const { settings } = useReaderSettings();
-
     const fetchVerses = useCallback(
         async (pageNum: number, reset = false) => {
             if (!chapter) return;
@@ -97,32 +197,17 @@ export const useVersesPanel = ({
             setError(null);
 
             try {
-                const params = new URLSearchParams({
-                    page: String(pageNum),
-                    limit: String(pageSize),
-                    edition: selectedEdition,
+                const currentTranslations = selectedTranslationsRef.current;
+                const data = await requestVersesPage({
+                    chapterId: chapter.id,
+                    apiUrl,
+                    pageNum,
+                    pageSize,
+                    selectedEdition,
+                    translationIds: currentTranslations,
+                    fromVerse,
+                    toVerse,
                 });
-
-                if (settings && settings.selectedTranslations && settings.selectedTranslations.length > 0) {
-                    settings.selectedTranslations.forEach((id) => {
-                        params.append('translations[]', String(id));
-                    });
-                }
-
-                if (fromVerse && toVerse) {
-                    params.set('from', String(fromVerse));
-                    params.set('to', String(toVerse));
-                }
-
-                const response = await fetch(
-                    `${apiUrl}/chapters/${chapter.id}/verses?${params.toString()}`,
-                );
-
-                if (!response.ok) {
-                    throw new Error('Failed to fetch verses');
-                }
-
-                const data = (await response.json()) as PaginatedVersesResponse;
 
                 if (reset) {
                     setVerses(data.data || []);
@@ -140,15 +225,21 @@ export const useVersesPanel = ({
                 setLoading(false);
             }
         },
-        [chapter, apiUrl, pageSize, selectedEdition, fromVerse, toVerse, settings.selectedTranslations],
+        [chapter, apiUrl, pageSize, selectedEdition, fromVerse, toVerse],
     );
+
+    // Store fetchVerses in a ref so the reset effect can call the latest
+    // version without including it in the dep array (which would add an
+    // extra scheduling cycle every time chapter changes).
+    const fetchVersesRef = useRef(fetchVerses);
+    fetchVersesRef.current = fetchVerses;
 
     // Reset state when chapter or translations change
     useEffect(() => {
         if (!chapter) return;
 
         // Reset if translations or chapter changes
-        const currentTranslationIds = settings.selectedTranslations.join(',');
+        const currentTranslationIds = selectedTranslationsRef.current.join(',');
         const startVerseChanged =
             (startFromVerse ?? null) !== lastStartVerseRef.current;
         if (
@@ -169,13 +260,11 @@ export const useVersesPanel = ({
                     : 1;
 
             setPage(initialPage);
-            fetchVerses(initialPage, true);
+            fetchVersesRef.current(initialPage, true);
         }
     }, [
         chapter?.id,
-        settings.selectedTranslations,
-        initialVerses,
-        fetchVerses,
+        translationIds,
         startFromVerse,
         fromVerse,
         toVerse,

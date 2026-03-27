@@ -21,7 +21,7 @@ import { type BreadcrumbItem as AppBreadcrumbItem } from '@/types';
 import { type ChapterSummary } from '@/types/quran';
 import { Link } from '@inertiajs/react';
 import { Info } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { Fragment, useState, type ReactNode } from 'react';
 
 interface QuranReaderLayoutProps {
     children: ReactNode;
@@ -70,13 +70,13 @@ export default function QuranReaderLayout({
                                             index === breadcrumbs.length - 1;
 
                                         return (
-                                            <BreadcrumbItem key={item.href}>
-                                                {isLast ? (
-                                                    <BreadcrumbPage className="line-clamp-1">
-                                                        {item.title}
-                                                    </BreadcrumbPage>
-                                                ) : (
-                                                    <>
+                                            <Fragment key={item.href}>
+                                                <BreadcrumbItem>
+                                                    {isLast ? (
+                                                        <BreadcrumbPage className="line-clamp-1">
+                                                            {item.title}
+                                                        </BreadcrumbPage>
+                                                    ) : (
                                                         <BreadcrumbLink asChild>
                                                             <Link
                                                                 href={item.href}
@@ -84,10 +84,12 @@ export default function QuranReaderLayout({
                                                                 {item.title}
                                                             </Link>
                                                         </BreadcrumbLink>
-                                                        <BreadcrumbSeparator />
-                                                    </>
+                                                    )}
+                                                </BreadcrumbItem>
+                                                {!isLast && (
+                                                    <BreadcrumbSeparator />
                                                 )}
-                                            </BreadcrumbItem>
+                                            </Fragment>
                                         );
                                     })
                                 ) : (

@@ -268,6 +268,12 @@ export function useResourcesSheet({
 
     const handleSeeMore = useCallback(
         async (resourceId: string | number) => {
+            if (resourceId === -1 || resourceId === '-1') {
+                setSelectedResource(null);
+                setLoadingFullResourceId(null);
+                return;
+            }
+
             setLoadingFullResourceId(resourceId);
             try {
                 const response = await fetch(`/api/resources/${resourceId}`);

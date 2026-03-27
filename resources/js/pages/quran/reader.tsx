@@ -1,17 +1,58 @@
 import { VersesPanel } from '@/components/quran/verses-panel';
-import QuranReaderLayout from '@/layouts/quran-reader-layout';
-import { type ChapterSummary, type PaginatedVersesResponse } from '@/types/quran';
-import { Head, router, usePage } from '@inertiajs/react';
-import { useCallback, useEffect, useState } from 'react';
 import { useChapters } from '@/hooks';
+import { useReaderSettings } from '@/contexts/reader-settings-context';
+import QuranReaderLayout from '@/layouts/quran-reader-layout';
+import {
+    type ChapterSummary,
+    type PaginatedVersesResponse,
+} from '@/types/quran';
+import { Head, usePage } from '@inertiajs/react';
+import { useCallback, useEffect, useState } from 'react';
+import { prefetchVersesPage } from '@/hooks/use-verses-panel';
 
 interface QuranReaderProps {
     chapterNumber?: number;
     fromVerse?: number | null;
     toVerse?: number | null;
-    chapter?: ChapterSummary; // Chapter provided by SSR
+    chapter?: ChapterSummary;
     initialVerses?: PaginatedVersesResponse;
 }
+
+const parseReaderLocation = (pathname: string, search: string) => {
+    const normalizedPath = pathname.replace(/^\/+|\/+$/g, '');
+    const segments = normalizedPath ? normalizedPath.split('/') : [];
+
+    if (segments.length === 0 || !/^\d+$/.test(segments[0] ?? '')) {
+        return null;
+    }
+
+    const parsedChapterNumber = Number.parseInt(segments[0], 10);
+    let parsedFromVerse: number | undefined;
+    let parsedToVerse: number | undefined;
+
+    if (segments[1]) {
+        const rangeMatch = segments[1].match(/^(\d+)(?:-(\d+))?$/);
+        if (rangeMatch) {
+            parsedFromVerse = Number.parseInt(rangeMatch[1], 10);
+            parsedToVerse = Number.parseInt(
+                rangeMatch[2] ?? rangeMatch[1],
+                10,
+            );
+        }
+    }
+
+    const searchParams = new URLSearchParams(search);
+    const startVerse = searchParams.get('start-verse');
+
+    return {
+        chapterNumber: parsedChapterNumber,
+        fromVerse: parsedFromVerse,
+        toVerse: parsedToVerse,
+        startFromVerse: startVerse
+            ? Number.parseInt(startVerse, 10) || undefined
+            : undefined,
+    };
+};
 
 export default function QuranReader({
     chapterNumber,
@@ -20,7 +61,17 @@ export default function QuranReader({
     chapter: initialChapter,
     initialVerses,
 }: QuranReaderProps) {
-    const { chapters, loading: chaptersLoading, getChapterById } = useChapters();
+    const { chapters, getChapterById, getChapterByNumber } = useChapters();
+    const { settings } = useReaderSettings();
+    const [activeChapterNumber, setActiveChapterNumber] = useState<
+        number | undefined
+    >(chapterNumber ?? initialChapter?.number);
+    const [activeFromVerse, setActiveFromVerse] = useState<number | undefined>(
+        fromVerse ?? undefined,
+    );
+    const [activeToVerse, setActiveToVerse] = useState<number | undefined>(
+        toVerse ?? undefined,
+    );
     const [selectedChapter, setSelectedChapter] = useState<
         ChapterSummary | undefined
     >(initialChapter);
@@ -31,17 +82,127 @@ export default function QuranReader({
         ((ayahNumber: number) => Promise<boolean>) | undefined
     >(undefined);
 
-    // Dynamic Title and Description for SEO
-    // Use romanName (e.g. At-Tawbah) if available, otherwise fallback to englishName (e.g. The Repentance)
+    const page = usePage<{ appUrl?: string; siteName?: string }>();
+    const url = page.url;
+    const searchParams = new URLSearchParams(url.split('?')[1] ?? '');
+    const startVerseParam = searchParams.get('start-verse');
+    const startFromVerse = startVerseParam
+        ? Number(startVerseParam) || undefined
+        : undefined;
+    const [activeStartFromVerse, setActiveStartFromVerse] = useState<
+        number | undefined
+    >(startFromVerse);
+
+    useEffect(() => {
+        setActiveChapterNumber(chapterNumber ?? initialChapter?.number);
+        setActiveFromVerse(fromVerse ?? undefined);
+        setActiveToVerse(toVerse ?? undefined);
+        setActiveStartFromVerse(startFromVerse);
+    }, [chapterNumber, fromVerse, toVerse, startFromVerse, initialChapter?.number]);
+
+    useEffect(() => {
+        if (chapters.length > 0 && !initialChapter) {
+            setLoading(false);
+        }
+    }, [chapters.length, initialChapter]);
+
+    useEffect(() => {
+        const handlePopState = () => {
+            const parsed = parseReaderLocation(
+                window.location.pathname,
+                window.location.search,
+            );
+
+            if (!parsed) {
+                window.location.reload();
+                return;
+            }
+
+            setActiveChapterNumber(parsed.chapterNumber);
+            setActiveFromVerse(parsed.fromVerse);
+            setActiveToVerse(parsed.toVerse);
+            setActiveStartFromVerse(parsed.startFromVerse);
+            setCurrentAyah(parsed.fromVerse ?? parsed.startFromVerse ?? 1);
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => {
+            window.removeEventListener('popstate', handlePopState);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!chapters.length) return;
+
+        const targetChapterNumber =
+            activeChapterNumber ?? chapterNumber ?? initialChapter?.number;
+
+        if (targetChapterNumber) {
+            const nextChapter =
+                getChapterByNumber(targetChapterNumber) ?? chapters[0];
+            setSelectedChapter(nextChapter);
+        } else if (!selectedChapter) {
+            setSelectedChapter(chapters[0]);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [
+        chapters,
+        activeChapterNumber,
+        chapterNumber,
+        initialChapter,
+        getChapterByNumber,
+    ]);
+
+    useEffect(() => {
+        setCurrentAyah(activeFromVerse ?? activeStartFromVerse ?? 1);
+    }, [
+        activeChapterNumber,
+        activeFromVerse,
+        activeToVerse,
+        activeStartFromVerse,
+    ]);
+
+    const handleChapterSelect = (chapterId: number) => {
+        const nextChapter = getChapterById(chapterId);
+        if (!nextChapter) return;
+
+        prefetchVersesPage({
+            chapterId: nextChapter.id,
+            apiUrl: '/api/quran',
+            pageNum: 1,
+            pageSize: 10,
+            selectedEdition: 'en.sahih',
+            translationIds: settings.selectedTranslations,
+        });
+
+        setActiveChapterNumber(nextChapter.number);
+        setActiveFromVerse(undefined);
+        setActiveToVerse(undefined);
+        setActiveStartFromVerse(undefined);
+        setSelectedChapter(nextChapter);
+        setCurrentAyah(1);
+        window.history.pushState({}, '', `/${nextChapter.number}`);
+        window.scrollTo({ top: 0, behavior: 'auto' });
+    };
+
+    const handleJumpHandlerChange = useCallback(
+        (handler: ((ayahNumber: number) => Promise<boolean>) | undefined) => {
+            setJumpToAyah(() => handler);
+        },
+        [],
+    );
+
     const displayName =
         selectedChapter?.romanName || selectedChapter?.englishName || '';
 
     let pageTitle: string;
     let pageDescription: string;
 
-    if (selectedChapter && fromVerse != null && toVerse != null) {
+    if (selectedChapter && activeFromVerse != null && activeToVerse != null) {
         const versePart =
-            fromVerse === toVerse ? `${fromVerse}` : `${fromVerse}-${toVerse}`;
+            activeFromVerse === activeToVerse
+                ? `${activeFromVerse}`
+                : `${activeFromVerse}-${activeToVerse}`;
         pageTitle = `Quran ${selectedChapter.number}:${versePart}`;
         pageDescription = `Read Quran ${selectedChapter.number}:${versePart} from Surah ${displayName || selectedChapter.name} with translation and related tools on From Quran.`;
     } else if (selectedChapter) {
@@ -53,15 +214,6 @@ export default function QuranReader({
             'Read the Holy Quran with translations and research tools.';
     }
 
-    // Optional start-verse query param to continue reading from a specific verse
-    const page = usePage<{ appUrl?: string; siteName?: string }>();
-    const url = page.url;
-    const searchParams = new URLSearchParams(url.split('?')[1] ?? '');
-    const startVerseParam = searchParams.get('start-verse');
-    const startFromVerse = startVerseParam
-        ? Number(startVerseParam) || undefined
-        : undefined;
-
     const appUrl =
         (page.props.appUrl as string | undefined) ?? 'https://fromquran.com';
     const siteName =
@@ -72,57 +224,6 @@ export default function QuranReader({
     const canonicalUrl = `${baseUrl}${path}`;
     const ogImage = `${baseUrl}/og-banner.png`;
     const fullTitle = `${pageTitle} | From Quran`;
-
-    useEffect(() => {
-        // If chapters were provided by the server, use them and avoid a client refetch
-        if (chapters.length > 0) {
-            if (!initialChapter) {
-                setLoading(false);
-            }
-        }
-    }, [chapters.length, initialChapter]);
-
-    // Sync selected chapter with server-provided chapterNumber prop (for navigation)
-    useEffect(() => {
-        if (!chapters.length) return;
-
-        if (chapterNumber) {
-            const chapter = getChapterById(chapterNumber) || chapters[0];
-            setSelectedChapter(chapter);
-        } else if (!selectedChapter && chapters.length > 0) {
-            setSelectedChapter(chapters[0]);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [chapters, chapterNumber, getChapterById]);
-
-    useEffect(() => {
-        setCurrentAyah(fromVerse ?? 1);
-    }, [chapterNumber, fromVerse, toVerse]);
-
-    const handleChapterSelect = (chapterId: number) => {
-        const chapter = getChapterById(chapterId);
-        if (!chapter) return;
-
-        // Update local state immediately for instant feedback
-        setSelectedChapter(chapter);
-
-        // Inertia visit with preserved state, so the sidebar
-        // and other local UI state don't remount between chapters.
-        // Server props still update (/{chapterNumber} never sets
-        // fromVerse/toVerse, so they become undefined when navigating
-        // away from a range like /49/7).
-        router.visit(`/${chapter.number}`, {
-            preserveScroll: false,
-            preserveState: true,
-        });
-    };
-
-    const handleJumpHandlerChange = useCallback(
-        (handler: ((ayahNumber: number) => Promise<boolean>) | undefined) => {
-            setJumpToAyah(() => handler);
-        },
-        [],
-    );
 
     if (loading && !selectedChapter) {
         return (
@@ -146,7 +247,7 @@ export default function QuranReader({
                 <meta property="og:description" content={pageDescription} />
                 <meta
                     property="og:type"
-                    content={fromVerse != null ? 'article' : 'article'}
+                    content={activeFromVerse != null ? 'article' : 'article'}
                 />
                 <meta property="og:url" content={canonicalUrl} />
                 <meta property="og:image" content={ogImage} />
@@ -184,9 +285,9 @@ export default function QuranReader({
                                 apiUrl="/api/quran"
                                 pageSize={10}
                                 showTranslation={true}
-                                fromVerse={fromVerse ?? undefined}
-                                toVerse={toVerse ?? undefined}
-                                startFromVerse={startFromVerse}
+                                fromVerse={activeFromVerse}
+                                toVerse={activeToVerse}
+                                startFromVerse={activeStartFromVerse}
                                 onCurrentAyahChange={setCurrentAyah}
                                 onJumpHandlerChange={handleJumpHandlerChange}
                             />
