@@ -1,10 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useAnnotations } from '@/hooks';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { BookText, Loader2, MoveRight, Trash2 } from 'lucide-react';
-import { useAnnotations } from '@/hooks';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -23,6 +23,10 @@ export default function MyAnnotationsPage() {
         clearError,
         clearSuccessMessage,
     } = useAnnotations();
+    const annotationsTitle =
+        annotations.length > 0
+            ? `${annotations.length} Saved Verse Notes`
+            : 'Saved verse notes';
 
     const goToVerse = (verseKey?: string) => {
         if (!verseKey) {
@@ -76,7 +80,7 @@ export default function MyAnnotationsPage() {
                             My Annotations
                         </p>
                         <h1 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-4xl">
-                            Saved verse notes
+                            {annotationsTitle}
                         </h1>
                         <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-500 sm:text-base">
                             Every verse you have annotated, with the selected
@@ -111,19 +115,6 @@ export default function MyAnnotationsPage() {
                             </Button>
                         </div>
                     )}
-
-                    <section className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                        <Card className="rounded-2xl border-slate-200/80 bg-white/90 shadow-none">
-                            <CardContent className="px-3 py-3 sm:px-4 sm:py-3.5">
-                                <p className="text-[11px] tracking-[0.16em] text-slate-400 uppercase">
-                                    Total
-                                </p>
-                                <p className="mt-1 text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">
-                                    {annotations.length}
-                                </p>
-                            </CardContent>
-                        </Card>
-                    </section>
 
                     {annotations.length === 0 ? (
                         <Card className="rounded-3xl border-slate-200 bg-white shadow-none">
