@@ -6,7 +6,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { resolveUrl } from '@/lib/utils';
+import { cn, resolveUrl } from '@/lib/utils';
 import { type NavItem } from '@/types';
 import { type ComponentPropsWithoutRef } from 'react';
 
@@ -41,7 +41,14 @@ export function NavFooter({
                                             className="h-5 w-5"
                                         />
                                     )}
-                                    <span>{item.title}</span>
+                                    <span
+                                        className={cn(
+                                            item.title === 'FromQuran' &&
+                                                'font-young text-[1.02rem] tracking-tight',
+                                        )}
+                                    >
+                                        {item.title}
+                                    </span>
                                 </a>
                             </SidebarMenuButton>
                         </SidebarMenuItem>

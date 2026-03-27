@@ -43,11 +43,11 @@ class AddResourceController extends Controller
         $request->validate([
             'term' => 'required|string',
             'type' => 'required',
-            'limit' => 'nullable|integer|in:10,20,30,40,50,60,70,80,90,100',
+            'limit' => 'nullable|integer|in:20,30,40,50,60,70,80,90,100',
         ]);
 
         $term = $request->term;
-        $limit = (int) $request->integer('limit', 20);
+        $limit = (int) $request->integer('limit', 100);
         $results = [];
 
         try {

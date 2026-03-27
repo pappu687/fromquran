@@ -26,6 +26,19 @@ interface Verse {
     chapter_id: number;
 }
 
+interface Chapter {
+    id: number;
+    chapter_number: number;
+    name_roman: string;
+    name_arabic: string;
+}
+
+interface ChapterOption {
+    id: number;
+    chapter_number: number;
+    name_roman: string;
+}
+
 interface ResourceType {
     id: number;
     slug: string;
@@ -34,8 +47,10 @@ interface ResourceType {
 
 interface Submission {
     id: number;
+    scope: 'verse' | 'chapter';
     user: User | null;
     verse: Verse | null;
+    chapter: Chapter | null;
     resource_type_id: number;
     resource_url: string;
     resource_title: string | null;
@@ -72,8 +87,11 @@ interface Props {
         status: string;
         search: string;
         resource_type_id: string;
+        resource_scope: string;
+        chapter_id: string;
     };
     resourceTypeLabels: Record<string, string>;
+    chapterOptions: ChapterOption[];
 }
 
 export default function ResourceSubmissions({
@@ -81,27 +99,34 @@ export default function ResourceSubmissions({
     stats,
     filters,
     resourceTypeLabels,
+    chapterOptions,
 }: Props) {
     const COMMENT_PREVIEW_LENGTH = 140;
-    const [selectedIds, setSelectedIds] = useState<number[]>([]);
-    const [expandedComments, setExpandedComments] = useState<number[]>([]);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [expandedComments, setExpandedComments] = useState<string[]>([]);
     const [searchInput, setSearchInput] = useState(filters.search);
     const [isProcessing, setIsProcessing] = useState(false);
+    const getSubmissionKey = (submission: Submission) =>
+        `${submission.scope}-${submission.id}`;
 
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
-            setSelectedIds(submissions.data.map((s) => s.id));
+            setSelectedIds(
+                submissions.data.map((submission) =>
+                    getSubmissionKey(submission),
+                ),
+            );
         } else {
             setSelectedIds([]);
         }
     };
 
-    const handleSelectOne = (id: number, checked: boolean) => {
+    const handleSelectOne = (key: string, checked: boolean) => {
         if (checked) {
-            setSelectedIds([...selectedIds, id]);
+            setSelectedIds([...selectedIds, key]);
         } else {
             setSelectedIds(
-                selectedIds.filter((selectedId) => selectedId !== id),
+                selectedIds.filter((selectedId) => selectedId !== key),
             );
         }
     };
@@ -119,49 +144,65 @@ export default function ResourceSubmissions({
         handleFilter('search', searchInput);
     };
 
-    const handleApprove = (id: number) => {
+    const handleApprove = (submission: Submission) => {
         if (confirm('Are you sure you want to approve this submission?')) {
             setIsProcessing(true);
             router.post(
-                `/admin/resource-submissions/${id}/approve`,
-                {},
+                `/admin/resource-submissions/${submission.id}/approve`,
+                { scope: submission.scope },
                 {
                     onFinish: () => {
                         setIsProcessing(false);
-                        setSelectedIds(selectedIds.filter((sid) => sid !== id));
+                        setSelectedIds(
+                            selectedIds.filter(
+                                (selectedId) =>
+                                    selectedId !== getSubmissionKey(submission),
+                            ),
+                        );
                     },
                 },
             );
         }
     };
 
-    const handleReject = (id: number) => {
+    const handleReject = (submission: Submission) => {
         if (confirm('Are you sure you want to reject this submission?')) {
             setIsProcessing(true);
             router.post(
-                `/admin/resource-submissions/${id}/reject`,
-                {},
+                `/admin/resource-submissions/${submission.id}/reject`,
+                { scope: submission.scope },
                 {
                     onFinish: () => {
                         setIsProcessing(false);
-                        setSelectedIds(selectedIds.filter((sid) => sid !== id));
+                        setSelectedIds(
+                            selectedIds.filter(
+                                (selectedId) =>
+                                    selectedId !== getSubmissionKey(submission),
+                            ),
+                        );
                     },
                 },
             );
         }
     };
 
-    const handleDelete = (id: number) => {
+    const handleDelete = (submission: Submission) => {
         if (
             confirm(
                 'Are you sure you want to delete this submission? This cannot be undone.',
             )
         ) {
             setIsProcessing(true);
-            router.delete(`/admin/resource-submissions/${id}`, {
+            router.delete(`/admin/resource-submissions/${submission.id}`, {
+                data: { scope: submission.scope },
                 onFinish: () => {
                     setIsProcessing(false);
-                    setSelectedIds(selectedIds.filter((sid) => sid !== id));
+                    setSelectedIds(
+                        selectedIds.filter(
+                            (selectedId) =>
+                                selectedId !== getSubmissionKey(submission),
+                        ),
+                    );
                 },
             });
         }
@@ -173,7 +214,16 @@ export default function ResourceSubmissions({
             setIsProcessing(true);
             router.post(
                 '/admin/resource-submissions/bulk-approve',
-                { ids: selectedIds },
+                {
+                    ids: selectedIds.map((selectedId) => {
+                        const [scope, id] = selectedId.split('-');
+
+                        return {
+                            scope,
+                            id: Number(id),
+                        };
+                    }),
+                },
                 {
                     onFinish: () => {
                         setIsProcessing(false);
@@ -190,7 +240,16 @@ export default function ResourceSubmissions({
             setIsProcessing(true);
             router.post(
                 '/admin/resource-submissions/bulk-reject',
-                { ids: selectedIds },
+                {
+                    ids: selectedIds.map((selectedId) => {
+                        const [scope, id] = selectedId.split('-');
+
+                        return {
+                            scope,
+                            id: Number(id),
+                        };
+                    }),
+                },
                 {
                     onFinish: () => {
                         setIsProcessing(false);
@@ -218,7 +277,7 @@ export default function ResourceSubmissions({
         );
     };
 
-    const toggleComment = (id: number) => {
+    const toggleComment = (id: string) => {
         setExpandedComments((current) =>
             current.includes(id)
                 ? current.filter((commentId) => commentId !== id)
@@ -336,6 +395,78 @@ export default function ResourceSubmissions({
                                     </Select>
 
                                     <Select
+                                        value={filters.resource_scope}
+                                        onValueChange={(value) =>
+                                            router.get(
+                                                '/admin/resource-submissions',
+                                                {
+                                                    ...filters,
+                                                    resource_scope: value,
+                                                    chapter_id:
+                                                        value === 'chapter'
+                                                            ? filters.chapter_id
+                                                            : 'all',
+                                                    page: 1,
+                                                },
+                                                {
+                                                    preserveState: true,
+                                                    preserveScroll: true,
+                                                },
+                                            )
+                                        }
+                                    >
+                                        <SelectTrigger className="h-11 w-full rounded-lg border-border/70 bg-background sm:w-[170px]">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">
+                                                All Scopes
+                                            </SelectItem>
+                                            <SelectItem value="verse">
+                                                Verse Resources
+                                            </SelectItem>
+                                            <SelectItem value="chapter">
+                                                Chapter Resources
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+
+                                    {filters.resource_scope === 'chapter' && (
+                                        <Select
+                                            value={filters.chapter_id}
+                                            onValueChange={(value) =>
+                                                handleFilter(
+                                                    'chapter_id',
+                                                    value,
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger className="h-11 w-full rounded-lg border-border/70 bg-background sm:w-[220px]">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">
+                                                    All Chapters
+                                                </SelectItem>
+                                                {chapterOptions.map(
+                                                    (chapter) => (
+                                                        <SelectItem
+                                                            key={chapter.id}
+                                                            value={chapter.id.toString()}
+                                                        >
+                                                            {
+                                                                chapter.chapter_number
+                                                            }
+                                                            .{' '}
+                                                            {chapter.name_roman}
+                                                        </SelectItem>
+                                                    ),
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                    )}
+
+                                    <Select
                                         value={filters.resource_type_id}
                                         onValueChange={(value) =>
                                             handleFilter(
@@ -417,7 +548,7 @@ export default function ResourceSubmissions({
                                             User
                                         </th>
                                         <th className="px-4 py-3 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase md:px-5">
-                                            Verse
+                                            Target
                                         </th>
                                         <th className="px-4 py-3 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase md:px-5">
                                             Type
@@ -452,19 +583,25 @@ export default function ResourceSubmissions({
                                     ) : (
                                         submissions.data.map((submission) => (
                                             <tr
-                                                key={submission.id}
+                                                key={getSubmissionKey(
+                                                    submission,
+                                                )}
                                                 className="border-b border-border/60 align-top transition-colors hover:bg-muted/20"
                                             >
                                                 <td className="px-4 py-4 md:px-5">
                                                     <Checkbox
                                                         checked={selectedIds.includes(
-                                                            submission.id,
+                                                            getSubmissionKey(
+                                                                submission,
+                                                            ),
                                                         )}
                                                         onCheckedChange={(
                                                             checked,
                                                         ) =>
                                                             handleSelectOne(
-                                                                submission.id,
+                                                                getSubmissionKey(
+                                                                    submission,
+                                                                ),
                                                                 checked as boolean,
                                                             )
                                                         }
@@ -485,14 +622,26 @@ export default function ResourceSubmissions({
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-4 md:px-5">
-                                                    <Badge
-                                                        variant="outline"
-                                                        className="rounded-md border-border/70 bg-background"
-                                                    >
-                                                        {submission.verse
-                                                            ?.verse_key ||
-                                                            'Unknown'}
-                                                    </Badge>
+                                                    <div className="space-y-2">
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="rounded-md border-border/70 bg-background"
+                                                        >
+                                                            {submission.scope ===
+                                                            'chapter'
+                                                                ? 'Chapter Resource'
+                                                                : 'Verse Resource'}
+                                                        </Badge>
+                                                        <div className="text-sm text-foreground">
+                                                            {submission.scope ===
+                                                            'chapter'
+                                                                ? `Surah ${submission.chapter?.chapter_number ?? '-'}${submission.chapter?.name_roman ? ` · ${submission.chapter.name_roman}` : ''}`
+                                                                : submission
+                                                                      .verse
+                                                                      ?.verse_key ||
+                                                                  'Unknown'}
+                                                        </div>
+                                                    </div>
                                                 </td>
                                                 <td className="px-4 py-4 md:px-5">
                                                     <span className="text-sm text-foreground">
@@ -529,7 +678,9 @@ export default function ResourceSubmissions({
                                                         <div className="max-w-xs">
                                                             <span className="block text-sm leading-6 text-muted-foreground">
                                                                 {expandedComments.includes(
-                                                                    submission.id,
+                                                                    getSubmissionKey(
+                                                                        submission,
+                                                                    ),
                                                                 ) ||
                                                                 submission
                                                                     .comment
@@ -546,12 +697,16 @@ export default function ResourceSubmissions({
                                                                     className="mt-1 text-xs font-medium text-primary hover:underline"
                                                                     onClick={() =>
                                                                         toggleComment(
-                                                                            submission.id,
+                                                                            getSubmissionKey(
+                                                                                submission,
+                                                                            ),
                                                                         )
                                                                     }
                                                                 >
                                                                     {expandedComments.includes(
-                                                                        submission.id,
+                                                                        getSubmissionKey(
+                                                                            submission,
+                                                                        ),
                                                                     )
                                                                         ? 'show less'
                                                                         : '... more'}
@@ -595,7 +750,7 @@ export default function ResourceSubmissions({
                                                                     className="h-8 w-8 rounded-md p-0"
                                                                     onClick={() =>
                                                                         handleApprove(
-                                                                            submission.id,
+                                                                            submission,
                                                                         )
                                                                     }
                                                                     disabled={
@@ -611,7 +766,7 @@ export default function ResourceSubmissions({
                                                                     className="h-8 w-8 rounded-md p-0"
                                                                     onClick={() =>
                                                                         handleReject(
-                                                                            submission.id,
+                                                                            submission,
                                                                         )
                                                                     }
                                                                     disabled={
@@ -629,7 +784,7 @@ export default function ResourceSubmissions({
                                                             className="h-8 w-8 rounded-md p-0"
                                                             onClick={() =>
                                                                 handleDelete(
-                                                                    submission.id,
+                                                                    submission,
                                                                 )
                                                             }
                                                             disabled={

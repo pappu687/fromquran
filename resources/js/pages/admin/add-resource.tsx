@@ -57,6 +57,8 @@ interface Props {
 
 export default function AddResource({ resourceTypes, chapters }: Props) {
     const [searchTerm, setSearchTerm] = useState('');
+    const [resultsLimit, setResultsLimit] = useState<string>('100');
+    const [showPreview, setShowPreview] = useState(false);
     const [selectedResourceTypeId, setSelectedResourceTypeId] =
         useState<string>(() => {
             const youTubeType = resourceTypes.find(
@@ -106,6 +108,7 @@ export default function AddResource({ resourceTypes, chapters }: Props) {
             .post('/admin/add-resource/search', {
                 term: searchTerm,
                 type: selectedResourceTypeId,
+                limit: Number(resultsLimit),
             })
             .then((res) => {
                 setSearchResults(res.data.results || []);
@@ -301,6 +304,39 @@ export default function AddResource({ resourceTypes, chapters }: Props) {
                                             />
                                         </div>
                                     </div>
+                                    <div className="w-full space-y-2 md:w-[140px]">
+                                        <label className="text-sm font-medium">
+                                            Results
+                                        </label>
+                                        <Select
+                                            value={resultsLimit}
+                                            onValueChange={setResultsLimit}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="100" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {[
+                                                    '20',
+                                                    '30',
+                                                    '40',
+                                                    '50',
+                                                    '60',
+                                                    '70',
+                                                    '80',
+                                                    '90',
+                                                    '100',
+                                                ].map((limit) => (
+                                                    <SelectItem
+                                                        key={limit}
+                                                        value={limit}
+                                                    >
+                                                        {limit}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                     <Button
                                         type="submit"
                                         disabled={isSearching || !searchTerm}
@@ -327,6 +363,22 @@ export default function AddResource({ resourceTypes, chapters }: Props) {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
+                                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <p className="text-sm text-muted-foreground">
+                                        Fetched {searchResults.length} result
+                                        {searchResults.length === 1 ? '' : 's'}
+                                    </p>
+                                    <label className="flex items-center gap-2 text-sm font-medium">
+                                        <Checkbox
+                                            checked={showPreview}
+                                            onCheckedChange={(checked) =>
+                                                setShowPreview(checked === true)
+                                            }
+                                        />
+                                        Show preview
+                                    </label>
+                                </div>
+
                                 <div className="overflow-x-auto rounded-md border bg-white">
                                     <table className="w-full bg-white text-sm">
                                         <thead className="bg-muted">
@@ -428,59 +480,62 @@ export default function AddResource({ resourceTypes, chapters }: Props) {
                                     </table>
                                 </div>
 
-                                {selectedResourcePreviews.length > 0 && (
-                                    <div className="mt-6 rounded-lg border bg-muted/30 p-4">
-                                        <div className="mb-3 flex items-center justify-between gap-3">
-                                            <div>
-                                                <h3 className="text-sm font-semibold">
-                                                    Selected Resources Preview
-                                                </h3>
-                                                <p className="text-xs text-muted-foreground">
-                                                    The description below will
-                                                    be saved into the `comment`
-                                                    field.
-                                                </p>
+                                {showPreview &&
+                                    selectedResourcePreviews.length > 0 && (
+                                        <div className="mt-6 rounded-lg border bg-muted/30 p-4">
+                                            <div className="mb-3 flex items-center justify-between gap-3">
+                                                <div>
+                                                    <h3 className="text-sm font-semibold">
+                                                        Selected Resources
+                                                        Preview
+                                                    </h3>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        The description below
+                                                        will be saved into the
+                                                        `comment` field.
+                                                    </p>
+                                                </div>
+                                                <div className="text-xs text-muted-foreground">
+                                                    {
+                                                        selectedResourcePreviews.length
+                                                    }{' '}
+                                                    selected
+                                                </div>
                                             </div>
-                                            <div className="text-xs text-muted-foreground">
-                                                {
-                                                    selectedResourcePreviews.length
-                                                }{' '}
-                                                selected
-                                            </div>
-                                        </div>
 
-                                        <div className="space-y-3">
-                                            {selectedResourcePreviews.map(
-                                                (result) => (
-                                                    <div
-                                                        key={`preview-${result.id}`}
-                                                        className="rounded-md border bg-background p-3"
-                                                    >
+                                            <div className="space-y-3">
+                                                {selectedResourcePreviews.map(
+                                                    (result) => (
                                                         <div
-                                                            className="text-sm font-semibold"
-                                                            dangerouslySetInnerHTML={{
-                                                                __html: result.title,
-                                                            }}
-                                                        />
-                                                        <div className="mt-2 rounded-md bg-muted/60 p-3 text-sm text-muted-foreground">
-                                                            <div className="mb-1 text-[11px] font-medium tracking-wide text-foreground/70 uppercase">
-                                                                Comment Preview
-                                                            </div>
+                                                            key={`preview-${result.id}`}
+                                                            className="rounded-md border bg-background p-3"
+                                                        >
                                                             <div
-                                                                className="line-clamp-4"
+                                                                className="text-sm font-semibold"
                                                                 dangerouslySetInnerHTML={{
-                                                                    __html:
-                                                                        result.description ||
-                                                                        '<span class="italic text-muted-foreground">No description available</span>',
+                                                                    __html: result.title,
                                                                 }}
                                                             />
+                                                            <div className="mt-2 rounded-md bg-muted/60 p-3 text-sm text-muted-foreground">
+                                                                <div className="mb-1 text-[11px] font-medium tracking-wide text-foreground/70 uppercase">
+                                                                    Comment
+                                                                    Preview
+                                                                </div>
+                                                                <div
+                                                                    className="line-clamp-4"
+                                                                    dangerouslySetInnerHTML={{
+                                                                        __html:
+                                                                            result.description ||
+                                                                            '<span class="italic text-muted-foreground">No description available</span>',
+                                                                    }}
+                                                                />
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ),
-                                            )}
+                                                    ),
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
 
                                 <div className="mt-6 flex justify-end">
                                     <Button
