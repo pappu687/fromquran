@@ -1,4 +1,6 @@
-import { api, isApiError, getErrorMessage } from '@/lib/api-client';
+import { useChapters } from '@/hooks';
+import { api, getErrorMessage } from '@/lib/api-client';
+import { type ChapterSummary } from '@/types/quran';
 import { router } from '@inertiajs/react';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -66,15 +68,7 @@ interface UseTopicDetailReturn {
     topic: Topic | null;
     verses: TopicVerse[];
     relatedTopics: RelatedTopic[];
-    chapters: Array<{
-        id: number;
-        number: number;
-        name: string;
-        englishName: string;
-        englishNameTranslation: string;
-        revelationType: 'Meccan' | 'Medinan';
-        verses: number;
-    }>;
+    chapters: ChapterSummary[];
 
     // State
     loading: boolean;
@@ -94,26 +88,26 @@ interface UseTopicDetailReturn {
 
 /**
  * Hook for managing topic detail page state and data fetching
- * 
+ *
  * Features:
  * - Fetches topic data with related topics and verses
  * - Handles pagination for verses
  * - Provides navigation handlers
  * - Includes chapter data for sidebar
- * 
+ *
  * @param topicId - The ID of the topic to fetch
  * @param versesPerPage - Number of verses per page (default: 10)
- * 
+ *
  * @example
  * ```tsx
- * const { 
- *   topic, verses, relatedTopics, 
- *   loading, pagination, handlePageChange 
+ * const {
+ *   topic, verses, relatedTopics,
+ *   loading, pagination, handlePageChange
  * } = useTopicDetail(topicId);
- * 
+ *
  * if (loading) return <LoadingSkeleton />;
  * if (!topic) return <NotFound />;
- * 
+ *
  * return (
  *   <div>
  *     <h1>{topic.name}</h1>
@@ -139,15 +133,7 @@ export function useTopicDetail(
         per_page: versesPerPage,
         total: 0,
     });
-    const [chapters, setChapters] = useState<Array<{
-        id: number;
-        number: number;
-        name: string;
-        englishName: string;
-        englishNameTranslation: string;
-        revelationType: 'Meccan' | 'Medinan';
-        verses: number;
-    }>>([]);
+    const { chapters } = useChapters();
 
     const fetchTopicData = useCallback(
         async (pageNum: number = 1, isInitialLoad = false) => {
@@ -186,27 +172,9 @@ export function useTopicDetail(
         [topicId],
     );
 
-    const fetchChapters = useCallback(async () => {
-        try {
-            const data = await api.get<Array<{
-                id: number;
-                number: number;
-                name: string;
-                englishName: string;
-                englishNameTranslation: string;
-                revelationType: 'Meccan' | 'Medinan';
-                verses: number;
-            }>>('/api/quran/chapters');
-            setChapters(data);
-        } catch (err) {
-            console.error('Failed to fetch chapters:', err);
-        }
-    }, []);
-
     useEffect(() => {
         fetchTopicData(1, true);
-        fetchChapters();
-    }, [fetchTopicData, fetchChapters, topicId]);
+    }, [fetchTopicData, topicId]);
 
     const refreshTopic = useCallback(async () => {
         await fetchTopicData(1, true);
@@ -222,12 +190,9 @@ export function useTopicDetail(
         [fetchTopicData, pagination.last_page],
     );
 
-    const handleTopicClick = useCallback(
-        (clickedTopicId: number) => {
-            router.visit(`/topic/${clickedTopicId}`);
-        },
-        [],
-    );
+    const handleTopicClick = useCallback((clickedTopicId: number) => {
+        router.visit(`/topic/${clickedTopicId}`);
+    }, []);
 
     const handleVerseClick = useCallback(
         (chapterNumber: number, verseNumber: number) => {

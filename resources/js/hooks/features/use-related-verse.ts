@@ -1,6 +1,8 @@
+import { useChapters } from '@/hooks';
 import { api, getErrorMessage } from '@/lib/api-client';
-import { useCallback, useEffect, useState } from 'react';
+import { type ChapterSummary } from '@/types/quran';
 import { BookOpen, FileText, Play, Scale, Video } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
 export interface ResourceType {
     id: number;
@@ -59,16 +61,6 @@ export interface MainVerse {
     resourceCount?: number;
 }
 
-export interface Chapter {
-    id: number;
-    number: number;
-    name: string;
-    englishName: string;
-    englishNameTranslation: string;
-    revelationType: 'Meccan' | 'Medinan';
-    verses: number;
-}
-
 export interface FullResource {
     id: number;
     title: string | null;
@@ -82,7 +74,7 @@ interface UseRelatedVerseReturn {
     similarVerses: SimilarVerse[];
     topics: Topic[];
     mainVerse: MainVerse | null;
-    chapters: Chapter[];
+    chapters: ChapterSummary[];
 
     // State
     loadingResources: boolean;
@@ -119,25 +111,25 @@ interface UseRelatedVerseReturn {
 
 /**
  * Hook for managing related verse page state and data fetching
- * 
+ *
  * Features:
  * - Fetches resources, similar verses, and topics for a given verse
  * - Manages main verse data for display
  * - Provides grouped resources by type
  * - Handles resource detail loading
  * - Navigation helpers for verse and topic navigation
- * 
+ *
  * @param verseId - The ID of the verse to fetch related data for
  * @param chapterNumber - The chapter number for navigation
  * @param verseNumber - The verse number for navigation
- * 
+ *
  * @example
  * ```tsx
- * const { 
+ * const {
  *   resources, similarVerses, topics, mainVerse,
- *   loadingResources, groupedResources, handleSeeMore 
+ *   loadingResources, groupedResources, handleSeeMore
  * } = useRelatedVerse(verseId, chapterNumber, verseNumber);
- * 
+ *
  * return (
  *   <div>
  *     <VerseCard verse={mainVerse} />
@@ -157,7 +149,7 @@ export function useRelatedVerse(
     const [similarVerses, setSimilarVerses] = useState<SimilarVerse[]>([]);
     const [topics, setTopics] = useState<Topic[]>([]);
     const [mainVerse, setMainVerse] = useState<MainVerse | null>(null);
-    const [chapters, setChapters] = useState<Chapter[]>([]);
+    const { chapters } = useChapters();
 
     const [loadingResources, setLoadingResources] = useState(false);
     const [loadingSimilar, setLoadingSimilar] = useState(false);
@@ -172,16 +164,6 @@ export function useRelatedVerse(
         url: string | null;
         comment: string;
     } | null>(null);
-
-    // Fetch chapters
-    const fetchChapters = useCallback(async () => {
-        try {
-            const data = await api.get<Chapter[]>('/api/quran/chapters');
-            setChapters(data);
-        } catch (err) {
-            console.error('Failed to fetch chapters:', err);
-        }
-    }, []);
 
     // Fetch main verse
     const fetchMainVerse = useCallback(async () => {
@@ -263,11 +245,6 @@ export function useRelatedVerse(
         }
     }, [verseId]);
 
-    // Initial load
-    useEffect(() => {
-        fetchChapters();
-    }, [fetchChapters]);
-
     useEffect(() => {
         if (chapters.length) {
             fetchMainVerse();
@@ -323,7 +300,10 @@ export function useRelatedVerse(
         (targetChapter: number, targetVerse: number) => {
             window.dispatchEvent(
                 new CustomEvent('navigate-related', {
-                    detail: { chapterNumber: targetChapter, verseNumber: targetVerse },
+                    detail: {
+                        chapterNumber: targetChapter,
+                        verseNumber: targetVerse,
+                    },
                 }),
             );
         },

@@ -1,128 +1,140 @@
-import { useAnnotationsStore } from '@/store/use-user-content';
-import { useCallback, useEffect } from 'react';
+import { api, getErrorMessage } from '@/lib/api-client';
+import { queryKeys } from '@/lib/query-client';
+import { type Annotation } from '@/store/use-user-content';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useState } from 'react';
+
+interface CreateAnnotationInput {
+    verse_id: number;
+    start_offset: number;
+    end_offset: number;
+    selected_text: string;
+    note: string;
+}
 
 interface UseAnnotationsReturn {
-    // Data
-    annotations: typeof useAnnotationsStore.getState.annotations;
-
-    // State
+    annotations: Annotation[];
     loading: boolean;
     error: string | null;
     successMessage: string | null;
-
-    // Actions
     loadAnnotations: () => Promise<void>;
     deleteAnnotation: (annotationId: number) => Promise<boolean>;
-    createAnnotation: (data: {
-        verse_id: number;
-        start_offset: number;
-        end_offset: number;
-        selected_text: string;
-        note: string;
-    }) => Promise<boolean>;
+    createAnnotation: (data: CreateAnnotationInput) => Promise<boolean>;
     clearError: () => void;
     clearSuccessMessage: () => void;
 }
 
-/**
- * Hook for managing verse annotations
- * 
- * Features:
- * - Load and manage user annotations
- * - Create new annotations with selected text
- * - Delete annotations
- * - Error and success message handling
- * 
- * @example
- * ```tsx
- * const { 
- *   annotations, loading, createAnnotation, deleteAnnotation 
- * } = useAnnotations();
- * 
- * const handleCreateAnnotation = async (verse, selectedText, note) => {
- *   const success = await createAnnotation({
- *     verse_id: verse.id,
- *     start_offset: selectionStart,
- *     end_offset: selectionEnd,
- *     selected_text: selectedText,
- *     note: note,
- *   });
- *   
- *   if (success) {
- *     showToast('Annotation created');
- *   }
- * };
- * 
- * return (
- *   <div>
- *     {annotations.map(annotation => (
- *       <AnnotationCard 
- *         key={annotation.id}
- *         annotation={annotation}
- *         onDelete={() => deleteAnnotation(annotation.id)}
- *       />
- *     ))}
- *   </div>
- * );
- * ```
- */
+async function fetchAnnotations() {
+    const response = await api.get<{ data: Annotation[] }>(
+        '/api/verse-annotations?all=1',
+    );
+
+    return response.data || [];
+}
+
 export function useAnnotations(): UseAnnotationsReturn {
-    const {
-        annotations,
-        loading,
-        error,
-        successMessage,
-        loadAnnotations,
-        deleteAnnotation: storeDeleteAnnotation,
-        createAnnotation: storeCreateAnnotation,
-        setSuccessMessage,
-        setError,
-        clearAnnotations,
-    } = useAnnotationsStore();
+    const queryClient = useQueryClient();
+    const [error, setError] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+    const annotationsQuery = useQuery({
+        queryKey: queryKeys.userAnnotations,
+        queryFn: fetchAnnotations,
+    });
+
+    useEffect(() => {
+        if (annotationsQuery.error) {
+            setError(getErrorMessage(annotationsQuery.error));
+        }
+    }, [annotationsQuery.error]);
+
+    const deleteAnnotationMutation = useMutation({
+        mutationFn: async (annotationId: number) => {
+            await api.delete(`/api/verse-annotations/${annotationId}`);
+
+            return annotationId;
+        },
+        onSuccess: (annotationId) => {
+            queryClient.setQueryData<Annotation[]>(
+                queryKeys.userAnnotations,
+                (current = []) =>
+                    current.filter(
+                        (annotation) => annotation.id !== annotationId,
+                    ),
+            );
+            setSuccessMessage('Annotation deleted');
+            setError(null);
+        },
+        onError: (mutationError) => {
+            setError(getErrorMessage(mutationError));
+        },
+    });
+
+    const createAnnotationMutation = useMutation({
+        mutationFn: async (data: CreateAnnotationInput) => {
+            await api.post('/api/verse-annotations', data);
+        },
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({
+                queryKey: queryKeys.userAnnotations,
+            });
+            setSuccessMessage('Annotation created');
+            setError(null);
+        },
+        onError: (mutationError) => {
+            setError(getErrorMessage(mutationError));
+        },
+    });
+
+    const loadAnnotations = useCallback(async () => {
+        setError(null);
+        await queryClient.invalidateQueries({
+            queryKey: queryKeys.userAnnotations,
+        });
+    }, [queryClient]);
 
     const deleteAnnotation = useCallback(
         async (annotationId: number) => {
-            return storeDeleteAnnotation(annotationId);
+            try {
+                await deleteAnnotationMutation.mutateAsync(annotationId);
+
+                return true;
+            } catch {
+                return false;
+            }
         },
-        [storeDeleteAnnotation],
+        [deleteAnnotationMutation],
     );
 
     const createAnnotation = useCallback(
-        async (data: {
-            verse_id: number;
-            start_offset: number;
-            end_offset: number;
-            selected_text: string;
-            note: string;
-        }) => {
-            return storeCreateAnnotation(data);
+        async (data: CreateAnnotationInput) => {
+            try {
+                await createAnnotationMutation.mutateAsync(data);
+
+                return true;
+            } catch {
+                return false;
+            }
         },
-        [storeCreateAnnotation],
+        [createAnnotationMutation],
     );
 
     const clearError = useCallback(() => {
         setError(null);
-    }, [setError]);
+    }, []);
 
     const clearSuccessMessage = useCallback(() => {
         setSuccessMessage(null);
-    }, [setSuccessMessage]);
-
-    // Auto-load annotations on mount
-    useEffect(() => {
-        loadAnnotations();
-    }, [loadAnnotations]);
+    }, []);
 
     return {
-        // Data
-        annotations,
-
-        // State
-        loading,
+        annotations: annotationsQuery.data ?? [],
+        loading:
+            annotationsQuery.isLoading ||
+            deleteAnnotationMutation.isPending ||
+            createAnnotationMutation.isPending,
         error,
         successMessage,
-
-        // Actions
         loadAnnotations,
         deleteAnnotation,
         createAnnotation,

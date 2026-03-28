@@ -57,12 +57,6 @@ interface PaginationData {
     data: Role[];
 }
 
-interface Stats {
-    total: number;
-    with_users: number;
-    permissions: number;
-}
-
 interface Filters {
     search: string;
     sort_column: string;
@@ -72,14 +66,12 @@ interface Filters {
 interface AdminRolesProps {
     roles: PaginationData;
     allPermissions: Permission[];
-    stats: Stats;
     filters: Filters;
 }
 
 export default function AdminRoles({
     roles: initialRoles,
     allPermissions,
-    stats,
     filters,
 }: AdminRolesProps) {
     const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
@@ -298,53 +290,23 @@ export default function AdminRoles({
             <Head title="Roles & Permissions - Admin - From Quran" />
             <AdminLayout title="Roles & Permissions">
                 <div className="space-y-6">
-                    <div className="rounded-2xl border border-border/60 bg-[linear-gradient(180deg,hsl(var(--background))_0%,hsl(var(--muted)/0.16)_100%)] px-5 py-6 shadow-sm shadow-black/[0.03] md:px-7">
-                        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                            <div className="max-w-3xl space-y-2">
-                                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-                                    Roles management
-                                </h2>
-                                <p className="text-sm leading-6 text-muted-foreground md:text-base">
-                                    Manage roles, review permission coverage,
-                                    and keep assignments deliberate.
-                                </p>
-                            </div>
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                                <div className="grid grid-cols-3 gap-3">
-                                    <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
-                                        <p className="text-lg font-semibold">
-                                            {stats.total}
-                                        </p>
-                                        <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-                                            Roles
-                                        </p>
-                                    </div>
-                                    <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
-                                        <p className="text-lg font-semibold">
-                                            {stats.with_users}
-                                        </p>
-                                        <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-                                            In Use
-                                        </p>
-                                    </div>
-                                    <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
-                                        <p className="text-lg font-semibold">
-                                            {stats.permissions}
-                                        </p>
-                                        <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-                                            Permissions
-                                        </p>
-                                    </div>
-                                </div>
-                                <Button
-                                    onClick={handleAddRole}
-                                    className="h-10 rounded-lg px-4 text-sm"
-                                >
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Create Role
-                                </Button>
-                            </div>
+                    <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                        <div className="max-w-3xl space-y-2">
+                            <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                                Roles management
+                            </h2>
+                            <p className="text-sm leading-6 text-muted-foreground md:text-base">
+                                Manage roles, review permission coverage, and
+                                keep assignments deliberate.
+                            </p>
                         </div>
+                        <Button
+                            onClick={handleAddRole}
+                            className="h-10 rounded-lg px-4 text-sm"
+                        >
+                            <Plus className="mr-2 h-4 w-4" />
+                            Create Role
+                        </Button>
                     </div>
 
                     <DataTable

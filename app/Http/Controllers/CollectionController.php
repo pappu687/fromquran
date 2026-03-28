@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Collection;
+use App\Models\Tag;
 use App\Models\Verse;
 use App\Services\QuranDatabaseService;
 use App\Services\TagService;
@@ -49,9 +50,48 @@ class CollectionController extends Controller
                 ->withCount('verses')
                 ->orderBy('created_at', 'desc'),
             $request,
-        )->get();
+        )->get()->map(fn (Collection $collection) => [
+            'id' => $collection->id,
+            'name' => $collection->name,
+            'description' => $collection->description,
+            'color' => $collection->color,
+            'is_public' => $collection->is_public,
+            'status' => $collection->status,
+            'verses_count' => $collection->verses_count,
+            'views_count' => (int) $collection->views_count,
+            'slug' => $collection->slug,
+            'created_at' => $collection->created_at?->toISOString(),
+            'tags' => $collection->tags->map(fn ($tag) => [
+                'id' => $tag->id,
+                'name' => $tag->name,
+                'slug' => $tag->slug,
+                'type' => $tag->type,
+            ])->values(),
+        ])->values();
 
         return response()->json($collections);
+    }
+
+    /**
+     * Display public collection page payload in a single request.
+     */
+    public function publicPageData(Request $request): JsonResponse
+    {
+        $collections = $this->publicIndex($request)->getData(true);
+
+        $tags = Tag::query()
+            ->active()
+            ->whereHas('collections', function ($query) {
+                $query->where('is_public', true)->where('status', 'approved');
+            })
+            ->orderBy('type')
+            ->orderBy('name')
+            ->get(['id', 'name', 'slug', 'type']);
+
+        return response()->json([
+            'collections' => $collections,
+            'tags' => $tags,
+        ]);
     }
 
     /**
@@ -203,6 +243,7 @@ class CollectionController extends Controller
             'created_at' => $collection->created_at?->toISOString(),
             'updated_at' => $collection->updated_at?->toISOString(),
             'verses_count' => $collection->verses_count,
+            'views_count' => (int) $collection->views_count,
             'tags' => $collection->tags->map(fn ($tag) => [
                 'id' => $tag->id,
                 'name' => $tag->name,

@@ -66,13 +66,6 @@ interface PaginationLink {
     active: boolean;
 }
 
-interface Stats {
-    total: number;
-    pending: number;
-    approved: number;
-    rejected: number;
-}
-
 interface Props {
     submissions: {
         data: Submission[];
@@ -82,7 +75,6 @@ interface Props {
         per_page: number;
         total: number;
     };
-    stats: Stats;
     filters: {
         status: string;
         search: string;
@@ -96,7 +88,6 @@ interface Props {
 
 export default function ResourceSubmissions({
     submissions,
-    stats,
     filters,
     resourceTypeLabels,
     chapterOptions,
@@ -290,242 +281,187 @@ export default function ResourceSubmissions({
             <Head title="Resource Submissions - Admin - From Quran" />
             <AdminLayout title="Resource Submissions">
                 <div className="space-y-6">
-                    <div className="rounded-2xl border border-border/60 bg-[linear-gradient(180deg,hsl(var(--background))_0%,hsl(var(--muted)/0.2)_100%)] px-5 py-6 shadow-sm shadow-black/[0.03] md:px-7 md:py-7">
-                        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                            <div className="max-w-3xl space-y-3">
-                                <div className="space-y-2">
-                                    <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
-                                        Resource submissions
-                                    </h1>
-                                    <p className="text-sm leading-6 text-muted-foreground md:text-base">
-                                        Review submitted resources, keep the
-                                        queue moving, and process approvals with
-                                        less noise.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                                <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
-                                    <p className="text-xl font-semibold text-foreground md:text-2xl">
-                                        {stats.total}
-                                    </p>
-                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-                                        Total
-                                    </p>
-                                </div>
-                                <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
-                                    <p className="text-xl font-semibold text-amber-700 md:text-2xl dark:text-amber-300">
-                                        {stats.pending}
-                                    </p>
-                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-                                        Pending
-                                    </p>
-                                </div>
-                                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
-                                    <p className="text-xl font-semibold text-emerald-700 md:text-2xl dark:text-emerald-300">
-                                        {stats.approved}
-                                    </p>
-                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-                                        Approved
-                                    </p>
-                                </div>
-                                <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3">
-                                    <p className="text-xl font-semibold text-red-700 md:text-2xl dark:text-red-300">
-                                        {stats.rejected}
-                                    </p>
-                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-                                        Rejected
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
+                    <div className="max-w-3xl space-y-2">
+                        <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+                            Resource submissions
+                        </h1>
+                        <p className="text-sm leading-6 text-muted-foreground md:text-base">
+                            Review submitted resources, keep the queue moving,
+                            and process approvals with less noise.
+                        </p>
                     </div>
 
-                    <div className="rounded-2xl border border-border/60 bg-background/96 shadow-sm shadow-black/[0.03]">
-                        <div className="border-b border-border/70 px-5 py-5 md:px-7">
-                            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                                <form
-                                    onSubmit={handleSearch}
-                                    className="flex w-full flex-col gap-3 sm:flex-row xl:max-w-xl"
+                    <div className="space-y-5">
+                        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                            <form
+                                onSubmit={handleSearch}
+                                className="flex w-full flex-col gap-3 sm:flex-row xl:max-w-xl"
+                            >
+                                <div className="relative flex-1">
+                                    <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Search by user, URL, or type..."
+                                        value={searchInput}
+                                        onChange={(e) =>
+                                            setSearchInput(e.target.value)
+                                        }
+                                        className="h-11 rounded-lg border-border/70 bg-background pl-9"
+                                    />
+                                </div>
+                                <Button
+                                    type="submit"
+                                    className="h-11 rounded-lg px-5 text-sm font-medium"
                                 >
-                                    <div className="relative flex-1">
-                                        <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                        <Input
-                                            placeholder="Search by user, URL, or type..."
-                                            value={searchInput}
-                                            onChange={(e) =>
-                                                setSearchInput(e.target.value)
-                                            }
-                                            className="h-11 rounded-lg border-border/70 bg-background pl-9"
-                                        />
-                                    </div>
-                                    <Button
-                                        type="submit"
-                                        className="h-11 rounded-lg px-5 text-sm font-medium"
-                                    >
-                                        Search
-                                    </Button>
-                                </form>
+                                    Search
+                                </Button>
+                            </form>
 
-                                <div className="flex flex-col gap-3 sm:flex-row">
+                            <div className="flex flex-col gap-3 sm:flex-row">
+                                <Select
+                                    value={filters.status}
+                                    onValueChange={(value) =>
+                                        handleFilter('status', value)
+                                    }
+                                >
+                                    <SelectTrigger className="h-11 w-full rounded-lg border-border/70 bg-background sm:w-[150px]">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            All Status
+                                        </SelectItem>
+                                        <SelectItem value="pending">
+                                            Pending
+                                        </SelectItem>
+                                        <SelectItem value="approved">
+                                            Approved
+                                        </SelectItem>
+                                        <SelectItem value="rejected">
+                                            Rejected
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+
+                                <Select
+                                    value={filters.resource_scope}
+                                    onValueChange={(value) =>
+                                        router.get(
+                                            '/admin/resource-submissions',
+                                            {
+                                                ...filters,
+                                                resource_scope: value,
+                                                chapter_id:
+                                                    value === 'chapter'
+                                                        ? filters.chapter_id
+                                                        : 'all',
+                                                page: 1,
+                                            },
+                                            {
+                                                preserveState: true,
+                                                preserveScroll: true,
+                                            },
+                                        )
+                                    }
+                                >
+                                    <SelectTrigger className="h-11 w-full rounded-lg border-border/70 bg-background sm:w-[170px]">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            All Scopes
+                                        </SelectItem>
+                                        <SelectItem value="verse">
+                                            Verse Resources
+                                        </SelectItem>
+                                        <SelectItem value="chapter">
+                                            Chapter Resources
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+
+                                {filters.resource_scope === 'chapter' && (
                                     <Select
-                                        value={filters.status}
+                                        value={filters.chapter_id}
                                         onValueChange={(value) =>
-                                            handleFilter('status', value)
+                                            handleFilter('chapter_id', value)
                                         }
                                     >
-                                        <SelectTrigger className="h-11 w-full rounded-lg border-border/70 bg-background sm:w-[150px]">
+                                        <SelectTrigger className="h-11 w-full rounded-lg border-border/70 bg-background sm:w-[220px]">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="all">
-                                                All Status
+                                                All Chapters
                                             </SelectItem>
-                                            <SelectItem value="pending">
-                                                Pending
-                                            </SelectItem>
-                                            <SelectItem value="approved">
-                                                Approved
-                                            </SelectItem>
-                                            <SelectItem value="rejected">
-                                                Rejected
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-
-                                    <Select
-                                        value={filters.resource_scope}
-                                        onValueChange={(value) =>
-                                            router.get(
-                                                '/admin/resource-submissions',
-                                                {
-                                                    ...filters,
-                                                    resource_scope: value,
-                                                    chapter_id:
-                                                        value === 'chapter'
-                                                            ? filters.chapter_id
-                                                            : 'all',
-                                                    page: 1,
-                                                },
-                                                {
-                                                    preserveState: true,
-                                                    preserveScroll: true,
-                                                },
-                                            )
-                                        }
-                                    >
-                                        <SelectTrigger className="h-11 w-full rounded-lg border-border/70 bg-background sm:w-[170px]">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">
-                                                All Scopes
-                                            </SelectItem>
-                                            <SelectItem value="verse">
-                                                Verse Resources
-                                            </SelectItem>
-                                            <SelectItem value="chapter">
-                                                Chapter Resources
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-
-                                    {filters.resource_scope === 'chapter' && (
-                                        <Select
-                                            value={filters.chapter_id}
-                                            onValueChange={(value) =>
-                                                handleFilter(
-                                                    'chapter_id',
-                                                    value,
-                                                )
-                                            }
-                                        >
-                                            <SelectTrigger className="h-11 w-full rounded-lg border-border/70 bg-background sm:w-[220px]">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">
-                                                    All Chapters
+                                            {chapterOptions.map((chapter) => (
+                                                <SelectItem
+                                                    key={chapter.id}
+                                                    value={chapter.id.toString()}
+                                                >
+                                                    {chapter.chapter_number}.{' '}
+                                                    {chapter.name_roman}
                                                 </SelectItem>
-                                                {chapterOptions.map(
-                                                    (chapter) => (
-                                                        <SelectItem
-                                                            key={chapter.id}
-                                                            value={chapter.id.toString()}
-                                                        >
-                                                            {
-                                                                chapter.chapter_number
-                                                            }
-                                                            .{' '}
-                                                            {chapter.name_roman}
-                                                        </SelectItem>
-                                                    ),
-                                                )}
-                                            </SelectContent>
-                                        </Select>
-                                    )}
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
 
-                                    <Select
-                                        value={filters.resource_type_id}
-                                        onValueChange={(value) =>
-                                            handleFilter(
-                                                'resource_type_id',
-                                                value,
-                                            )
-                                        }
-                                    >
-                                        <SelectTrigger className="h-11 w-full rounded-lg border-border/70 bg-background sm:w-[190px]">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">
-                                                All Types
-                                            </SelectItem>
-                                            {Object.entries(
-                                                resourceTypeLabels,
-                                            ).map(([value, label]) => (
+                                <Select
+                                    value={filters.resource_type_id}
+                                    onValueChange={(value) =>
+                                        handleFilter('resource_type_id', value)
+                                    }
+                                >
+                                    <SelectTrigger className="h-11 w-full rounded-lg border-border/70 bg-background sm:w-[190px]">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            All Types
+                                        </SelectItem>
+                                        {Object.entries(resourceTypeLabels).map(
+                                            ([value, label]) => (
                                                 <SelectItem
                                                     key={value}
                                                     value={value}
                                                 >
                                                     {label}
                                                 </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                            ),
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        {selectedIds.length > 0 && (
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <span className="text-sm font-medium text-foreground">
+                                    {selectedIds.length} selected
+                                </span>
+                                <div className="flex flex-wrap gap-2">
+                                    <Button
+                                        size="sm"
+                                        className="h-9 rounded-lg px-4 text-sm"
+                                        onClick={handleBulkApprove}
+                                        disabled={isProcessing}
+                                    >
+                                        <Check className="mr-1 h-4 w-4" />
+                                        Approve
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        className="h-9 rounded-lg px-4 text-sm"
+                                        onClick={handleBulkReject}
+                                        disabled={isProcessing}
+                                    >
+                                        <X className="mr-1 h-4 w-4" />
+                                        Reject
+                                    </Button>
                                 </div>
                             </div>
-
-                            {selectedIds.length > 0 && (
-                                <div className="mt-4 flex flex-col gap-3 rounded-lg border border-border/60 bg-muted/30 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                                    <span className="text-sm font-medium text-foreground">
-                                        {selectedIds.length} selected
-                                    </span>
-                                    <div className="flex flex-wrap gap-2">
-                                        <Button
-                                            size="sm"
-                                            className="h-9 rounded-lg px-4 text-sm"
-                                            onClick={handleBulkApprove}
-                                            disabled={isProcessing}
-                                        >
-                                            <Check className="mr-1 h-4 w-4" />
-                                            Approve
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="destructive"
-                                            className="h-9 rounded-lg px-4 text-sm"
-                                            onClick={handleBulkReject}
-                                            disabled={isProcessing}
-                                        >
-                                            <X className="mr-1 h-4 w-4" />
-                                            Reject
-                                        </Button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                        )}
 
                         <div className="overflow-x-auto bg-white">
                             <table className="min-w-full bg-white">
@@ -632,7 +568,15 @@ export default function ResourceSubmissions({
                                                                 ? 'Chapter Resource'
                                                                 : 'Verse Resource'}
                                                         </Badge>
-                                                        <div className="text-sm text-foreground">
+                                                        <Link
+                                                            href={
+                                                                submission.scope ===
+                                                                'chapter'
+                                                                    ? `/${submission.chapter?.chapter_number ?? ''}`
+                                                                    : `/${submission.verse?.chapter_id ?? ''}/${submission.verse?.verse_key?.split(':')[1] ?? ''}`
+                                                            }
+                                                            className="block text-sm text-primary hover:underline"
+                                                        >
                                                             {submission.scope ===
                                                             'chapter'
                                                                 ? `Surah ${submission.chapter?.chapter_number ?? '-'}${submission.chapter?.name_roman ? ` · ${submission.chapter.name_roman}` : ''}`
@@ -640,7 +584,7 @@ export default function ResourceSubmissions({
                                                                       .verse
                                                                       ?.verse_key ||
                                                                   'Unknown'}
-                                                        </div>
+                                                        </Link>
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-4 md:px-5">

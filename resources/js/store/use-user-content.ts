@@ -1,5 +1,5 @@
+import { api, getErrorMessage } from '@/lib/api-client';
 import { type CollectionTag } from '@/types/collections';
-import { api, isApiError, getErrorMessage } from '@/lib/api-client';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -206,7 +206,10 @@ export const useCollectionsStore = create<CollectionsState>()(
                 }
             },
 
-            updateCollection: async (slug: string, data: Partial<Collection>) => {
+            updateCollection: async (
+                slug: string,
+                data: Partial<Collection>,
+            ) => {
                 try {
                     const updated = await api.put<CollectionDetail>(
                         `/api/collections/${slug}`,
@@ -285,10 +288,9 @@ export const useCollectionsStore = create<CollectionsState>()(
                         currentCollection: state.currentCollection
                             ? {
                                   ...state.currentCollection,
-                                  verses:
-                                      state.currentCollection.verses.filter(
-                                          (v) => v.id !== verseId,
-                                      ),
+                                  verses: state.currentCollection.verses.filter(
+                                      (v) => v.id !== verseId,
+                                  ),
                                   verses_count:
                                       state.currentCollection.verses_count - 1,
                               }
@@ -562,9 +564,7 @@ export const useAnnotationsStore = create<AnnotationsState>()(
 
             deleteAnnotation: async (annotationId) => {
                 try {
-                    await api.delete(
-                        `/api/verse-annotations/${annotationId}`,
-                    );
+                    await api.delete(`/api/verse-annotations/${annotationId}`);
 
                     set((state) => ({
                         annotations: state.annotations.filter(
@@ -641,12 +641,14 @@ export const useUserContentStore = create<{
                 ]);
 
                 // Update counts
+                const latestCollectionsStore = useCollectionsStore.getState();
+                const latestBookmarksStore = useBookmarksStore.getState();
+                const latestAnnotationsStore = useAnnotationsStore.getState();
                 const newCollectionsCount =
-                    collectionsStore.getState().collections.length;
-                const newBookmarksCount =
-                    bookmarksStore.getState().bookmarks.length;
+                    latestCollectionsStore.collections.length;
+                const newBookmarksCount = latestBookmarksStore.bookmarks.length;
                 const newAnnotationsCount =
-                    annotationsStore.getState().annotations.length;
+                    latestAnnotationsStore.annotations.length;
 
                 set({
                     isLoadingAny: false,

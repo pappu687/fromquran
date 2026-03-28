@@ -9,19 +9,12 @@ import {
     CommandSeparator,
 } from '@/components/ui/command';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useChapters } from '@/hooks';
+import { useQuranSearch } from '@/hooks/api';
+import { type ChapterSummary } from '@/types/quran';
 import { router } from '@inertiajs/react';
 import { ArrowRight, BookOpen, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
-
-interface Chapter {
-    id: number;
-    number: number;
-    name: string;
-    englishName: string;
-    englishNameTranslation: string;
-    revelationType: string;
-    numberOfVerses: number;
-}
 
 interface Verse {
     id: number;
@@ -36,7 +29,7 @@ interface SearchResult {
     verseNumber: number;
     chapterId: number;
     text: string;
-    chapter?: Chapter;
+    chapter?: ChapterSummary;
 }
 
 interface CommandPaletteProps {
@@ -46,55 +39,24 @@ interface CommandPaletteProps {
 
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     const [searchQuery, setSearchQuery] = useState('');
-    const [chapters, setChapters] = useState<Chapter[]>([]);
-    const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [selectedChapterId, setSelectedChapterId] = useState<number | null>(
-        null,
+    const [debouncedQuery, setDebouncedQuery] = useState('');
+    const { chapters } = useChapters();
+    const { results: searchResults, isLoading: loading } = useQuranSearch(
+        debouncedQuery,
+        {
+            limit: 10,
+            enabled: open && debouncedQuery.length >= 2,
+        },
     );
 
-    // Fetch chapters when dialog opens
-    useEffect(() => {
-        if (open) {
-            fetch('/api/quran/chapters')
-                .then((res) => res.json())
-                .then((data) => setChapters(data))
-                .catch((err) =>
-                    console.error('Failed to fetch chapters:', err),
-                );
-        }
-    }, [open]);
-
-    // Debounced search for verses
     useEffect(() => {
         if (!searchQuery || searchQuery.length < 2) {
-            setSearchResults([]);
+            setDebouncedQuery('');
             return;
         }
 
         const timer = setTimeout(() => {
-            setLoading(true);
-            const params = new URLSearchParams({
-                query: searchQuery,
-                limit: '10',
-            });
-
-            fetch(`/api/quran/search?${params}`)
-                .then((res) => res.json())
-                .then((data) => {
-                    setSearchResults(
-                        (data.data || []).filter(
-                            (result: SearchResult) =>
-                                result.documentType === 'verse',
-                        ),
-                    );
-                    setLoading(false);
-                })
-                .catch((err) => {
-                    console.error('Search failed:', err);
-                    setSearchResults([]);
-                    setLoading(false);
-                });
+            setDebouncedQuery(searchQuery);
         }, 300);
 
         return () => clearTimeout(timer);
@@ -127,7 +89,10 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
 
     const showChapterResults =
         searchQuery.length > 0 || filteredChapters.length > 0;
-    const showVerseResults = searchResults.length > 0;
+    const verseResults = searchResults.filter(
+        (result: SearchResult) => result.documentType === 'verse',
+    );
+    const showVerseResults = verseResults.length > 0;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -151,7 +116,8 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
 
                         {!loading &&
                             searchQuery.length >= 2 &&
-                            searchResults.length === 0 && (
+                            !loading &&
+                            verseResults.length === 0 && (
                                 <CommandEmpty>No results found.</CommandEmpty>
                             )}
 
@@ -161,7 +127,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                                     heading="Verses"
                                     className="[&_[data-cmdk-group-heading]]:px-2"
                                 >
-                                    {searchResults.map((result) => (
+                                    {verseResults.map((result) => (
                                         <CommandItem
                                             key={result.id}
                                             onSelect={() =>
@@ -226,7 +192,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                                         </div>
                                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                             <span>
-                                                {chapter.numberOfVerses} verses
+                                                {chapter.verses ?? 0} verses
                                             </span>
                                             <ArrowRight className="h-3 w-3" />
                                         </div>

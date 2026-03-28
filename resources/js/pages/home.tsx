@@ -1,5 +1,7 @@
 import { Button } from '@/components/ui/button';
+import { useChapters } from '@/hooks';
 import LandingLayout from '@/layouts/landing-layout';
+import { type ChapterSummary } from '@/types/quran';
 import { router } from '@inertiajs/react';
 import {
     ArrowRight,
@@ -10,18 +12,7 @@ import {
     Link2,
     Network,
 } from 'lucide-react';
-import { type ReactNode, useEffect, useState } from 'react';
-
-interface Chapter {
-    id: number;
-    number: number;
-    name: string;
-    englishName: string;
-    romanName: string;
-    englishNameTranslation: string;
-    revelationType: 'Meccan' | 'Medinan';
-    verses: number;
-}
+import { type ReactNode } from 'react';
 
 interface FeatureProps {
     icon: ReactNode;
@@ -74,7 +65,7 @@ function FeatureRow({ icon, title, description }: FeatureProps) {
     );
 }
 
-function ChapterRow({ chapter }: { chapter: Chapter }) {
+function ChapterRow({ chapter }: { chapter: ChapterSummary }) {
     return (
         <button
             type="button"
@@ -115,31 +106,8 @@ function ChapterRow({ chapter }: { chapter: Chapter }) {
 }
 
 export default function HomePage() {
-    const [chapters, setChapters] = useState<Chapter[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [hasError, setHasError] = useState(false);
-
-    useEffect(() => {
-        const fetchChapters = async () => {
-            try {
-                const response = await fetch('/api/quran/chapters');
-                if (!response.ok) {
-                    throw new Error('Failed to load chapters');
-                }
-
-                const data = (await response.json()) as Chapter[];
-                setChapters(data);
-                setHasError(false);
-            } catch (err) {
-                console.error('Failed to load chapters:', err);
-                setHasError(true);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchChapters();
-    }, []);
+    const { chapters, loading, error } = useChapters();
+    const hasError = Boolean(error);
 
     const scrollToChapters = () => {
         document.getElementById('chapters-section')?.scrollIntoView({

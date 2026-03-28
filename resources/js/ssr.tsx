@@ -1,7 +1,9 @@
 import { AuthProvider } from '@/contexts/auth-context';
+import { makeQueryClient } from '@/lib/query-client';
 import { type SharedData } from '@/types';
 import { createInertiaApp } from '@inertiajs/react';
 import createServer from '@inertiajs/react/server';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import ReactDOMServer from 'react-dom/server';
 import { ReaderSettingsProvider } from './contexts/reader-settings-context';
@@ -22,15 +24,18 @@ createServer((page) =>
         setup: ({ App, props }) => {
             const { auth } = props.initialPage.props as Partial<SharedData>;
             const user = auth?.user || null;
+            const queryClient = makeQueryClient();
 
             return (
-                <AuthProvider user={user}>
-                    <ReaderSettingsProvider>
-                        <ReadingModeProvider>
-                            <App {...props} />
-                        </ReadingModeProvider>
-                    </ReaderSettingsProvider>
-                </AuthProvider>
+                <QueryClientProvider client={queryClient}>
+                    <AuthProvider user={user}>
+                        <ReaderSettingsProvider>
+                            <ReadingModeProvider>
+                                <App {...props} />
+                            </ReadingModeProvider>
+                        </ReaderSettingsProvider>
+                    </AuthProvider>
+                </QueryClientProvider>
             );
         },
     }),

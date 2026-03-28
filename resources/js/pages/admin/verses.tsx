@@ -64,13 +64,6 @@ interface PaginationData {
     data: Verse[];
 }
 
-interface Stats {
-    total_verses: number;
-    total_translations: number;
-    total_chapters: number;
-    total_juzs: number;
-}
-
 interface Filters {
     search: string;
     chapter_id: string;
@@ -83,14 +76,12 @@ interface Filters {
 interface AdminVersesProps {
     verses: PaginationData;
     chapters: Chapter[];
-    stats: Stats;
     filters: Filters;
 }
 
 export default function AdminVerses({
     verses: initialVerses,
     chapters,
-    stats,
     filters,
 }: AdminVersesProps) {
     const [selectedChapter, setSelectedChapter] = useState(filters.chapter_id);
@@ -277,55 +268,17 @@ export default function AdminVerses({
             <Head title="Verses - Admin - From Quran" />
             <AdminLayout title="Verses">
                 <div className="space-y-6">
-                    <div className="rounded-2xl border border-border/60 bg-[linear-gradient(180deg,hsl(var(--background))_0%,hsl(var(--muted)/0.16)_100%)] px-5 py-6 shadow-sm shadow-black/[0.03] md:px-7">
-                        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                            <div className="max-w-3xl space-y-2">
-                                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-                                    Verse management
-                                </h2>
-                                <p className="text-sm leading-6 text-muted-foreground md:text-base">
-                                    Browse verses with lighter filtering and
-                                    quicker context across chapters and juz.
-                                </p>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                                <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
-                                    <p className="text-lg font-semibold">
-                                        {stats.total_verses.toLocaleString()}
-                                    </p>
-                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-                                        Verses
-                                    </p>
-                                </div>
-                                <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
-                                    <p className="text-lg font-semibold">
-                                        {stats.total_translations.toLocaleString()}
-                                    </p>
-                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-                                        Translations
-                                    </p>
-                                </div>
-                                <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
-                                    <p className="text-lg font-semibold">
-                                        {stats.total_chapters}
-                                    </p>
-                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-                                        Chapters
-                                    </p>
-                                </div>
-                                <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
-                                    <p className="text-lg font-semibold">
-                                        {stats.total_juzs}
-                                    </p>
-                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-                                        Juz
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
+                    <div className="max-w-3xl space-y-2">
+                        <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                            Verse management
+                        </h2>
+                        <p className="text-sm leading-6 text-muted-foreground md:text-base">
+                            Browse verses with lighter filtering and quicker
+                            context across chapters and juz.
+                        </p>
                     </div>
 
-                    <div className="flex flex-wrap gap-3 rounded-xl border border-border/60 bg-background/96 px-4 py-4 shadow-sm shadow-black/[0.02]">
+                    <div className="flex flex-wrap gap-3">
                         <Select
                             value={selectedChapter}
                             onValueChange={handleChapterFilter}

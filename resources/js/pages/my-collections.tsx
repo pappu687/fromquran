@@ -16,7 +16,9 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useCollections } from '@/hooks';
 import AppLayout from '@/layouts/app-layout';
+import { api } from '@/lib/api-client';
 import { type BreadcrumbItem } from '@/types';
 import { type CollectionTag } from '@/types/collections';
 import { Head, router, usePage } from '@inertiajs/react';
@@ -33,8 +35,6 @@ import {
     Trash2,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useCollections } from '@/hooks';
-import { api } from '@/lib/api-client';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -51,7 +51,6 @@ export default function MyCollectionsPage() {
         error,
         successMessage,
         selectedTagSlugs,
-        loadCollections,
         deleteCollection,
         clearError,
         clearSuccessMessage,
@@ -60,8 +59,9 @@ export default function MyCollectionsPage() {
 
     const [availableTags, setAvailableTags] = useState<CollectionTag[]>([]);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    const [selectedCollection, setSelectedCollection] =
-        useState<typeof collections[number] | null>(null);
+    const [selectedCollection, setSelectedCollection] = useState<
+        (typeof collections)[number] | null
+    >(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
@@ -74,10 +74,6 @@ export default function MyCollectionsPage() {
     useEffect(() => {
         loadAvailableTags();
     }, []);
-
-    useEffect(() => {
-        loadCollections(selectedTagSlugs);
-    }, [selectedTagSlugs, loadCollections]);
 
     const loadAvailableTags = async () => {
         try {
@@ -96,7 +92,7 @@ export default function MyCollectionsPage() {
         );
     };
 
-    const handleDelete = (collection: typeof collections[number]) => {
+    const handleDelete = (collection: (typeof collections)[number]) => {
         setSelectedCollection(collection);
         setIsDeleteDialogOpen(true);
     };
@@ -121,7 +117,7 @@ export default function MyCollectionsPage() {
         router.visit(`/my-collections/${slug}`);
     };
 
-    const getStatusBadge = (status: typeof collections[number]['status']) => {
+    const getStatusBadge = (status: (typeof collections)[number]['status']) => {
         if (status === 'approved') {
             return (
                 <Badge className="rounded-full bg-emerald-600 px-2.5 py-1 text-white hover:bg-emerald-700">

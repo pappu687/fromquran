@@ -1,6 +1,6 @@
 /**
  * Centralized API Client
- * 
+ *
  * Provides a unified interface for all API requests with:
  * - Automatic CSRF token injection
  * - Standardized error handling
@@ -47,9 +47,11 @@ const isServer = typeof window === 'undefined';
  */
 function getCsrfToken(): string | null {
     if (isServer) return null;
-    return document
-        .querySelector('meta[name="csrf-token"]')
-        ?.getAttribute('content') ?? null;
+    return (
+        document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute('content') ?? null
+    );
 }
 
 /**
@@ -97,7 +99,10 @@ function delay(ms: number): Promise<void> {
 /**
  * Check if error should be retried
  */
-function shouldRetryError(error: ApiError, customCheck?: (error: ApiError) => boolean): boolean {
+function shouldRetryError(
+    error: ApiError,
+    customCheck?: (error: ApiError) => boolean,
+): boolean {
     // Custom check takes precedence
     if (customCheck) {
         return customCheck(error);
@@ -165,16 +170,23 @@ async function fetchWithRetry<T>(
 
             if (!response.ok) {
                 const error = await createApiError(response, url);
-                
+
                 // Don't retry client errors (4xx) except 429
-                if (error.status >= 400 && error.status < 500 && error.status !== 429) {
+                if (
+                    error.status >= 400 &&
+                    error.status < 500 &&
+                    error.status !== 429
+                ) {
                     throw error;
                 }
 
                 lastError = error;
 
                 // Retry if we have attempts left and error is retryable
-                if (attempt < retry && shouldRetryError(error, customShouldRetry)) {
+                if (
+                    attempt < retry &&
+                    shouldRetryError(error, customShouldRetry)
+                ) {
                     await delay(RETRY_DELAY_MS * (attempt + 1));
                     continue;
                 }
@@ -197,7 +209,8 @@ async function fetchWithRetry<T>(
 
             // Wrap unknown errors
             const wrappedError: ApiError = {
-                message: error instanceof Error ? error.message : 'Network error',
+                message:
+                    error instanceof Error ? error.message : 'Network error',
                 status: 0,
                 statusText: 'Network Error',
                 url,
@@ -219,11 +232,11 @@ async function fetchWithRetry<T>(
         throw lastError;
     }
 
-    throw new ApiError({
+    throw {
         message: 'Unknown error',
         status: 0,
         statusText: 'Unknown',
-    });
+    } satisfies ApiError;
 }
 
 /**
@@ -243,7 +256,11 @@ export const api = {
     /**
      * POST request
      */
-    async post<T>(url: string, data?: unknown, options?: ApiRequestOptions): Promise<T> {
+    async post<T>(
+        url: string,
+        data?: unknown,
+        options?: ApiRequestOptions,
+    ): Promise<T> {
         return fetchWithRetry<T>(url, {
             ...options,
             method: 'POST',
@@ -254,7 +271,11 @@ export const api = {
     /**
      * PUT request
      */
-    async put<T>(url: string, data?: unknown, options?: ApiRequestOptions): Promise<T> {
+    async put<T>(
+        url: string,
+        data?: unknown,
+        options?: ApiRequestOptions,
+    ): Promise<T> {
         return fetchWithRetry<T>(url, {
             ...options,
             method: 'PUT',
@@ -265,7 +286,11 @@ export const api = {
     /**
      * PATCH request
      */
-    async patch<T>(url: string, data?: unknown, options?: ApiRequestOptions): Promise<T> {
+    async patch<T>(
+        url: string,
+        data?: unknown,
+        options?: ApiRequestOptions,
+    ): Promise<T> {
         return fetchWithRetry<T>(url, {
             ...options,
             method: 'PATCH',
@@ -296,7 +321,10 @@ export const api = {
     /**
      * GET single item response
      */
-    async getSingle<T>(url: string, options?: ApiRequestOptions): Promise<SingleResponse<T>> {
+    async getSingle<T>(
+        url: string,
+        options?: ApiRequestOptions,
+    ): Promise<SingleResponse<T>> {
         return this.get<SingleResponse<T>>(url, options);
     },
 };
@@ -320,7 +348,9 @@ export function getErrorMessage(error: unknown): string {
     if (isApiError(error)) {
         return error.message;
     }
-    return error instanceof Error ? error.message : 'An unexpected error occurred';
+    return error instanceof Error
+        ? error.message
+        : 'An unexpected error occurred';
 }
 
 /**

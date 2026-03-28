@@ -3,6 +3,7 @@ import '../css/app.css';
 
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/contexts/auth-context';
+import { QueryProvider } from '@/providers/query-provider';
 import { type SharedData } from '@/types';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
@@ -27,14 +28,16 @@ createInertiaApp({
 
         const content = (
             <StrictMode>
-                <AuthProvider user={user}>
-                    <ReaderSettingsProvider>
-                        <ReadingModeProvider>
-                            <App {...props} />
-                            <Toaster />
-                        </ReadingModeProvider>
-                    </ReaderSettingsProvider>
-                </AuthProvider>
+                <QueryProvider>
+                    <AuthProvider user={user}>
+                        <ReaderSettingsProvider>
+                            <ReadingModeProvider>
+                                <App {...props} />
+                                <Toaster />
+                            </ReadingModeProvider>
+                        </ReaderSettingsProvider>
+                    </AuthProvider>
+                </QueryProvider>
             </StrictMode>
         );
 

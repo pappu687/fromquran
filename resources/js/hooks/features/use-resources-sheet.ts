@@ -37,8 +37,11 @@
  * ```
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { api } from '@/lib/api-client';
+import { queryKeys } from '@/lib/query-client';
 import { router } from '@inertiajs/react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useState } from 'react';
 
 interface ResourceType {
     id: number;
@@ -130,9 +133,7 @@ export function useResourcesSheet({
     initialActiveSection,
     onOpenChange,
 }: UseResourcesSheetOptions): UseResourcesSheetReturn {
-    const [resources, setResources] = useState<Resource[]>([]);
-    const [totalResources, setTotalResources] = useState<number>(0);
-    const [loading, setLoading] = useState(false);
+    const queryClient = useQueryClient();
     const [loadingFullResourceId, setLoadingFullResourceId] = useState<
         string | number | null
     >(null);
@@ -141,53 +142,38 @@ export function useResourcesSheet({
         url: string | null;
         comment: string;
     } | null>(null);
-    const [similarVerses, setSimilarVerses] = useState<SimilarVerse[]>([]);
-    const [topics, setTopics] = useState<Topic[]>([]);
-    const [hasMore, setHasMore] = useState(false);
     const [activeSection, setActiveSection] = useState<string | undefined>(
         undefined,
     );
-    const [resourceCounts, setResourceCounts] = useState<Record<string, number>>(
-        {},
-    );
-
-    const fetchAllRelated = useCallback(async () => {
-        setLoading(true);
-        try {
-            const response = await fetch(
+    const verseResourcesQuery = useQuery({
+        queryKey: queryKeys.verseResourcesSummary(verseId),
+        queryFn: () =>
+            api.get<{
+                data?: Resource[];
+                meta?: {
+                    total?: number;
+                    hasMore?: boolean;
+                    counts?: {
+                        resource_types?: Record<string, number>;
+                    };
+                };
+                similar_verses?: { data?: SimilarVerse[] };
+                topics?: { data?: Topic[] };
+            }>(
                 `/api/verses/${verseId}/resources?limit=5&include_chapter_resources=0`,
-            );
-            if (response.ok) {
-                const data = await response.json();
+            ),
+        enabled: open && verseId > 0,
+        staleTime: 2 * 60 * 1000,
+    });
 
-                // Set resources (resources are at data)
-                setResources(data.data || []);
-                setTotalResources(data.meta?.total || 0);
-                setHasMore(Boolean(data.meta?.hasMore));
-
-                // Store actual server-side counts of resource types
-                if (data.meta?.counts?.resource_types) {
-                    setResourceCounts(data.meta.counts.resource_types);
-                }
-
-                // Set similar verses (now included in the response)
-                setSimilarVerses(data.similar_verses?.data || []);
-
-                // Set topics (now included in the response)
-                setTopics(data.topics?.data || []);
-            }
-        } catch (error) {
-            console.error('Failed to fetch related data:', error);
-        } finally {
-            setLoading(false);
-        }
-    }, [verseId]);
-
-    useEffect(() => {
-        if (open) {
-            fetchAllRelated();
-        }
-    }, [open, verseId, fetchAllRelated]);
+    const resources = verseResourcesQuery.data?.data || [];
+    const totalResources = verseResourcesQuery.data?.meta?.total || 0;
+    const hasMore = Boolean(verseResourcesQuery.data?.meta?.hasMore);
+    const resourceCounts =
+        verseResourcesQuery.data?.meta?.counts?.resource_types || {};
+    const similarVerses = verseResourcesQuery.data?.similar_verses?.data || [];
+    const topics = verseResourcesQuery.data?.topics?.data || [];
+    const loading = verseResourcesQuery.isLoading;
 
     // Handle initial active section sync when sheet opens or resources change
     useEffect(() => {
@@ -254,49 +240,51 @@ export function useResourcesSheet({
         }
     }, []);
 
-    const isVerifiedSource = useCallback((url: string) => {
-        const domain = getDomainName(url).toLowerCase();
-        const verifiedDomains = [
-            'islamqa.info',
-            'sunnah.com',
-            'quran.com',
-            'tafsir.net',
-            'kingfahdcomplex.gov.sa',
-        ];
-        return verifiedDomains.includes(domain);
-    }, [getDomainName]);
-
-    const handleSeeMore = useCallback(
-        async (resourceId: string | number) => {
-            if (resourceId === -1 || resourceId === '-1') {
-                setSelectedResource(null);
-                setLoadingFullResourceId(null);
-                return;
-            }
-
-            setLoadingFullResourceId(resourceId);
-            try {
-                const response = await fetch(`/api/resources/${resourceId}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    setSelectedResource({
-                        title: data.data.title || 'Full Description',
-                        url: data.data.url || null,
-                        comment: data.data.comment,
-                    });
-                }
-            } catch (error) {
-                console.error('Failed to fetch full resource:', error);
-            } finally {
-                setLoadingFullResourceId(null);
-            }
+    const isVerifiedSource = useCallback(
+        (url: string) => {
+            const domain = getDomainName(url).toLowerCase();
+            const verifiedDomains = [
+                'islamqa.info',
+                'sunnah.com',
+                'quran.com',
+                'tafsir.net',
+                'kingfahdcomplex.gov.sa',
+            ];
+            return verifiedDomains.includes(domain);
         },
-        [],
+        [getDomainName],
     );
 
+    const handleSeeMore = useCallback(async (resourceId: string | number) => {
+        if (resourceId === -1 || resourceId === '-1') {
+            setSelectedResource(null);
+            setLoadingFullResourceId(null);
+            return;
+        }
+
+        setLoadingFullResourceId(resourceId);
+        try {
+            const response = await fetch(`/api/resources/${resourceId}`);
+            if (response.ok) {
+                const data = await response.json();
+                setSelectedResource({
+                    title: data.data.title || 'Full Description',
+                    url: data.data.url || null,
+                    comment: data.data.comment,
+                });
+            }
+        } catch (error) {
+            console.error('Failed to fetch full resource:', error);
+        } finally {
+            setLoadingFullResourceId(null);
+        }
+    }, []);
+
     const refresh = useCallback(async () => {
-        await fetchAllRelated();
-    }, [fetchAllRelated]);
+        await queryClient.invalidateQueries({
+            queryKey: queryKeys.verseResourcesSummary(verseId),
+        });
+    }, [queryClient, verseId]);
 
     return {
         // Data

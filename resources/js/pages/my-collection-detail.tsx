@@ -14,7 +14,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useCollectionDetailQuery, useCollectionTagsQuery } from '@/hooks';
+import {
+    type CollectionDetailData,
+    type CollectionVerse,
+} from '@/hooks/api/use-collection-data';
 import AppLayout from '@/layouts/app-layout';
+import { isApiError } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 import { type CollectionTag } from '@/types/collections';
 import {
@@ -59,47 +65,6 @@ const colorOptions = [
     { value: '#84cc16', label: 'Lime', bg: 'bg-lime-500' },
 ];
 
-interface Verse {
-    id: number;
-    verse_key: string;
-    verse_number: number;
-    text_uthmani: string;
-    text_imlaei_simple?: string;
-    juz_number?: number;
-    page_number?: number;
-    has_resources?: boolean;
-    resource_count?: number;
-    translations?: Array<{
-        resource_id: number;
-        resource_name?: string;
-        language?: string;
-        text: string;
-    }>;
-    chapter: {
-        id: number;
-        chapter_number: number;
-        name_simple: string;
-        name_roman?: string;
-        name_arabic: string;
-    };
-    pivot: {
-        display_order: number;
-    };
-}
-
-interface Collection {
-    id: number;
-    name: string;
-    description?: string;
-    color: string;
-    is_public: boolean;
-    status: 'pending' | 'approved' | 'rejected';
-    slug: string;
-    created_at: string;
-    verses: Verse[];
-    tags: CollectionTag[];
-}
-
 interface CollectionFormData {
     name: string;
     description: string;
@@ -109,7 +74,7 @@ interface CollectionFormData {
 }
 
 interface SortableVerseItemProps {
-    verse: Verse;
+    verse: CollectionVerse;
     onDelete: (verseId: number) => void;
 }
 
@@ -147,7 +112,7 @@ function SortableVerseItem({ verse, onDelete }: SortableVerseItemProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => onDelete(verse.id)}
-                    className="rounded-full border border-slate-200 bg-white/95 text-slate-400 shadow-sm opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
+                    className="rounded-full border border-slate-200 bg-white/95 text-slate-400 opacity-0 shadow-sm transition-opacity group-hover:opacity-100 hover:text-destructive"
                 >
                     <Trash2 className="h-4 w-4" />
                 </Button>
@@ -177,9 +142,10 @@ function SortableVerseItem({ verse, onDelete }: SortableVerseItemProps) {
 }
 
 export default function CollectionDetailPage({ slug }: { slug: string }) {
-    const [collection, setCollection] = useState<Collection | null>(null);
-    const [verses, setVerses] = useState<Verse[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [collection, setCollection] = useState<CollectionDetailData | null>(
+        null,
+    );
+    const [verses, setVerses] = useState<CollectionVerse[]>([]);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [editForm, setEditForm] = useState<CollectionFormData>({
         name: '',
@@ -188,10 +154,16 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
         is_public: false,
         tags: [],
     });
-    const [availableTags, setAvailableTags] = useState<CollectionTag[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const {
+        collection: fetchedCollection,
+        isLoading: isCollectionLoading,
+        error: collectionError,
+        refetch: refetchCollection,
+    } = useCollectionDetailQuery(slug);
+    const { tags: availableTags = [] } = useCollectionTagsQuery();
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -200,7 +172,7 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
         }),
     );
 
-    const getStatusBadgeClasses = (status: Collection['status']) => {
+    const getStatusBadgeClasses = (status: CollectionDetailData['status']) => {
         if (status === 'approved') {
             return 'border-green-500/20 bg-green-500/10 text-green-700 dark:text-green-400';
         }
@@ -213,73 +185,34 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
     };
 
     useEffect(() => {
-        loadCollection();
-        loadAvailableTags();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [slug]);
-
-    const loadCollection = async () => {
-        setIsLoading(true);
-        try {
-            const csrfToken = document
-                .querySelector('meta[name="csrf-token"]')
-                ?.getAttribute('content');
-
-            const response = await fetch(`/api/collections/${slug}`, {
-                headers: {
-                    Accept: 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || '',
-                },
-                credentials: 'include',
-            });
-
-            if (response.status === 401) {
-                router.visit('/login');
-                return;
-            }
-
-            if (response.status === 404) {
-                router.visit('/my-collections');
-                return;
-            }
-
-            if (!response.ok) {
-                throw new Error('Failed to load collection');
-            }
-
-            const data = await response.json();
-            setCollection(data);
-            const loadedVerses: Verse[] = data.verses || [];
-            setVerses(loadedVerses);
-        } catch (error) {
-            console.error('Failed to load collection:', error);
-            setErrors({
-                general: 'Failed to load collection. Please try again.',
-            });
-        } finally {
-            setIsLoading(false);
+        if (!fetchedCollection) {
+            return;
         }
-    };
 
-    const loadAvailableTags = async () => {
-        try {
-            const response = await fetch('/api/tags', {
-                headers: {
-                    Accept: 'application/json',
-                },
-                credentials: 'include',
-            });
+        setCollection(fetchedCollection);
+        setVerses(fetchedCollection.verses || []);
+        setErrors((current) => ({ ...current, general: '' }));
+    }, [fetchedCollection]);
 
-            if (!response.ok) {
-                throw new Error('Failed to load tags');
-            }
-
-            const data = (await response.json()) as CollectionTag[];
-            setAvailableTags(data);
-        } catch (error) {
-            console.error('Failed to load tags:', error);
+    useEffect(() => {
+        if (!collectionError || !isApiError(collectionError)) {
+            return;
         }
-    };
+
+        if (collectionError.status === 401) {
+            router.visit('/login');
+            return;
+        }
+
+        if (collectionError.status === 404) {
+            router.visit('/my-collections');
+            return;
+        }
+
+        setErrors({
+            general: 'Failed to load collection. Please try again.',
+        });
+    }, [collectionError]);
 
     const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event;
@@ -294,10 +227,12 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
         const newVerses = arrayMove(verses, oldIndex, newIndex);
         setVerses(newVerses);
 
-        const verseOrders = newVerses.map((verse: Verse, index: number) => ({
-            verse_id: verse.id,
-            display_order: index + 1,
-        }));
+        const verseOrders = newVerses.map(
+            (verse: CollectionVerse, index: number) => ({
+                verse_id: verse.id,
+                display_order: index + 1,
+            }),
+        );
 
         try {
             const csrfToken = document
@@ -323,7 +258,7 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
             setTimeout(() => setSuccessMessage(null), 2000);
         } catch (error) {
             console.error('Failed to reorder verses:', error);
-            loadCollection();
+            await refetchCollection();
         }
     };
 
@@ -419,7 +354,11 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
                 return;
             }
 
-            await loadCollection();
+            const refreshedCollection = await refetchCollection();
+            if (refreshedCollection.data) {
+                setCollection(refreshedCollection.data);
+                setVerses(refreshedCollection.data.verses || []);
+            }
             setIsEditDialogOpen(false);
             setSuccessMessage('Collection updated successfully');
             setTimeout(() => setSuccessMessage(null), 3000);
@@ -430,7 +369,7 @@ export default function CollectionDetailPage({ slug }: { slug: string }) {
         }
     };
 
-    if (isLoading) {
+    if (isCollectionLoading && !collection) {
         return (
             <AppLayout>
                 <Head title="Collection - From Quran" />

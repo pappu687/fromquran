@@ -14,6 +14,7 @@ import { type CollectionTag } from '@/types/collections';
 import { Head, router, usePage } from '@inertiajs/react';
 import {
     ChevronRight,
+    Eye,
     Folder,
     FolderPlus,
     Loader2,
@@ -29,9 +30,22 @@ interface Collection {
     is_public: boolean;
     status: 'pending' | 'approved' | 'rejected';
     verses_count: number;
+    views_count: number;
     slug: string;
     created_at: string;
     tags: CollectionTag[];
+}
+
+interface PublicCollectionsPagePayload {
+    collections: Collection[];
+    tags: CollectionTag[];
+}
+
+function parseTagSlugs(url: string): string[] {
+    const queryString = url.split('?')[1] ?? '';
+    const params = new URLSearchParams(queryString);
+
+    return params.getAll('tags[]');
 }
 
 function formatDate(date: string) {
@@ -59,21 +73,20 @@ export default function CollectionsPage() {
     const page = usePage();
     const [collections, setCollections] = useState<Collection[]>([]);
     const [availableTags, setAvailableTags] = useState<CollectionTag[]>([]);
-    const [selectedTagSlugs, setSelectedTagSlugs] = useState<string[]>([]);
+    const [selectedTagSlugs, setSelectedTagSlugs] = useState<string[]>(
+        parseTagSlugs(page.url),
+    );
     const [isLoading, setIsLoading] = useState(true);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
-        const queryString = page.url.split('?')[1] ?? '';
-        const params = new URLSearchParams(queryString);
-        const urlTags = params.getAll('tags[]');
-        setSelectedTagSlugs(urlTags);
-    }, [page.url]);
+        const urlTags = parseTagSlugs(page.url);
 
-    useEffect(() => {
-        loadAvailableTags();
-    }, []);
+        setSelectedTagSlugs((current) =>
+            current.join('|') === urlTags.join('|') ? current : urlTags,
+        );
+    }, [page.url]);
 
     useEffect(() => {
         loadCollections(selectedTagSlugs);
@@ -85,10 +98,11 @@ export default function CollectionsPage() {
             const params = new URLSearchParams();
             tagSlugs.forEach((slug) => params.append('tags[]', slug));
 
-            const data = await api.get<Collection[]>(
-                `/api/collections/public${params.toString() ? `?${params.toString()}` : ''}`,
+            const data = await api.get<PublicCollectionsPagePayload>(
+                `/api/collections/public-page${params.toString() ? `?${params.toString()}` : ''}`,
             );
-            setCollections(data);
+            setCollections(data.collections);
+            setAvailableTags(data.tags);
             setErrors({});
         } catch (error) {
             console.error('Failed to load collections:', error);
@@ -97,15 +111,6 @@ export default function CollectionsPage() {
             });
         } finally {
             setIsLoading(false);
-        }
-    };
-
-    const loadAvailableTags = async () => {
-        try {
-            const data = await api.get<CollectionTag[]>('/api/tags');
-            setAvailableTags(data);
-        } catch (error) {
-            console.error('Failed to load tags:', error);
         }
     };
 
@@ -349,10 +354,19 @@ export default function CollectionsPage() {
                                     </CardContent>
 
                                     <CardFooter className="mt-6 flex items-center justify-between border-t border-slate-200 pt-4">
-                                        <p className="text-xs text-slate-400">
-                                            Created{' '}
-                                            {formatDate(collection.created_at)}
-                                        </p>
+                                        <div className="space-y-1 text-xs text-slate-400">
+                                            <p>
+                                                Created{' '}
+                                                {formatDate(
+                                                    collection.created_at,
+                                                )}
+                                            </p>
+                                            <p className="inline-flex items-center gap-1.5">
+                                                <Eye className="h-3.5 w-3.5" />
+                                                {collection.views_count.toLocaleString()}{' '}
+                                                views
+                                            </p>
+                                        </div>
                                         <Button
                                             variant="ghost"
                                             size="sm"

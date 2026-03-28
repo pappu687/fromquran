@@ -2,12 +2,19 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\PersistCollectionView;
 use App\Models\Collection;
+use App\Models\CollectionViewEvent;
+use App\Services\ViewCounter\VisitorFingerprintResolver;
 use App\Models\Tag;
 use App\Models\User;
 use App\Models\Verse;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class CollectionControllerTest extends TestCase
@@ -19,6 +26,13 @@ class CollectionControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        config([
+            'view_counter.cache_store' => 'file',
+        ]);
+
+        Cache::store('file')->flush();
+
         $this->user = User::factory()->create();
     }
 
@@ -220,5 +234,248 @@ class CollectionControllerTest extends TestCase
             ->assertJsonCount(1)
             ->assertJsonFragment(['id' => $publicMatchingCollection->id])
             ->assertJsonMissing(['id' => $publicOtherCollection->id]);
+    }
+
+    /** @test */
+    public function first_hit_counts()
+    {
+        Queue::fake();
+        Cache::flush();
+
+        $collection = Collection::factory()->create([
+            'is_public' => true,
+            'status' => 'approved',
+            'views_count' => 10,
+        ]);
+
+        $this->withHeader('User-Agent', 'Mozilla/5.0 Test Browser')
+            ->withHeader('Accept-Language', 'en-US')
+            ->withCookie(config('view_counter.visitor_cookie_name'), 'visitor-a')
+            ->postJson("/api/public/collections/{$collection->slug}/view")
+            ->assertOk()
+            ->assertJson([
+                'counted' => true,
+                'views_count' => 11,
+            ]);
+
+        Queue::assertPushed(PersistCollectionView::class, 1);
+        $this->assertDatabaseCount('collection_view_events', 1);
+    }
+
+    /** @test */
+    public function refresh_or_repeat_hit_does_not_count_within_ttl()
+    {
+        Queue::fake();
+        Cache::flush();
+
+        $collection = Collection::factory()->create([
+            'is_public' => true,
+            'status' => 'approved',
+        ]);
+
+        $headers = [
+            'User-Agent' => 'Mozilla/5.0 Test Browser',
+            'Accept-Language' => 'en-US',
+        ];
+
+        $this->withHeaders($headers)
+            ->withCookie(config('view_counter.visitor_cookie_name'), 'visitor-b')
+            ->postJson("/api/public/collections/{$collection->slug}/view")
+            ->assertOk()
+            ->assertJson([
+                'counted' => true,
+                'views_count' => 1,
+            ]);
+
+        $this->withHeaders($headers)
+            ->withCookie(config('view_counter.visitor_cookie_name'), 'visitor-b')
+            ->postJson("/api/public/collections/{$collection->slug}/view")
+            ->assertOk()
+            ->assertJson([
+                'counted' => false,
+                'views_count' => 1,
+            ]);
+
+        Queue::assertPushed(PersistCollectionView::class, 1);
+    }
+
+    /** @test */
+    public function different_collections_count_separately()
+    {
+        Queue::fake();
+        Cache::flush();
+
+        $firstCollection = Collection::factory()->create([
+            'is_public' => true,
+            'status' => 'approved',
+        ]);
+        $secondCollection = Collection::factory()->create([
+            'is_public' => true,
+            'status' => 'approved',
+        ]);
+
+        $headers = [
+            'User-Agent' => 'Mozilla/5.0 Test Browser',
+            'Accept-Language' => 'en-US',
+        ];
+
+        $this->withHeaders($headers)
+            ->withCookie(config('view_counter.visitor_cookie_name'), 'visitor-c')
+            ->postJson("/api/public/collections/{$firstCollection->slug}/view")
+            ->assertOk()
+            ->assertJson([
+                'counted' => true,
+                'views_count' => 1,
+            ]);
+
+        $this->withHeaders($headers)
+            ->withCookie(config('view_counter.visitor_cookie_name'), 'visitor-c')
+            ->postJson("/api/public/collections/{$secondCollection->slug}/view")
+            ->assertOk()
+            ->assertJson([
+                'counted' => true,
+                'views_count' => 1,
+            ]);
+
+        Queue::assertPushed(PersistCollectionView::class, 2);
+    }
+
+    /** @test */
+    public function bot_user_agent_is_ignored()
+    {
+        Queue::fake();
+        Cache::flush();
+
+        $collection = Collection::factory()->create([
+            'is_public' => true,
+            'status' => 'approved',
+            'views_count' => 4,
+        ]);
+
+        $this->withHeader(
+            'User-Agent',
+            'Googlebot/2.1 (+http://www.google.com/bot.html)',
+        )
+            ->postJson("/api/public/collections/{$collection->slug}/view")
+            ->assertOk()
+            ->assertJson([
+                'counted' => false,
+                'views_count' => 4,
+            ]);
+
+        Queue::assertNothingPushed();
+        $this->assertDatabaseCount('collection_view_events', 0);
+    }
+
+    /** @test */
+    public function unpublished_or_private_collection_does_not_count()
+    {
+        Queue::fake();
+
+        $collection = Collection::factory()->create([
+            'is_public' => false,
+            'status' => 'approved',
+        ]);
+
+        $this->postJson("/api/public/collections/{$collection->slug}/view")
+            ->assertNotFound();
+
+        Queue::assertNothingPushed();
+    }
+
+    /** @test */
+    public function concurrent_duplicate_requests_count_once()
+    {
+        Queue::fake();
+        Cache::flush();
+
+        $collection = Collection::factory()->create([
+            'is_public' => true,
+            'status' => 'approved',
+        ]);
+
+        $fingerprintRequest = Request::create(
+            "/api/public/collections/{$collection->slug}/view",
+            'POST',
+            [],
+            [config('view_counter.visitor_cookie_name') => 'visitor-concurrent'],
+            [],
+            [
+                'REMOTE_ADDR' => '127.0.0.1',
+                'HTTP_USER_AGENT' => 'Mozilla/5.0 test browser',
+            ],
+        );
+        $fingerprintRequest->headers->set('Accept-Language', 'en-US');
+
+        $resolver = app(VisitorFingerprintResolver::class);
+        $fingerprintHashes = [
+            $resolver->resolve($fingerprintRequest)->fingerprintHash,
+        ];
+
+        $fallbackFingerprintRequest = Request::create(
+            "/api/public/collections/{$collection->slug}/view",
+            'POST',
+            [],
+            [],
+            [],
+            [
+                'REMOTE_ADDR' => '127.0.0.1',
+                'HTTP_USER_AGENT' => 'Mozilla/5.0 test browser',
+            ],
+        );
+        $fallbackFingerprintRequest->headers->set('Accept-Language', 'en-US');
+        $fingerprintHashes[] = $resolver
+            ->resolve($fallbackFingerprintRequest)
+            ->fingerprintHash;
+
+        foreach (array_unique($fingerprintHashes) as $fingerprintHash) {
+            Cache::store(config('view_counter.cache_store') ?: config('cache.default'))
+                ->add(
+                    "collection_view:{$collection->id}:{$fingerprintHash}",
+                    now()->timestamp,
+                    now()->addHours(config('view_counter.dedupe_ttl_hours', 12)),
+                );
+        }
+
+        $this->withHeader('User-Agent', 'Mozilla/5.0 test browser')
+            ->withHeader('Accept-Language', 'en-US')
+            ->withCookie(config('view_counter.visitor_cookie_name'), 'visitor-concurrent')
+            ->postJson("/api/public/collections/{$collection->slug}/view")
+            ->assertOk()
+            ->assertJson([
+                'counted' => false,
+                'views_count' => 0,
+            ]);
+
+        Queue::assertNothingPushed();
+    }
+
+    /** @test */
+    public function persist_collection_view_job_is_idempotent()
+    {
+        $collection = Collection::factory()->create([
+            'is_public' => true,
+            'status' => 'approved',
+        ]);
+
+        $event = CollectionViewEvent::create([
+            'collection_id' => $collection->id,
+            'event_key' => Str::uuid()->toString(),
+            'visitor_hash' => hash_hmac('sha256', 'visitor', config('app.key')),
+            'ip_hash' => hash_hmac('sha256', '127.0.0.0', config('app.key')),
+            'user_agent_hash' => hash_hmac('sha256', 'mozilla', config('app.key')),
+            'viewed_at' => now(),
+            'is_bot' => false,
+        ]);
+
+        $job = new PersistCollectionView($event->id);
+        $job->handle(app('db'));
+        $job->handle(app('db'));
+
+        $this->assertDatabaseHas('collections', [
+            'id' => $collection->id,
+            'views_count' => 1,
+        ]);
+        $this->assertNotNull($event->fresh()->counted_at);
     }
 }

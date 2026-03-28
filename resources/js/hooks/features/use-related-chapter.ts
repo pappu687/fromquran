@@ -1,4 +1,10 @@
+import {
+    useChapterInfoQuery,
+    useChapterResourcesQuery,
+    useChapters,
+} from '@/hooks';
 import { api, getErrorMessage } from '@/lib/api-client';
+import { type ChapterSummary } from '@/types/quran';
 import { BookOpen, FileText, Globe, Scale, Video } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -22,28 +28,15 @@ interface Resource {
     created_at?: string;
 }
 
-interface ChapterInfo {
-    surah_number: number;
-    surah_name: string;
-    text: string;
-    short_text: string;
-}
-
-interface Chapter {
-    id: number;
-    number: number;
-    name: string;
-    englishName: string;
-    englishNameTranslation: string;
-    revelationType: 'Meccan' | 'Medinan';
-    verses: number;
-    romanName?: string;
-}
-
 interface UseRelatedChapterReturn {
     resources: Resource[];
-    chapterInfo: ChapterInfo | null;
-    chapters: Chapter[];
+    chapterInfo: {
+        surah_number: number;
+        surah_name: string;
+        text: string;
+        short_text: string;
+    } | null;
+    chapters: ChapterSummary[];
     groupedResources: Record<string, Resource[]>;
     loadingResources: boolean;
     loadingChapterInfo: boolean;
@@ -69,11 +62,7 @@ interface UseRelatedChapterReturn {
 export function useRelatedChapter(
     chapterNumber: number,
 ): UseRelatedChapterReturn {
-    const [resources, setResources] = useState<Resource[]>([]);
-    const [chapterInfo, setChapterInfo] = useState<ChapterInfo | null>(null);
-    const [chapters, setChapters] = useState<Chapter[]>([]);
-    const [loadingResources, setLoadingResources] = useState(false);
-    const [loadingChapterInfo, setLoadingChapterInfo] = useState(false);
+    const { chapters } = useChapters();
     const [loadingFullResourceId, setLoadingFullResourceId] = useState<
         string | number | null
     >(null);
@@ -84,55 +73,25 @@ export function useRelatedChapter(
         comment: string;
     } | null>(null);
 
-    const fetchResources = useCallback(async () => {
-        setLoadingResources(true);
-        try {
-            const data = await api.get<{ data: Resource[] }>(
-                `/api/quran/chapters/${chapterNumber}/resources`,
-            );
-            setResources(data.data || []);
-        } catch (err) {
-            setError(getErrorMessage(err));
-        } finally {
-            setLoadingResources(false);
-        }
-    }, [chapterNumber]);
-
-    const fetchChapterInfo = useCallback(async () => {
-        setLoadingChapterInfo(true);
-        try {
-            const data = await api.get<ChapterInfo>(
-                `/api/quran/chapters/${chapterNumber}/info`,
-            );
-            setChapterInfo(data);
-        } catch (err) {
-            console.error('Failed to fetch chapter info:', err);
-        } finally {
-            setLoadingChapterInfo(false);
-        }
-    }, [chapterNumber]);
-
-    const fetchChapters = useCallback(async () => {
-        try {
-            const data = await api.get<Chapter[]>('/api/quran/chapters');
-            setChapters(data);
-        } catch (err) {
-            console.error('Failed to fetch chapters:', err);
-        }
-    }, []);
+    const {
+        resources,
+        isLoading: loadingResources,
+        error: resourcesError,
+        refetch: refetchResources,
+    } = useChapterResourcesQuery(chapterNumber, chapterNumber > 0);
+    const {
+        chapterInfo,
+        isLoading: loadingChapterInfo,
+        refetch: refetchChapterInfo,
+    } = useChapterInfoQuery(chapterNumber, chapterNumber > 0);
 
     useEffect(() => {
-        fetchChapters();
-    }, [fetchChapters]);
-
-    useEffect(() => {
-        setError(null);
-        void Promise.all([fetchResources(), fetchChapterInfo()]);
-    }, [fetchChapterInfo, fetchResources]);
+        setError(resourcesError ? getErrorMessage(resourcesError) : null);
+    }, [resourcesError]);
 
     const refresh = useCallback(async () => {
-        await Promise.all([fetchResources(), fetchChapterInfo()]);
-    }, [fetchChapterInfo, fetchResources]);
+        await Promise.all([refetchResources(), refetchChapterInfo()]);
+    }, [refetchChapterInfo, refetchResources]);
 
     const handleSeeMore = useCallback(async (resourceId: string | number) => {
         if (resourceId === -1 || resourceId === '-1') {

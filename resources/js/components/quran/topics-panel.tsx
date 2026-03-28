@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge';
 import {
     SidebarContent,
     SidebarGroup,
@@ -6,18 +7,11 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { ChevronRight, ChevronDown, Tags } from 'lucide-react';
-import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
-import { useState, useEffect } from 'react';
-import { Badge } from '@/components/ui/badge';
+import { useTopicsTree } from '@/hooks';
 import { cn } from '@/lib/utils';
-
-interface Topic {
-    topic_id: number;
-    name: string;
-    arabic_name?: string;
-    children?: RecursiveTopic[];
-}
+import { ChevronDown, ChevronRight, Tags } from 'lucide-react';
+import { OverlayScrollbarsComponent } from 'overlayscrollbars-react';
+import { useState } from 'react';
 
 interface RecursiveTopic {
     topic_id: number;
@@ -49,28 +43,11 @@ const getRandomColor = (id: number): string => {
 };
 
 export function TopicsPanel({ onTopicSelect, className }: TopicsPanelProps) {
-    const [topics, setTopics] = useState<Topic[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [expandedTopics, setExpandedTopics] = useState<Set<number>>(new Set());
+    const [expandedTopics, setExpandedTopics] = useState<Set<number>>(
+        new Set(),
+    );
     const [searchTerm, setSearchTerm] = useState('');
-
-    useEffect(() => {
-        const fetchTopics = async () => {
-            try {
-                const response = await fetch('/api/topics');
-                if (response.ok) {
-                    const data = await response.json();
-                    setTopics(data);
-                }
-            } catch (error) {
-                console.error('Failed to fetch topics:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchTopics();
-    }, []);
+    const { topicsTree: topics, isLoading: loading } = useTopicsTree();
 
     const toggleExpand = (topicId: number) => {
         setExpandedTopics((prev) => {
@@ -90,14 +67,16 @@ export function TopicsPanel({ onTopicSelect, className }: TopicsPanelProps) {
         for (const topic of topicList) {
             const matchesSearch =
                 topic.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (topic.arabic_name &&
-                    topic.arabic_name.includes(searchTerm));
+                (topic.arabic_name && topic.arabic_name.includes(searchTerm));
 
             const filteredChildren = topic.children
                 ? filterTopics(topic.children)
                 : undefined;
 
-            if (matchesSearch || (filteredChildren && filteredChildren.length > 0)) {
+            if (
+                matchesSearch ||
+                (filteredChildren && filteredChildren.length > 0)
+            ) {
                 result.push({
                     ...topic,
                     children: filteredChildren,
@@ -110,7 +89,10 @@ export function TopicsPanel({ onTopicSelect, className }: TopicsPanelProps) {
 
     const filteredTopics = filterTopics(topics);
 
-    const renderTopic = (topic: Topic, level: number = 0): React.ReactNode => {
+    const renderTopic = (
+        topic: RecursiveTopic,
+        level: number = 0,
+    ): React.ReactNode => {
         const children = topic.children ?? [];
         const hasChildren = children.length > 0;
         const isExpanded = expandedTopics.has(topic.topic_id);
@@ -146,16 +128,16 @@ export function TopicsPanel({ onTopicSelect, className }: TopicsPanelProps) {
                         >
                             <Badge
                                 className={cn(
-                                    'font-normal cursor-pointer transition-colors',
+                                    'cursor-pointer font-normal transition-colors',
                                     colorClass,
                                 )}
                                 variant="secondary"
                             >
-                                <span className="truncate max-w-[120px]">
+                                <span className="max-w-[120px] truncate">
                                     {topic.name}
                                 </span>
                                 {topic.arabic_name && (
-                                    <span className="ml-1 font-arabic text-xs">
+                                    <span className="font-arabic ml-1 text-xs">
                                         {topic.arabic_name}
                                     </span>
                                 )}
@@ -165,9 +147,7 @@ export function TopicsPanel({ onTopicSelect, className }: TopicsPanelProps) {
                 </SidebarMenuItem>
                 {hasChildren && isExpanded && (
                     <div className="mt-1">
-                        {children.map((child) =>
-                            renderTopic(child, level + 1),
-                        )}
+                        {children.map((child) => renderTopic(child, level + 1))}
                     </div>
                 )}
             </div>
@@ -182,7 +162,7 @@ export function TopicsPanel({ onTopicSelect, className }: TopicsPanelProps) {
                     placeholder="Search topics..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
                 />
             </div>
 
@@ -216,7 +196,11 @@ export function TopicsPanel({ onTopicSelect, className }: TopicsPanelProps) {
                                     </span>
                                 </div>
                             ) : (
-                                <SidebarMenu>{filteredTopics.map((topic) => renderTopic(topic))}</SidebarMenu>
+                                <SidebarMenu>
+                                    {filteredTopics.map((topic) =>
+                                        renderTopic(topic),
+                                    )}
+                                </SidebarMenu>
                             )}
                         </SidebarGroupContent>
                     </SidebarGroup>

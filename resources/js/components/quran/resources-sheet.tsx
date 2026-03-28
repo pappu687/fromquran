@@ -17,6 +17,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useResourcesSheet } from '@/hooks/features';
 import { router } from '@inertiajs/react';
 import {
+    AlertTriangle,
     BookOpen,
     FileText,
     Globe,
@@ -158,11 +159,20 @@ export function ResourcesSheet({
                             <Skeleton className="h-12 w-full" />
                         </div>
                     ) : resources.length === 0 ? (
-                        <div className="flex h-40 flex-col items-center justify-center gap-3 text-center">
-                            <p className="text-muted-foreground">
-                                No resources available yet
-                            </p>
-                            <div className="flex w-full justify-between gap-3 px-2">
+                        <div className="flex flex-col items-center justify-center gap-3 text-center">
+                            <div className="flex w-full items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-amber-800 dark:border-amber-700/60 dark:bg-amber-950/30 dark:text-amber-300">
+                                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                                <div className="text-left text-sm">
+                                    <p className="font-semibold">
+                                        No resources available yet
+                                    </p>
+                                    <p className="mt-0.5 text-amber-700 dark:text-amber-400">
+                                        Be the first to contribute a resource
+                                        for this verse.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="mt-3 flex w-full justify-between gap-3">
                                 <Button
                                     variant="outline"
                                     size="sm"

@@ -2,9 +2,10 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\QuranController;
 use App\Http\Controllers\BookmarkController;
 use App\Http\Controllers\CollectionController;
+use App\Http\Controllers\PublicCollectionViewController;
+use App\Http\Controllers\QuranController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\Api\VerseAnnotationController;
 use App\Http\Controllers\Api\VerseResourceController;
@@ -77,9 +78,15 @@ Route::get('/topics/{topicId}', [\App\Http\Controllers\TopicController::class, '
 Route::get('/verses/{verseId}/topics', [\App\Http\Controllers\TopicController::class, 'forVerse']);
 Route::get('/tags', [TagController::class, 'index']);
 
+Route::post(
+    '/public/collections/{collection:slug}/view',
+    PublicCollectionViewController::class,
+)->middleware('throttle:public-collection-views');
+
 // Collection Routes (require authentication)
 // Public Collection Routes
 Route::middleware(['web'])->prefix('collections')->group(function () {
+    Route::get('/public-page', [CollectionController::class, 'publicPageData']);
     Route::get('/public', [CollectionController::class, 'publicIndex']);
     Route::get('/{slug}', [CollectionController::class, 'show']);
 });

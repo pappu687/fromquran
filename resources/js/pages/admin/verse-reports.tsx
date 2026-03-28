@@ -52,20 +52,12 @@ interface PaginationLink {
     active: boolean;
 }
 
-interface Stats {
-    total: number;
-    pending: number;
-    resolved: number;
-    dismissed: number;
-}
-
 interface Props {
     reports: {
         data: Report[];
         links: PaginationLink[];
         total: number;
     };
-    stats: Stats;
     typeOptions: string[];
     filters: {
         status: string;
@@ -76,7 +68,6 @@ interface Props {
 
 export default function VerseReports({
     reports,
-    stats,
     typeOptions,
     filters,
 }: Props) {
@@ -130,129 +121,87 @@ export default function VerseReports({
             <Head title="Verse Reports - Admin - From Quran" />
             <AdminLayout title="Verse Reports">
                 <div className="space-y-6">
-                    <div className="rounded-2xl border border-border/60 bg-[linear-gradient(180deg,hsl(var(--background))_0%,hsl(var(--muted)/0.2)_100%)] px-5 py-6 shadow-sm shadow-black/[0.03] md:px-7 md:py-7">
-                        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                            <div className="max-w-3xl space-y-2">
-                                <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
-                                    Verse reports
-                                </h1>
-                                <p className="text-sm leading-6 text-muted-foreground md:text-base">
-                                    Review Quran verse error reports submitted
-                                    by users and keep the correction queue
-                                    organized.
-                                </p>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                                <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
-                                    <p className="text-xl font-semibold text-foreground md:text-2xl">
-                                        {stats.total}
-                                    </p>
-                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-                                        Total
-                                    </p>
-                                </div>
-                                <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
-                                    <p className="text-xl font-semibold text-amber-700 md:text-2xl dark:text-amber-300">
-                                        {stats.pending}
-                                    </p>
-                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-                                        Pending
-                                    </p>
-                                </div>
-                                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3">
-                                    <p className="text-xl font-semibold text-emerald-700 md:text-2xl dark:text-emerald-300">
-                                        {stats.resolved}
-                                    </p>
-                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-                                        Resolved
-                                    </p>
-                                </div>
-                                <div className="rounded-xl border border-slate-400/20 bg-slate-400/10 px-4 py-3">
-                                    <p className="text-xl font-semibold text-slate-700 md:text-2xl dark:text-slate-300">
-                                        {stats.dismissed}
-                                    </p>
-                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-                                        Dismissed
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
+                    <div className="max-w-3xl space-y-2">
+                        <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+                            Verse reports
+                        </h1>
+                        <p className="text-sm leading-6 text-muted-foreground md:text-base">
+                            Review Quran verse error reports submitted by users
+                            and keep the correction queue organized.
+                        </p>
                     </div>
 
-                    <div className="rounded-2xl border border-border/60 bg-background/96 shadow-sm shadow-black/[0.03]">
-                        <div className="border-b border-border/70 px-5 py-5 md:px-7">
-                            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                                <form
-                                    onSubmit={handleSearch}
-                                    className="flex w-full flex-col gap-3 sm:flex-row xl:max-w-xl"
-                                >
-                                    <div className="relative flex-1">
-                                        <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                        <Input
-                                            placeholder="Search by verse, chapter, user, or text..."
-                                            value={searchInput}
-                                            onChange={(event) =>
-                                                setSearchInput(event.target.value)
-                                            }
-                                            className="h-11 rounded-lg border-border/70 bg-background pl-9"
-                                        />
-                                    </div>
-                                    <Button
-                                        type="submit"
-                                        className="h-11 rounded-lg px-5 text-sm font-medium"
-                                    >
-                                        Search
-                                    </Button>
-                                </form>
-
-                                <div className="flex flex-col gap-3 sm:flex-row">
-                                    <Select
-                                        value={filters.status}
-                                        onValueChange={(value) =>
-                                            handleFilter('status', value)
+                    <div className="space-y-5">
+                        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                            <form
+                                onSubmit={handleSearch}
+                                className="flex w-full flex-col gap-3 sm:flex-row xl:max-w-xl"
+                            >
+                                <div className="relative flex-1">
+                                    <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Search by verse, chapter, user, or text..."
+                                        value={searchInput}
+                                        onChange={(event) =>
+                                            setSearchInput(event.target.value)
                                         }
-                                    >
-                                        <SelectTrigger className="h-11 w-full rounded-lg border-border/70 bg-background sm:w-[150px]">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">
-                                                All Status
-                                            </SelectItem>
-                                            <SelectItem value="pending">
-                                                Pending
-                                            </SelectItem>
-                                            <SelectItem value="resolved">
-                                                Resolved
-                                            </SelectItem>
-                                            <SelectItem value="dismissed">
-                                                Dismissed
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-
-                                    <Select
-                                        value={filters.type}
-                                        onValueChange={(value) =>
-                                            handleFilter('type', value)
-                                        }
-                                    >
-                                        <SelectTrigger className="h-11 w-full rounded-lg border-border/70 bg-background sm:w-[220px]">
-                                            <SelectValue placeholder="All Types" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">
-                                                All Types
-                                            </SelectItem>
-                                            {typeOptions.map((type) => (
-                                                <SelectItem key={type} value={type}>
-                                                    {type.replace(/_/g, ' ')}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                        className="h-11 rounded-lg border-border/70 bg-background pl-9"
+                                    />
                                 </div>
+                                <Button
+                                    type="submit"
+                                    className="h-11 rounded-lg px-5 text-sm font-medium"
+                                >
+                                    Search
+                                </Button>
+                            </form>
+
+                            <div className="flex flex-col gap-3 sm:flex-row">
+                                <Select
+                                    value={filters.status}
+                                    onValueChange={(value) =>
+                                        handleFilter('status', value)
+                                    }
+                                >
+                                    <SelectTrigger className="h-11 w-full rounded-lg border-border/70 bg-background sm:w-[150px]">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            All Status
+                                        </SelectItem>
+                                        <SelectItem value="pending">
+                                            Pending
+                                        </SelectItem>
+                                        <SelectItem value="resolved">
+                                            Resolved
+                                        </SelectItem>
+                                        <SelectItem value="dismissed">
+                                            Dismissed
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+
+                                <Select
+                                    value={filters.type}
+                                    onValueChange={(value) =>
+                                        handleFilter('type', value)
+                                    }
+                                >
+                                    <SelectTrigger className="h-11 w-full rounded-lg border-border/70 bg-background sm:w-[220px]">
+                                        <SelectValue placeholder="All Types" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            All Types
+                                        </SelectItem>
+                                        {typeOptions.map((type) => (
+                                            <SelectItem key={type} value={type}>
+                                                {type.replace(/_/g, ' ')}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
 

@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\MorphedByMany;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -47,7 +47,7 @@ class Tag extends Model
     /**
      * Get collections using this tag.
      */
-    public function collections(): MorphedByMany
+    public function collections(): MorphToMany
     {
         return $this->morphedByMany(Collection::class, 'taggable')
             ->withPivot('display_order')

@@ -2,19 +2,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { useQuranSearch } from '@/hooks/api';
+import { type QuranSearchResult } from '@/hooks/api/use-quran-search';
 import { BookOpen, ExternalLink, Search, X } from 'lucide-react';
-import { useState } from 'react';
-
-interface SearchResult {
-    id: number;
-    documentType?: string;
-    chapterId: number;
-    chapterName: string;
-    verseNumber: number;
-    text: string;
-    translation: string | null;
-    highlight: string;
-}
+import { useEffect, useState } from 'react';
 
 interface QuranSearchProps {
     onVerseSelect?: (chapterId: number, verseNumber: number) => void;
@@ -24,53 +15,36 @@ interface QuranSearchProps {
 export function QuranSearch({ onVerseSelect, className }: QuranSearchProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [query, setQuery] = useState('');
-    const [results, setResults] = useState<SearchResult[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    const handleSearch = async (searchQuery: string) => {
-        if (!searchQuery.trim()) {
-            setResults([]);
-            return;
-        }
-
-        setLoading(true);
-        setError(null);
-
-        try {
-            const response = await fetch(
-                `/api/quran/search?query=${encodeURIComponent(searchQuery)}&limit=20`,
-            );
-
-            if (!response.ok) {
-                throw new Error('Search failed');
-            }
-
-            const data = await response.json();
-            setResults(
-                (data.data || []).filter(
-                    (result: SearchResult) => result.documentType === 'verse',
-                ),
-            );
-        } catch (err) {
-            setError('Failed to search. Please try again.');
-            setResults([]);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const [submittedQuery, setSubmittedQuery] = useState('');
+    const {
+        results,
+        isLoading: loading,
+        errorMessage,
+    } = useQuranSearch(submittedQuery, {
+        limit: 20,
+        enabled: isOpen && submittedQuery.length > 0,
+    });
+    const verseResults = results.filter(
+        (result) => result.documentType === 'verse',
+    );
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        handleSearch(query);
+        setSubmittedQuery(query.trim());
     };
 
-    const handleVerseClick = (result: SearchResult) => {
+    useEffect(() => {
+        if (!query.trim()) {
+            setSubmittedQuery('');
+        }
+    }, [query]);
+
+    const handleVerseClick = (result: QuranSearchResult) => {
         if (onVerseSelect) {
             onVerseSelect(result.chapterId, result.verseNumber);
             setIsOpen(false);
             setQuery('');
-            setResults([]);
+            setSubmittedQuery('');
         }
     };
 
@@ -119,7 +93,7 @@ export function QuranSearch({ onVerseSelect, className }: QuranSearchProps) {
                         onClick={() => {
                             setIsOpen(false);
                             setQuery('');
-                            setResults([]);
+                            setSubmittedQuery('');
                         }}
                     >
                         <X className="h-4 w-4" />
@@ -146,21 +120,22 @@ export function QuranSearch({ onVerseSelect, className }: QuranSearchProps) {
                 </form>
 
                 {/* Error Message */}
-                {error && (
+                {errorMessage && (
                     <div className="mb-4 rounded-lg bg-destructive/10 p-4 text-destructive">
-                        {error}
+                        {errorMessage}
                     </div>
                 )}
 
                 {/* Results */}
                 <div className="flex-1 overflow-y-auto">
-                    {results.length > 0 ? (
+                    {verseResults.length > 0 ? (
                         <div className="space-y-4">
                             <div className="text-sm text-muted-foreground">
-                                Found {results.length} results for "{query}"
+                                Found {verseResults.length} results for "
+                                {submittedQuery}"
                             </div>
 
-                            {results.map((result) => (
+                            {verseResults.map((result) => (
                                 <div
                                     key={result.id}
                                     className="cursor-pointer rounded-lg border p-4 transition-colors hover:bg-accent/50"
@@ -202,10 +177,10 @@ export function QuranSearch({ onVerseSelect, className }: QuranSearchProps) {
                                 </div>
                             ))}
                         </div>
-                    ) : query && !loading ? (
+                    ) : submittedQuery && !loading ? (
                         <div className="py-8 text-center text-muted-foreground">
                             <BookOpen className="mx-auto mb-4 h-12 w-12 opacity-50" />
-                            <p>No results found for "{query}"</p>
+                            <p>No results found for "{submittedQuery}"</p>
                             <p className="mt-2 text-sm">
                                 Try using different keywords or search in Arabic
                                 or English

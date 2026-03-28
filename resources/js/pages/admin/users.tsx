@@ -46,13 +46,6 @@ interface PaginationData {
     data: User[];
 }
 
-interface Stats {
-    total: number;
-    admins: number;
-    moderators: number;
-    reviewers: number;
-}
-
 interface Filters {
     search: string;
     role: string;
@@ -62,13 +55,11 @@ interface Filters {
 
 interface AdminUsersProps {
     users: PaginationData;
-    stats: Stats;
     filters: Filters;
 }
 
 export default function AdminUsers({
     users: initialUsers,
-    stats,
     filters,
 }: AdminUsersProps) {
     const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
@@ -266,53 +257,23 @@ export default function AdminUsers({
             <Head title="Users - Admin - From Quran" />
             <AdminLayout title="Users">
                 <div className="space-y-6">
-                    <div className="rounded-2xl border border-border/60 bg-[linear-gradient(180deg,hsl(var(--background))_0%,hsl(var(--muted)/0.16)_100%)] px-5 py-6 shadow-sm shadow-black/[0.03] md:px-7">
-                        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                            <div className="max-w-3xl space-y-2">
-                                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-                                    User management
-                                </h2>
-                                <p className="text-sm leading-6 text-muted-foreground md:text-base">
-                                    Manage accounts, assign roles, and keep the
-                                    admin user base tidy.
-                                </p>
-                            </div>
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                                <div className="grid grid-cols-3 gap-3">
-                                    <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
-                                        <p className="text-lg font-semibold">
-                                            {stats.total}
-                                        </p>
-                                        <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-                                            Total
-                                        </p>
-                                    </div>
-                                    <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
-                                        <p className="text-lg font-semibold">
-                                            {stats.admins}
-                                        </p>
-                                        <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-                                            Admins
-                                        </p>
-                                    </div>
-                                    <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
-                                        <p className="text-lg font-semibold">
-                                            {stats.reviewers + stats.moderators}
-                                        </p>
-                                        <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-                                            Staff
-                                        </p>
-                                    </div>
-                                </div>
-                                <Button
-                                    onClick={handleAddUser}
-                                    className="h-10 rounded-lg px-4 text-sm"
-                                >
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Add User
-                                </Button>
-                            </div>
+                    <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                        <div className="max-w-3xl space-y-2">
+                            <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                                User management
+                            </h2>
+                            <p className="text-sm leading-6 text-muted-foreground md:text-base">
+                                Manage accounts, assign roles, and keep the
+                                admin user base tidy.
+                            </p>
                         </div>
+                        <Button
+                            onClick={handleAddUser}
+                            className="h-10 rounded-lg px-4 text-sm"
+                        >
+                            <Plus className="mr-2 h-4 w-4" />
+                            Add User
+                        </Button>
                     </div>
 
                     <DataTable

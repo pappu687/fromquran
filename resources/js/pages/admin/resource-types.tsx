@@ -285,25 +285,23 @@ export default function AdminResourceTypes({
             <Head title="Resource Types - Admin - From Quran" />
             <AdminLayout title="Resource Types">
                 <div className="space-y-6">
-                    <div className="rounded-2xl border border-border/60 bg-[linear-gradient(180deg,hsl(var(--background))_0%,hsl(var(--muted)/0.16)_100%)] px-5 py-6 shadow-sm shadow-black/[0.03] md:px-7">
-                        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                            <div className="max-w-3xl space-y-2">
-                                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-                                    Resource types management
-                                </h2>
-                                <p className="text-sm leading-6 text-muted-foreground md:text-base">
-                                    Manage the taxonomy used for categorizing
-                                    verse-linked resources.
-                                </p>
-                            </div>
-                            <Button
-                                onClick={handleAddResourceType}
-                                className="h-10 rounded-lg px-4 text-sm"
-                            >
-                                <Plus className="mr-2 h-4 w-4" />
-                                Create Type
-                            </Button>
+                    <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                        <div className="max-w-3xl space-y-2">
+                            <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                                Resource types management
+                            </h2>
+                            <p className="text-sm leading-6 text-muted-foreground md:text-base">
+                                Manage the taxonomy used for categorizing
+                                verse-linked resources.
+                            </p>
                         </div>
+                        <Button
+                            onClick={handleAddResourceType}
+                            className="h-10 rounded-lg px-4 text-sm"
+                        >
+                            <Plus className="mr-2 h-4 w-4" />
+                            Create Type
+                        </Button>
                     </div>
 
                     <DataTable

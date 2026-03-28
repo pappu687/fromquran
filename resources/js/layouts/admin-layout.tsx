@@ -3,8 +3,10 @@ import { NavActions } from '@/components/nav-actions';
 import {
     Breadcrumb,
     BreadcrumbItem,
+    BreadcrumbLink,
     BreadcrumbList,
     BreadcrumbPage,
+    BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -12,6 +14,7 @@ import {
     SidebarProvider,
     SidebarTrigger,
 } from '@/components/ui/sidebar';
+import { Link } from '@inertiajs/react';
 import { type ReactNode } from 'react';
 
 interface AdminLayoutProps {
@@ -34,10 +37,20 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                         <Breadcrumb>
                             <BreadcrumbList>
                                 <BreadcrumbItem>
-                                    <BreadcrumbPage className="line-clamp-1">
-                                        {title || 'Admin Panel'}
-                                    </BreadcrumbPage>
+                                    <BreadcrumbLink asChild>
+                                        <Link href="/admin">Admin</Link>
+                                    </BreadcrumbLink>
                                 </BreadcrumbItem>
+                                {title && (
+                                    <>
+                                        <BreadcrumbSeparator />
+                                        <BreadcrumbItem>
+                                            <BreadcrumbPage className="line-clamp-1">
+                                                {title}
+                                            </BreadcrumbPage>
+                                        </BreadcrumbItem>
+                                    </>
+                                )}
                             </BreadcrumbList>
                         </Breadcrumb>
                     </div>

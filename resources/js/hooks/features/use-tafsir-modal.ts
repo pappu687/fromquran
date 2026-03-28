@@ -34,6 +34,8 @@
  * ```
  */
 
+import { useChapters } from '@/hooks';
+import { type ChapterSummary } from '@/types/quran';
 import { useCallback, useEffect, useState } from 'react';
 
 interface TafseerBook {
@@ -41,16 +43,6 @@ interface TafseerBook {
     name: string;
     slug: string;
     description: string;
-}
-
-interface Chapter {
-    id: number;
-    number: number;
-    name: string;
-    englishName: string;
-    englishNameTranslation: string;
-    revelationType: 'Meccan' | 'Medinan';
-    verses: number;
 }
 
 interface MainVerse {
@@ -93,7 +85,7 @@ interface UseTafsirModalOptions {
 interface UseTafsirModalReturn {
     // Data
     tafseerBooks: TafseerBook[];
-    chapters: Chapter[];
+    chapters: ChapterSummary[];
     mainVerse: MainVerse | null;
     tafsirData: TafsirData | null;
     previousTafsirData: TafsirData | null;
@@ -127,9 +119,8 @@ export function useTafsirModal({
     totalVerses = 1,
 }: UseTafsirModalOptions): UseTafsirModalReturn {
     const [tafseerBooks, setTafseerBooks] = useState<TafseerBook[]>([]);
-    const [selectedBookSlug, setSelectedBookSlug] = useState<string>(
-        'en-ibn-katheer',
-    );
+    const [selectedBookSlug, setSelectedBookSlug] =
+        useState<string>('en-ibn-katheer');
     const [tafsirData, setTafsirData] = useState<TafsirData | null>(null);
     const [previousTafsirData, setPreviousTafsirData] =
         useState<TafsirData | null>(null);
@@ -143,7 +134,7 @@ export function useTafsirModal({
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [isNavigating, setIsNavigating] = useState(false);
 
-    const [chapters, setChapters] = useState<Chapter[]>([]);
+    const { chapters } = useChapters();
     const [mainVerse, setMainVerse] = useState<MainVerse | null>(null);
     const [loadingMainVerse, setLoadingMainVerse] = useState(false);
 
@@ -151,13 +142,6 @@ export function useTafsirModal({
     useEffect(() => {
         if (open && tafseerBooks.length === 0) {
             fetchTafseerBooks();
-        }
-    }, [open]);
-
-    // Fetch chapters when modal opens
-    useEffect(() => {
-        if (open && chapters.length === 0) {
-            fetchChapters();
         }
     }, [open]);
 
@@ -191,19 +175,6 @@ export function useTafsirModal({
             setError('Network error. Please try again.');
         } finally {
             setIsLoadingBooks(false);
-        }
-    }, []);
-
-    const fetchChapters = useCallback(async () => {
-        try {
-            const response = await fetch('/api/quran/chapters');
-            if (!response.ok) {
-                throw new Error('Failed to load chapters');
-            }
-            const data = await response.json();
-            setChapters(data);
-        } catch (err) {
-            console.error('Failed to fetch chapters:', err);
         }
     }, []);
 
@@ -263,7 +234,9 @@ export function useTafsirModal({
                 setTafsirData(data);
             } else if (response.status === 404) {
                 setTafsirData(null);
-                setError('No tafsir found for this verse in the selected book.');
+                setError(
+                    'No tafsir found for this verse in the selected book.',
+                );
             } else {
                 setError('Failed to fetch tafsir');
             }
@@ -323,12 +296,9 @@ export function useTafsirModal({
         }
     }, [currentVerse, isNavigating, isLoadingTafsir, tafsirData]);
 
-    const handleBookChange = useCallback(
-        (slug: string) => {
-            setSelectedBookSlug(slug);
-        },
-        [],
-    );
+    const handleBookChange = useCallback((slug: string) => {
+        setSelectedBookSlug(slug);
+    }, []);
 
     const refresh = useCallback(async () => {
         await fetchTafsir();

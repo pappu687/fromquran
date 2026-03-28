@@ -20,9 +20,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useCollectionTagsQuery } from '@/hooks';
+import { queryKeys } from '@/lib/query-client';
 import { cn } from '@/lib/utils';
 import { type CollectionTag } from '@/types/collections';
 import { router } from '@inertiajs/react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
     BookmarkPlus,
     Check,
@@ -101,7 +104,6 @@ export function CollectionsModal({
     const [newCollectionTags, setNewCollectionTags] = useState<CollectionTag[]>(
         [],
     );
-    const [availableTags, setAvailableTags] = useState<CollectionTag[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingCollections, setIsLoadingCollections] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -112,6 +114,10 @@ export function CollectionsModal({
     );
     const [isContentReady, setIsContentReady] = useState(false);
     const nameInputRef = useRef<HTMLInputElement>(null);
+    const queryClient = useQueryClient();
+    const { tags: availableTags = [] } = useCollectionTagsQuery(
+        open && isContentReady,
+    );
 
     const loadCollections = useCallback(async () => {
         setIsLoadingCollections(true);
@@ -161,26 +167,6 @@ export function CollectionsModal({
         }
     }, [verseId]);
 
-    const loadAvailableTags = useCallback(async () => {
-        try {
-            const response = await fetch('/api/tags', {
-                headers: {
-                    Accept: 'application/json',
-                },
-                credentials: 'include',
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to load tags');
-            }
-
-            const data = (await response.json()) as CollectionTag[];
-            setAvailableTags(data);
-        } catch (error) {
-            console.error('Failed to load tags:', error);
-        }
-    }, []);
-
     // Wait until the dialog content has fully opened before starting fetches.
     useEffect(() => {
         if (open) {
@@ -201,19 +187,12 @@ export function CollectionsModal({
     useEffect(() => {
         if (open && isContentReady) {
             loadCollections();
-            loadAvailableTags();
             if (verseNumber) {
                 setFromVerse(verseNumber);
                 setToVerse(verseNumber);
             }
         }
-    }, [
-        isContentReady,
-        loadAvailableTags,
-        loadCollections,
-        open,
-        verseNumber,
-    ]);
+    }, [isContentReady, loadCollections, open, verseNumber]);
 
     // Focus name input when new collection form opens
     useEffect(() => {
@@ -295,25 +274,28 @@ export function CollectionsModal({
             setNewCollectionTags([]);
             setShowNewCollectionForm(false);
             setErrors({});
-            setAvailableTags((prev) => {
-                const next = [...prev];
+            queryClient.setQueryData<CollectionTag[]>(
+                queryKeys.collectionTags,
+                (current = []) => {
+                    const next = [...current];
 
-                (data.tags || []).forEach((tag: CollectionTag) => {
-                    if (
-                        next.some(
-                            (existingTag) =>
-                                existingTag.slug === tag.slug &&
-                                existingTag.type === tag.type,
-                        )
-                    ) {
-                        return;
-                    }
+                    (data.tags || []).forEach((tag: CollectionTag) => {
+                        if (
+                            next.some(
+                                (existingTag) =>
+                                    existingTag.slug === tag.slug &&
+                                    existingTag.type === tag.type,
+                            )
+                        ) {
+                            return;
+                        }
 
-                    next.push(tag);
-                });
+                        next.push(tag);
+                    });
 
-                return next;
-            });
+                    return next;
+                },
+            );
 
             setSuccessMessage('Collection created successfully!');
             setTimeout(() => setSuccessMessage(null), 3000);

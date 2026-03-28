@@ -1,17 +1,15 @@
-import { useBookmarksStore } from '@/store/use-user-content';
-import { useCallback, useEffect } from 'react';
+import { api, getErrorMessage } from '@/lib/api-client';
+import { queryKeys } from '@/lib/query-client';
+import { type Bookmark } from '@/store/use-user-content';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 interface UseBookmarksReturn {
-    // Data
-    bookmarks: typeof useBookmarksStore.getState.bookmarks;
-    bookmarkedVerseIds: typeof useBookmarksStore.getState.bookmarkedVerseIds;
-
-    // State
+    bookmarks: Bookmark[];
+    bookmarkedVerseIds: Set<string>;
     loading: boolean;
     error: string | null;
     successMessage: string | null;
-
-    // Actions
     loadBookmarks: () => Promise<void>;
     toggleBookmark: (
         verseId: string,
@@ -26,62 +24,85 @@ interface UseBookmarksReturn {
     clearSuccessMessage: () => void;
 }
 
-/**
- * Hook for managing bookmarks (favorites)
- * 
- * Features:
- * - Load and manage user bookmarks
- * - Toggle bookmark status with optimistic updates
- * - Add notes to bookmarks
- * - Check if a verse is bookmarked
- * 
- * @example
- * ```tsx
- * const { 
- *   bookmarks, loading, toggleBookmark, removeBookmark, isBookmarked 
- * } = useBookmarks();
- * 
- * const handleBookmark = async (verse) => {
- *   const result = await toggleBookmark(
- *     String(verse.id),
- *     verse.chapterId,
- *     verse.verseNumber,
- *     'en.sahih'
- *   );
- *   
- *   if (result.success) {
- *     showToast(result.isBookmarked ? 'Bookmarked' : 'Bookmark removed');
- *   }
- * };
- * 
- * return (
- *   <div>
- *     {bookmarks.map(bookmark => (
- *       <BookmarkCard 
- *         key={bookmark.id}
- *         bookmark={bookmark}
- *         onRemove={() => removeBookmark(bookmark.id)}
- *       />
- *     ))}
- *   </div>
- * );
- * ```
- */
+async function fetchBookmarks() {
+    const response = await api.get<{ data: Bookmark[] }>('/api/bookmarks');
+
+    return (response.data || []).filter(
+        (bookmark) => bookmark.verse && bookmark.chapter,
+    );
+}
+
 export function useBookmarks(): UseBookmarksReturn {
-    const {
-        bookmarks,
-        bookmarkedVerseIds,
-        loading,
-        error,
-        successMessage,
-        loadBookmarks,
-        toggleBookmark: storeToggleBookmark,
-        removeBookmark: storeRemoveBookmark,
-        addNote: storeAddNote,
-        setSuccessMessage,
-        setError,
-        clearBookmarks,
-    } = useBookmarksStore();
+    const queryClient = useQueryClient();
+    const [error, setError] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+    const bookmarksQuery = useQuery({
+        queryKey: queryKeys.userBookmarks,
+        queryFn: fetchBookmarks,
+    });
+
+    useEffect(() => {
+        if (bookmarksQuery.error) {
+            setError(getErrorMessage(bookmarksQuery.error));
+        }
+    }, [bookmarksQuery.error]);
+
+    const bookmarks = bookmarksQuery.data ?? [];
+    const bookmarkedVerseIds = useMemo(
+        () => new Set(bookmarks.map((bookmark) => String(bookmark.verse_id))),
+        [bookmarks],
+    );
+
+    const removeBookmarkMutation = useMutation({
+        mutationFn: async (bookmarkId: number) => {
+            await api.delete(`/api/bookmarks/${bookmarkId}`);
+
+            return bookmarkId;
+        },
+        onSuccess: (bookmarkId) => {
+            queryClient.setQueryData<Bookmark[]>(
+                queryKeys.userBookmarks,
+                (current = []) =>
+                    current.filter((bookmark) => bookmark.id !== bookmarkId),
+            );
+            setSuccessMessage('Bookmark removed');
+            setError(null);
+        },
+        onError: (mutationError) => {
+            setError(getErrorMessage(mutationError));
+        },
+    });
+
+    const addNoteMutation = useMutation({
+        mutationFn: async ({
+            bookmarkId,
+            notes,
+        }: {
+            bookmarkId: number;
+            notes: string;
+        }) => {
+            await api.put(`/api/bookmarks/${bookmarkId}`, { notes });
+
+            return { bookmarkId, notes };
+        },
+        onSuccess: ({ bookmarkId, notes }) => {
+            queryClient.setQueryData<Bookmark[]>(
+                queryKeys.userBookmarks,
+                (current = []) =>
+                    current.map((bookmark) =>
+                        bookmark.id === bookmarkId
+                            ? { ...bookmark, notes }
+                            : bookmark,
+                    ),
+            );
+            setSuccessMessage('Note added');
+            setError(null);
+        },
+        onError: (mutationError) => {
+            setError(getErrorMessage(mutationError));
+        },
+    });
 
     const toggleBookmark = useCallback(
         async (
@@ -90,56 +111,112 @@ export function useBookmarks(): UseBookmarksReturn {
             verseNumber: number,
             edition: string,
         ) => {
-            return storeToggleBookmark(verseId, chapterId, verseNumber, edition);
+            const currentlyBookmarked = bookmarkedVerseIds.has(verseId);
+
+            try {
+                if (currentlyBookmarked) {
+                    const checkResponse = await api.get<{
+                        bookmark?: { id: number };
+                    }>(
+                        `/api/bookmarks/check?verse_id=${verseId}&edition=${edition}`,
+                    );
+
+                    if (!checkResponse.bookmark) {
+                        return {
+                            success: false,
+                            isBookmarked: currentlyBookmarked,
+                        };
+                    }
+
+                    await removeBookmarkMutation.mutateAsync(
+                        checkResponse.bookmark.id,
+                    );
+
+                    return { success: true, isBookmarked: false };
+                }
+
+                await api.post('/api/bookmarks', {
+                    chapter_id: chapterId,
+                    verse_number: verseNumber,
+                    verse_id: verseId,
+                    edition,
+                });
+
+                await queryClient.invalidateQueries({
+                    queryKey: queryKeys.userBookmarks,
+                });
+
+                setSuccessMessage('Added to bookmarks');
+                setError(null);
+
+                return { success: true, isBookmarked: true };
+            } catch (mutationError) {
+                setError(getErrorMessage(mutationError));
+
+                return {
+                    success: false,
+                    isBookmarked: currentlyBookmarked,
+                };
+            }
         },
-        [storeToggleBookmark],
+        [bookmarkedVerseIds, queryClient, removeBookmarkMutation],
     );
 
     const removeBookmark = useCallback(
         async (bookmarkId: number) => {
-            return storeRemoveBookmark(bookmarkId);
+            try {
+                await removeBookmarkMutation.mutateAsync(bookmarkId);
+
+                return true;
+            } catch {
+                return false;
+            }
         },
-        [storeRemoveBookmark],
+        [removeBookmarkMutation],
     );
 
     const addNote = useCallback(
         async (bookmarkId: number, notes: string) => {
-            return storeAddNote(bookmarkId, notes);
+            try {
+                await addNoteMutation.mutateAsync({ bookmarkId, notes });
+
+                return true;
+            } catch {
+                return false;
+            }
         },
-        [storeAddNote],
+        [addNoteMutation],
     );
 
+    const loadBookmarks = useCallback(async () => {
+        setError(null);
+        await queryClient.invalidateQueries({
+            queryKey: queryKeys.userBookmarks,
+        });
+    }, [queryClient]);
+
     const isBookmarked = useCallback(
-        (verseId: string): boolean => {
-            return bookmarkedVerseIds.has(verseId);
-        },
+        (verseId: string) => bookmarkedVerseIds.has(verseId),
         [bookmarkedVerseIds],
     );
 
     const clearError = useCallback(() => {
         setError(null);
-    }, [setError]);
+    }, []);
 
     const clearSuccessMessage = useCallback(() => {
         setSuccessMessage(null);
-    }, [setSuccessMessage]);
-
-    // Auto-load bookmarks on mount
-    useEffect(() => {
-        loadBookmarks();
-    }, [loadBookmarks]);
+    }, []);
 
     return {
-        // Data
         bookmarks,
         bookmarkedVerseIds,
-
-        // State
-        loading,
+        loading:
+            bookmarksQuery.isLoading ||
+            removeBookmarkMutation.isPending ||
+            addNoteMutation.isPending,
         error,
         successMessage,
-
-        // Actions
         loadBookmarks,
         toggleBookmark,
         removeBookmark,

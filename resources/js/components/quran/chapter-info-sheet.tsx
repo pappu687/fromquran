@@ -15,37 +15,12 @@ import {
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useChapterInfoQuery, useChapterResourcesQuery } from '@/hooks/api';
+import { type ChapterResourceData } from '@/hooks/api/use-quran-chapter-data';
 import { router } from '@inertiajs/react';
 import { Info, Link as LinkIcon, Plus } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { AddResourceModal } from './add-resource-modal';
-
-interface ChapterInfo {
-    surah_number: number;
-    surah_name: string;
-    text: string;
-    short_text: string;
-}
-
-interface ResourceType {
-    id: number;
-    slug: string;
-    name: string;
-}
-
-interface ChapterResource {
-    id: string | number;
-    resource_type_id: number;
-    resource_url: string;
-    resource_title?: string;
-    comment: string | null;
-    is_truncated?: boolean;
-    created_at?: string;
-    resource_type: ResourceType;
-    user: {
-        name: string;
-    };
-}
 
 interface ChapterInfoSheetProps {
     open: boolean;
@@ -60,10 +35,6 @@ export function ChapterInfoSheet({
     chapterNumber,
     chapterName,
 }: ChapterInfoSheetProps) {
-    const [info, setInfo] = useState<ChapterInfo | null>(null);
-    const [resources, setResources] = useState<ChapterResource[]>([]);
-    const [loadingInfo, setLoadingInfo] = useState(false);
-    const [loadingResources, setLoadingResources] = useState(false);
     const [activeTab, setActiveTab] = useState('intro');
     const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
     const [loadingFullResourceId, setLoadingFullResourceId] = useState<
@@ -74,47 +45,14 @@ export function ChapterInfoSheet({
         url: string | null;
         comment: string;
     } | null>(null);
-
-    const fetchChapterInfo = useCallback(async () => {
-        setLoadingInfo(true);
-        try {
-            const response = await fetch(
-                `/api/quran/chapters/${chapterNumber}/info`,
-            );
-            if (response.ok) {
-                const data = await response.json();
-                setInfo(data);
-            }
-        } catch (error) {
-            console.error('Failed to fetch chapter info:', error);
-        } finally {
-            setLoadingInfo(false);
-        }
-    }, [chapterNumber]);
-
-    const fetchChapterResources = useCallback(async () => {
-        setLoadingResources(true);
-        try {
-            const response = await fetch(
-                `/api/quran/chapters/${chapterNumber}/resources`,
-            );
-            if (response.ok) {
-                const data = await response.json();
-                setResources(data.data || []);
-            }
-        } catch (error) {
-            console.error('Failed to fetch chapter resources:', error);
-        } finally {
-            setLoadingResources(false);
-        }
-    }, [chapterNumber]);
-
-    useEffect(() => {
-        if (open && chapterNumber) {
-            void fetchChapterInfo();
-            void fetchChapterResources();
-        }
-    }, [chapterNumber, fetchChapterInfo, fetchChapterResources, open]);
+    const { chapterInfo: info, isLoading: loadingInfo } = useChapterInfoQuery(
+        chapterNumber,
+        open,
+    );
+    const { resources, isLoading: loadingResources } = useChapterResourcesQuery(
+        chapterNumber,
+        open,
+    );
 
     const handleSeeMore = async (resourceId: string | number) => {
         if (resourceId === -1 || resourceId === '-1') {
@@ -161,7 +99,7 @@ export function ChapterInfoSheet({
             acc[type].push(resource);
             return acc;
         },
-        {} as Record<string, ChapterResource[]>,
+        {} as Record<string, ChapterResourceData[]>,
     );
 
     return (

@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -20,6 +19,8 @@ class Collection extends Model
         'color',
         'is_public',
         'status',
+        'views_count',
+        'unique_views_24h',
         'slug',
     ];
 

@@ -1,31 +1,17 @@
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useChapters, useFlatTopics } from '@/hooks';
+import { type FlatTopic } from '@/hooks/api/use-topics';
 import QuranReaderLayout from '@/layouts/quran-reader-layout';
 import { Head, router, usePage } from '@inertiajs/react';
-import { Search, Tags } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useChapters } from '@/hooks';
-
-interface Topic {
-    topic_id: number;
-    name: string;
-    arabic_name: string;
-}
-
-interface TopicNode {
-    topic_id: number;
-    name: string;
-    arabic_name: string;
-    children?: TopicNode[];
-}
+import { Search } from 'lucide-react';
+import { useState } from 'react';
 
 export default function Topics() {
-    const [topics, setTopics] = useState<Topic[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
     const { chapters, loading: chaptersLoading } = useChapters();
+    const { topics, isLoading: loading, errorMessage: error } = useFlatTopics();
 
     const page = usePage<{ appUrl?: string; siteName?: string }>();
     const url = page.url;
@@ -42,44 +28,6 @@ export default function Topics() {
     const pageTitle = 'Quran Topics';
     const pageDescription =
         'Browse Quranic topics, themes, and tagged verses organized alphabetically.';
-
-    useEffect(() => {
-        const fetchTopics = async () => {
-            try {
-                const response = await fetch('/api/topics');
-                if (!response.ok) {
-                    throw new Error('Failed to load topics');
-                }
-
-                const data = (await response.json()) as TopicNode[];
-                const allTopics: Topic[] = [];
-
-                const flattenTopics = (topicList: TopicNode[]) => {
-                    for (const topic of topicList) {
-                        allTopics.push({
-                            topic_id: topic.topic_id,
-                            name: topic.name,
-                            arabic_name: topic.arabic_name,
-                        });
-
-                        if (topic.children?.length) {
-                            flattenTopics(topic.children);
-                        }
-                    }
-                };
-
-                flattenTopics(data);
-                setTopics(allTopics);
-                setError(null);
-            } catch {
-                setError('Failed to load topics');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchTopics();
-    }, []);
 
     const handleChapterSelect = (chapterId: number) => {
         const chapter = chapters.find((item) => item.id === chapterId);
@@ -114,7 +62,7 @@ export default function Topics() {
             acc[firstLetter].push(topic);
             return acc;
         },
-        {} as Record<string, Topic[]>,
+        {} as Record<string, FlatTopic[]>,
     );
 
     const sortedLetters = Object.keys(groupedTopics).sort((a, b) =>

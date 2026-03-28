@@ -78,13 +78,6 @@ interface PaginationData {
     data: Translation[];
 }
 
-interface Stats {
-    total_translations: number;
-    total_languages: number;
-    total_resources: number;
-    avg_translations_per_verse: number;
-}
-
 interface Filters {
     search: string;
     chapter_id: string;
@@ -99,7 +92,6 @@ interface AdminTranslationsProps {
     chapters: Chapter[];
     languages: Language[];
     resources: Resource[];
-    stats: Stats;
     filters: Filters;
 }
 
@@ -108,7 +100,6 @@ export default function AdminTranslations({
     chapters,
     languages,
     resources,
-    stats,
     filters,
 }: AdminTranslationsProps) {
     const [selectedChapter, setSelectedChapter] = useState(filters.chapter_id);
@@ -304,55 +295,17 @@ export default function AdminTranslations({
             <Head title="Translations - Admin - From Quran" />
             <AdminLayout title="Translations">
                 <div className="space-y-6">
-                    <div className="rounded-2xl border border-border/60 bg-[linear-gradient(180deg,hsl(var(--background))_0%,hsl(var(--muted)/0.16)_100%)] px-5 py-6 shadow-sm shadow-black/[0.03] md:px-7">
-                        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                            <div className="max-w-3xl space-y-2">
-                                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-                                    Translation management
-                                </h2>
-                                <p className="text-sm leading-6 text-muted-foreground md:text-base">
-                                    Review translation coverage across chapters,
-                                    languages, and source resources.
-                                </p>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                                <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
-                                    <p className="text-lg font-semibold">
-                                        {stats.total_translations.toLocaleString()}
-                                    </p>
-                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-                                        Translations
-                                    </p>
-                                </div>
-                                <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
-                                    <p className="text-lg font-semibold">
-                                        {stats.total_languages}
-                                    </p>
-                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-                                        Languages
-                                    </p>
-                                </div>
-                                <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
-                                    <p className="text-lg font-semibold">
-                                        {stats.total_resources}
-                                    </p>
-                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-                                        Resources
-                                    </p>
-                                </div>
-                                <div className="rounded-xl border border-border/60 bg-background/90 px-4 py-3">
-                                    <p className="text-lg font-semibold">
-                                        {stats.avg_translations_per_verse}
-                                    </p>
-                                    <p className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-                                        Avg / Verse
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
+                    <div className="max-w-3xl space-y-2">
+                        <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                            Translation management
+                        </h2>
+                        <p className="text-sm leading-6 text-muted-foreground md:text-base">
+                            Review translation coverage across chapters,
+                            languages, and source resources.
+                        </p>
                     </div>
 
-                    <div className="flex flex-wrap gap-3 rounded-xl border border-border/60 bg-background/96 px-4 py-4 shadow-sm shadow-black/[0.02]">
+                    <div className="flex flex-wrap gap-3">
                         <Select
                             value={selectedChapter}
                             onValueChange={handleChapterFilter}

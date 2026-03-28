@@ -3,58 +3,27 @@ import { VerseCard } from '@/components/quran/verse-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useCollectionDetailQuery } from '@/hooks';
+import { type CollectionDetailData } from '@/hooks/api/use-collection-data';
+import { useCollectionViewTracker } from '@/hooks/use-collection-view-tracker';
 import PublicLayout from '@/layouts/public-layout';
-import { type CollectionTag } from '@/types/collections';
+import { isApiError } from '@/lib/api-client';
 import { Head, router, usePage } from '@inertiajs/react';
-import { ArrowLeft, Globe, Loader2, Lock } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
-
-interface Verse {
-    id: number;
-    verse_key: string;
-    verse_number: number;
-    text_uthmani: string;
-    text_imlaei_simple?: string;
-    juz_number?: number;
-    page_number?: number;
-    has_resources?: boolean;
-    resource_count?: number;
-    translations?: Array<{
-        resource_id: number;
-        resource_name?: string;
-        language?: string;
-        text: string;
-    }>;
-    chapter: {
-        id: number;
-        chapter_number: number;
-        name_simple: string;
-        name_arabic: string;
-    };
-    pivot: {
-        display_order: number;
-    };
-}
-
-interface Collection {
-    id: number;
-    name: string;
-    description?: string;
-    color: string;
-    is_public: boolean;
-    status: 'pending' | 'approved' | 'rejected';
-    slug: string;
-    created_at: string;
-    verses: Verse[];
-    tags: CollectionTag[];
-}
+import { ArrowLeft, Eye, Globe, Loader2, Lock } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function PublicCollectionDetailPage({ slug }: { slug: string }) {
-    const [collection, setCollection] = useState<Collection | null>(null);
-    const [verses, setVerses] = useState<Verse[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [collection, setCollection] = useState<CollectionDetailData | null>(
+        null,
+    );
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const collectionRootRef = useRef<HTMLDivElement | null>(null);
+    const {
+        collection: fetchedCollection,
+        isLoading: isCollectionLoading,
+        error: collectionError,
+    } = useCollectionDetailQuery(slug);
 
     const inertiaPage = usePage<{ appUrl?: string; siteName?: string }>();
     const url = inertiaPage.url;
@@ -69,48 +38,30 @@ export default function PublicCollectionDetailPage({ slug }: { slug: string }) {
     const canonicalUrl = `${baseUrl}${path}`;
     const ogImage = `${baseUrl}/og-banner.png`;
 
-    const loadCollection = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const csrfToken = document
-                .querySelector('meta[name="csrf-token"]')
-                ?.getAttribute('content');
-
-            const response = await fetch(`/api/collections/${slug}`, {
-                headers: {
-                    Accept: 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || '',
-                },
-                credentials: 'include',
-            });
-
-            if (response.status === 404) {
-                router.visit('/collections');
-                return;
-            }
-
-            if (!response.ok) {
-                throw new Error('Failed to load collection');
-            }
-
-            const data = await response.json();
-            setCollection(data);
-            const loadedVerses: Verse[] = data.verses || [];
-            setVerses(loadedVerses);
-            setIsDescriptionExpanded(false);
-        } catch (error) {
-            console.error('Failed to load collection:', error);
-            setErrors({
-                general: 'Failed to load collection. Please try again.',
-            });
-        } finally {
-            setIsLoading(false);
+    useEffect(() => {
+        if (!fetchedCollection) {
+            return;
         }
-    }, [slug]);
+
+        setCollection(fetchedCollection);
+        setIsDescriptionExpanded(false);
+        setErrors((current) => ({ ...current, general: '' }));
+    }, [fetchedCollection]);
 
     useEffect(() => {
-        loadCollection();
-    }, [loadCollection]);
+        if (!collectionError || !isApiError(collectionError)) {
+            return;
+        }
+
+        if (collectionError.status === 404) {
+            router.visit('/collections');
+            return;
+        }
+
+        setErrors({
+            general: 'Failed to load collection. Please try again.',
+        });
+    }, [collectionError]);
 
     const pageTitle = collection
         ? `${collection.name} - Quran Collection`
@@ -125,7 +76,25 @@ export default function PublicCollectionDetailPage({ slug }: { slug: string }) {
     const shouldTruncateDescription =
         (collection?.description?.length ?? 0) > 150;
 
-    if (isLoading) {
+    useCollectionViewTracker({
+        collectionId: collection?.id,
+        collectionSlug: collection?.slug,
+        enabled: Boolean(collection?.is_public),
+        minVisibleMs: 2000,
+        target: collectionRootRef.current,
+        onTracked: (result) => {
+            setCollection((current) =>
+                current
+                    ? {
+                          ...current,
+                          views_count: result.views_count,
+                      }
+                    : current,
+            );
+        },
+    });
+
+    if (isCollectionLoading && !collection) {
         return (
             <PublicLayout>
                 <Head>
@@ -184,7 +153,11 @@ export default function PublicCollectionDetailPage({ slug }: { slug: string }) {
                 <meta name="twitter:description" content={pageDescription} />
                 <meta name="twitter:image" content={ogImage} />
             </Head>
-            <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+            <div
+                ref={collectionRootRef}
+                data-collection-view-root
+                className="mx-auto max-w-7xl px-4 py-8 sm:px-6"
+            >
                 {/* Header */}
                 <div className="mb-8">
                     <Button
@@ -257,8 +230,17 @@ export default function PublicCollectionDetailPage({ slug }: { slug: string }) {
                                 }
                             />
                             <p className="mt-2 text-sm text-muted-foreground">
-                                {verses.length}{' '}
-                                {verses.length === 1 ? 'verse' : 'verses'}
+                                {collection.verses.length}{' '}
+                                {collection.verses.length === 1
+                                    ? 'verse'
+                                    : 'verses'}
+                            </p>
+                            <p className="mt-1 inline-flex items-center gap-2 text-sm text-muted-foreground">
+                                <Eye className="h-4 w-4" />
+                                {(
+                                    collection.views_count ?? 0
+                                ).toLocaleString()}{' '}
+                                views
                             </p>
                         </div>
                     </div>
@@ -271,7 +253,7 @@ export default function PublicCollectionDetailPage({ slug }: { slug: string }) {
                 )}
 
                 {/* Verses List (Read Only) */}
-                {verses.length === 0 ? (
+                {collection.verses.length === 0 ? (
                     <Card className="text-center">
                         <CardContent className="py-16">
                             <h2 className="mb-2 text-xl font-semibold">
@@ -284,7 +266,7 @@ export default function PublicCollectionDetailPage({ slug }: { slug: string }) {
                     </Card>
                 ) : (
                     <div className="space-y-3">
-                        {verses.map((verse) => (
+                        {collection.verses.map((verse) => (
                             <VerseCard
                                 key={verse.id}
                                 className="bg-transparent px-0 py-3 md:p-3"
