@@ -1,6 +1,13 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -97,6 +104,9 @@ export default function ResourceSubmissions({
     const [expandedComments, setExpandedComments] = useState<string[]>([]);
     const [searchInput, setSearchInput] = useState(filters.search);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [previewSubmission, setPreviewSubmission] = useState<Submission | null>(
+        null,
+    );
     const getSubmissionKey = (submission: Submission) =>
         `${submission.scope}-${submission.id}`;
 
@@ -144,6 +154,13 @@ export default function ResourceSubmissions({
                 {
                     onFinish: () => {
                         setIsProcessing(false);
+                        if (
+                            previewSubmission &&
+                            getSubmissionKey(previewSubmission) ===
+                                getSubmissionKey(submission)
+                        ) {
+                            setPreviewSubmission(null);
+                        }
                         setSelectedIds(
                             selectedIds.filter(
                                 (selectedId) =>
@@ -165,6 +182,13 @@ export default function ResourceSubmissions({
                 {
                     onFinish: () => {
                         setIsProcessing(false);
+                        if (
+                            previewSubmission &&
+                            getSubmissionKey(previewSubmission) ===
+                                getSubmissionKey(submission)
+                        ) {
+                            setPreviewSubmission(null);
+                        }
                         setSelectedIds(
                             selectedIds.filter(
                                 (selectedId) =>
@@ -274,6 +298,45 @@ export default function ResourceSubmissions({
                 ? current.filter((commentId) => commentId !== id)
                 : [...current, id],
         );
+    };
+
+    const openPreview = (submission: Submission) => {
+        setPreviewSubmission(submission);
+    };
+
+    const getEmbeddableUrl = (url: string) => {
+        try {
+            const parsed = new URL(url);
+            const hostname = parsed.hostname.toLowerCase();
+
+            if (
+                hostname === 'youtu.be' ||
+                hostname === 'www.youtu.be' ||
+                hostname === 'youtube.com' ||
+                hostname === 'www.youtube.com' ||
+                hostname === 'm.youtube.com'
+            ) {
+                let videoId = '';
+
+                if (hostname.includes('youtu.be')) {
+                    videoId = parsed.pathname.replace('/', '');
+                } else if (parsed.pathname === '/watch') {
+                    videoId = parsed.searchParams.get('v') ?? '';
+                } else if (parsed.pathname.startsWith('/embed/')) {
+                    videoId = parsed.pathname.split('/embed/')[1] ?? '';
+                } else if (parsed.pathname.startsWith('/shorts/')) {
+                    videoId = parsed.pathname.split('/shorts/')[1] ?? '';
+                }
+
+                if (videoId) {
+                    return `https://www.youtube.com/embed/${videoId}`;
+                }
+            }
+        } catch {
+            return null;
+        }
+
+        return null;
     };
 
     return (
@@ -596,25 +659,46 @@ export default function ResourceSubmissions({
                                                 </td>
                                                 <td className="px-4 py-4 md:px-5">
                                                     <div className="flex max-w-sm flex-col gap-1.5">
-                                                        <span className="text-sm font-medium text-foreground">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                openPreview(
+                                                                    submission,
+                                                                )
+                                                            }
+                                                            className="max-w-full text-left text-sm font-medium text-foreground hover:text-primary"
+                                                        >
                                                             {submission.resource_title ||
                                                                 '-'}
-                                                        </span>
-                                                        <a
-                                                            href={
-                                                                submission.resource_url
-                                                            }
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="inline-flex max-w-xs items-center gap-1.5 truncate text-xs text-primary hover:underline"
-                                                        >
-                                                            <ExternalLink className="h-3.5 w-3.5 shrink-0" />
-                                                            <span className="truncate">
-                                                                {
+                                                        </button>
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    openPreview(
+                                                                        submission,
+                                                                    )
+                                                                }
+                                                                className="inline-flex max-w-xs items-center gap-1.5 truncate text-xs text-primary hover:underline"
+                                                            >
+                                                                <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                                                                <span className="truncate">
+                                                                    {
+                                                                        submission.resource_url
+                                                                    }
+                                                                </span>
+                                                            </button>
+                                                            <a
+                                                                href={
                                                                     submission.resource_url
                                                                 }
-                                                            </span>
-                                                        </a>
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+                                                            >
+                                                                open
+                                                            </a>
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-4 md:px-5">
@@ -787,6 +871,176 @@ export default function ResourceSubmissions({
                     </div>
                 </div>
             </AdminLayout>
+
+            <Dialog
+                open={previewSubmission !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setPreviewSubmission(null);
+                    }
+                }}
+            >
+                <DialogContent className="flex h-[calc(100vh-2rem)] max-w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-[calc(100vw-2rem)]">
+                    {previewSubmission && (
+                        <>
+                            {(() => {
+                                const embeddableUrl = getEmbeddableUrl(
+                                    previewSubmission.resource_url,
+                                );
+
+                                return (
+                                    <>
+                            <DialogHeader className="border-b border-border/70 px-5 py-4 pr-16">
+                                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                                    <div className="min-w-0">
+                                        <DialogTitle className="truncate text-base md:text-lg">
+                                            {previewSubmission.resource_title ||
+                                                previewSubmission.resource_type
+                                                    ?.name ||
+                                                'Resource preview'}
+                                        </DialogTitle>
+                                        <DialogDescription className="mt-1">
+                                            {embeddableUrl
+                                                ? 'Review this resource inline, then approve or reject without leaving the queue.'
+                                                : 'This source cannot be embedded here. Review the details and open it in a new tab when needed.'}
+                                        </DialogDescription>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        {previewSubmission.status ===
+                                            'pending' && (
+                                            <>
+                                                <Button
+                                                    size="sm"
+                                                    className="h-9 rounded-lg px-4"
+                                                    onClick={() =>
+                                                        handleApprove(
+                                                            previewSubmission,
+                                                        )
+                                                    }
+                                                    disabled={isProcessing}
+                                                >
+                                                    <Check className="mr-1 h-4 w-4" />
+                                                    Approve
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="destructive"
+                                                    className="h-9 rounded-lg px-4"
+                                                    onClick={() =>
+                                                        handleReject(
+                                                            previewSubmission,
+                                                        )
+                                                    }
+                                                    disabled={isProcessing}
+                                                >
+                                                    <X className="mr-1 h-4 w-4" />
+                                                    Reject
+                                                </Button>
+                                            </>
+                                        )}
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="h-9 rounded-lg px-4"
+                                            onClick={() =>
+                                                setPreviewSubmission(null)
+                                            }
+                                        >
+                                            Close
+                                        </Button>
+                                    </div>
+                                </div>
+                            </DialogHeader>
+
+                            <div className="flex min-h-0 flex-1 flex-col">
+                                <div className="flex items-center justify-between gap-3 border-b border-border/60 bg-muted/20 px-5 py-2.5">
+                                    <a
+                                        href={previewSubmission.resource_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="truncate text-sm text-primary hover:underline"
+                                    >
+                                        {previewSubmission.resource_url}
+                                    </a>
+                                    <a
+                                        href={previewSubmission.resource_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="shrink-0 text-sm text-muted-foreground hover:text-foreground hover:underline"
+                                    >
+                                        Open in new tab
+                                    </a>
+                                </div>
+
+                                <div className="min-h-0 flex-1 bg-muted/10">
+                                    {embeddableUrl ? (
+                                        <iframe
+                                            key={getSubmissionKey(
+                                                previewSubmission,
+                                            )}
+                                            src={embeddableUrl}
+                                            title={
+                                                previewSubmission.resource_title ||
+                                                'Resource preview'
+                                            }
+                                            className="h-full w-full border-0 bg-black"
+                                            loading="lazy"
+                                            referrerPolicy="strict-origin-when-cross-origin"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                            allowFullScreen
+                                        />
+                                    ) : (
+                                        <div className="flex h-full items-center justify-center p-6">
+                                            <div className="w-full max-w-3xl rounded-2xl border border-border/70 bg-background p-6 shadow-sm">
+                                                <p className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+                                                    Preview unavailable
+                                                </p>
+                                                <h3 className="mt-3 text-xl font-semibold text-foreground">
+                                                    {previewSubmission.resource_title ||
+                                                        'External resource'}
+                                                </h3>
+                                                <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
+                                                    This website blocks
+                                                    embedding in iframes, so the
+                                                    browser will not render it
+                                                    inside the modal. You can
+                                                    still review the submission
+                                                    from here and open the
+                                                    source in a new tab.
+                                                </p>
+                                                {previewSubmission.comment && (
+                                                    <p className="mt-5 rounded-xl bg-muted/40 px-4 py-3 text-sm leading-7 text-muted-foreground">
+                                                        {
+                                                            previewSubmission.comment
+                                                        }
+                                                    </p>
+                                                )}
+                                                <div className="mt-6 flex flex-wrap gap-3">
+                                                    <Button asChild>
+                                                        <a
+                                                            href={
+                                                                previewSubmission.resource_url
+                                                            }
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                        >
+                                                            <ExternalLink className="mr-2 h-4 w-4" />
+                                                            Open source
+                                                        </a>
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                                    </>
+                                );
+                            })()}
+                        </>
+                    )}
+                </DialogContent>
+            </Dialog>
         </>
     );
 }
