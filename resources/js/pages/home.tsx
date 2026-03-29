@@ -49,15 +49,15 @@ const featureItems: FeatureProps[] = [
 
 function FeatureRow({ icon, title, description }: FeatureProps) {
     return (
-        <div className="flex items-start gap-4 border-t border-slate-200 py-4 first:border-t-0 first:pt-0 last:pb-0">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-stone-100 text-slate-700">
+        <div className="grid gap-4 border-t border-slate-300/80 py-5 first:border-t-0 first:pt-0 sm:grid-cols-[2.75rem_minmax(0,1fr)] sm:gap-5">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-300/80 bg-white/70 text-slate-700">
                 {icon}
             </div>
-            <div>
+            <div className="space-y-1.5">
                 <h3 className="text-base font-semibold tracking-tight text-slate-950">
                     {title}
                 </h3>
-                <p className="mt-1 text-sm leading-7 text-slate-500">
+                <p className="max-w-xl text-sm leading-7 text-slate-600">
                     {description}
                 </p>
             </div>
@@ -69,15 +69,15 @@ function ChapterRow({ chapter }: { chapter: ChapterSummary }) {
     return (
         <button
             type="button"
-            className="group flex w-full min-w-0 items-center justify-between gap-3 border-t border-slate-200 py-4 text-left first:border-t-0 first:pt-0 last:pb-0"
+            className="group grid w-full min-w-0 gap-3 border-t border-slate-200 py-4 text-left transition-colors first:border-t-0 first:pt-0 hover:text-slate-950 sm:grid-cols-[minmax(0,1fr)_auto]"
             onClick={() => router.visit(`/${chapter.number}`)}
         >
-            <div className="flex min-w-0 items-center gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-stone-100 text-sm font-semibold text-slate-700">
+            <div className="flex min-w-0 items-start gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-stone-50 text-sm font-semibold text-slate-700 transition-colors group-hover:border-slate-500 group-hover:text-slate-950">
                     {chapter.number}
                 </div>
                 <div className="min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                         <h3 className="truncate text-base font-semibold tracking-tight text-slate-950">
                             {chapter.romanName}
                         </h3>
@@ -90,18 +90,31 @@ function ChapterRow({ chapter }: { chapter: ChapterSummary }) {
                     </p>
                 </div>
             </div>
-            <div className="flex shrink-0 items-start gap-2 sm:items-center sm:gap-3">
-                <div className="text-right">
+            <div className="flex shrink-0 items-center justify-between gap-3 pl-[3.75rem] sm:justify-end sm:pl-0">
+                <div className="text-left sm:text-right">
                     <p className="text-sm text-slate-600">
                         {chapter.verses} verses
                     </p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs tracking-[0.18em] text-slate-400 uppercase">
                         {chapter.revelationType}
                     </p>
                 </div>
-                <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5 sm:mt-0" />
+                <ChevronRight className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5" />
             </div>
         </button>
+    );
+}
+
+function StatColumn({ value, label }: { value: string; label: string }) {
+    return (
+        <div className="border-t border-slate-300/80 py-5 first:border-t-0 first:pt-0 sm:border-t-0 sm:border-l sm:px-6 sm:py-0 sm:first:border-l-0 sm:first:px-0">
+            <div className="text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-[2.2rem]">
+                {value}
+            </div>
+            <p className="mt-2 max-w-[14rem] text-sm leading-6 text-slate-500">
+                {label}
+            </p>
+        </div>
     );
 }
 
@@ -117,160 +130,193 @@ export default function HomePage() {
 
     return (
         <LandingLayout title="From Quran - Explore the Quran Like Never Before">
-            <section className="border-b border-slate-200 bg-[#fafaf8]">
-                <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 sm:py-18 lg:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)] lg:gap-16 lg:py-24">
-                    <div className="max-w-3xl">
-                        <p className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">
-                            From Quran
-                        </p>
-                        <h1 className="font-young mt-4 text-[2.8rem] leading-[0.95] tracking-[-0.05em] text-slate-950 sm:text-[4rem] lg:text-[5.2rem]">
-                            Read the Qur&apos;an
-                            <br />
-                            with context.
-                        </h1>
-                        <p className="mt-5 max-w-2xl text-base leading-8 text-slate-500 sm:text-lg">
-                            Explore verses, related topics, tafseer, and saved
-                            collections in one reading experience designed to
-                            stay calm, clear, and highly readable.
-                        </p>
+            <div className="bg-[#f7f4ef] text-slate-950">
+                <section className="relative overflow-hidden border-b border-slate-200">
+                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-400/40 to-transparent" />
+                    <div className="absolute top-16 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,_rgba(148,163,184,0.16),_transparent_68%)] blur-3xl" />
 
-                        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                    <div className="mx-auto max-w-7xl px-4 sm:px-6">
+                        <div className="grid gap-14 py-14 sm:py-18 lg:grid-cols-[minmax(0,1.2fr)_minmax(19rem,0.8fr)] lg:gap-16 lg:py-24">
+                            <div className="max-w-4xl">
+                                <div className="flex items-center gap-3 text-xs font-semibold tracking-[0.22em] text-slate-400 uppercase">
+                                    <span>From Quran</span>
+                                    <span className="h-px flex-1 bg-slate-300/80" />
+                                </div>
+
+                                <h1 className="font-young mt-6 max-w-4xl text-[3rem] leading-[0.92] tracking-[-0.055em] text-slate-950 sm:text-[4.2rem] lg:text-[5.5rem]">
+                                    Read the Qur&apos;an
+                                    <br />
+                                    with context.
+                                </h1>
+
+                                <div className="mt-7 grid gap-8 lg:grid-cols-[minmax(0,1fr)_15rem] lg:items-end">
+                                    <p className="max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
+                                        Explore verses, related topics, tafseer,
+                                        and saved collections in one reading
+                                        experience designed to stay calm, clear,
+                                        and highly readable.
+                                    </p>
+                                    <div className="border-l border-slate-300/80 pl-5 text-sm leading-7 text-slate-500">
+                                        Structured for focused reading, not
+                                        visual clutter.
+                                    </div>
+                                </div>
+
+                                <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                                    <Button
+                                        size="lg"
+                                        onClick={scrollToChapters}
+                                        className="h-12 rounded-full px-6"
+                                    >
+                                        Start reading
+                                        <ArrowRight className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        size="lg"
+                                        variant="outline"
+                                        onClick={() => router.visit('/topics')}
+                                        className="h-12 rounded-full border-slate-300 bg-white/70 px-6 shadow-none"
+                                    >
+                                        Explore topics
+                                    </Button>
+                                    <Button
+                                        size="lg"
+                                        variant="outline"
+                                        onClick={() =>
+                                            router.visit('/collections')
+                                        }
+                                        className="h-12 rounded-full border-slate-300 bg-white/70 px-6 shadow-none"
+                                    >
+                                        Explore Collections
+                                    </Button>
+                                </div>
+
+                                <div className="mt-12 grid gap-4 border-t border-slate-300/80 pt-6 sm:grid-cols-2 sm:gap-0 sm:pt-8">
+                                    <StatColumn
+                                        value="114"
+                                        label="chapters ready to open"
+                                    />
+                                    <StatColumn
+                                        value="1 place"
+                                        label="for reading and references"
+                                    />
+                                </div>
+                            </div>
+
+                            <aside className="relative">
+                                <div className="absolute top-0 left-0 hidden h-full w-px bg-slate-300/80 lg:block" />
+                                <div className="lg:pl-9">
+                                    <div className="flex items-center gap-3 text-xs font-semibold tracking-[0.22em] text-slate-400 uppercase">
+                                        <span>Why it feels better</span>
+                                        <span className="h-px flex-1 bg-slate-300/80" />
+                                    </div>
+                                    <div className="mt-6">
+                                        {featureItems.map((feature) => (
+                                            <FeatureRow
+                                                key={feature.title}
+                                                {...feature}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            </aside>
+                        </div>
+                    </div>
+                </section>
+
+                <section
+                    id="chapters-section"
+                    className="relative overflow-hidden py-14 sm:py-18 lg:py-24"
+                >
+                    <div className="absolute inset-x-0 top-0 h-px bg-slate-200" />
+                    <div className="absolute top-20 right-0 h-72 w-72 rounded-full bg-[radial-gradient(circle,_rgba(226,232,240,0.9),_transparent_70%)] blur-3xl" />
+
+                    <div className="mx-auto max-w-7xl px-4 sm:px-6">
+                        <div className="mb-8 max-w-5xl sm:mb-10">
+                            <p className="text-xs font-semibold tracking-[0.2em] text-slate-400 uppercase">
+                                Chapters
+                            </p>
+                            <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                                <div>
+                                    <h2 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-4xl">
+                                        All 114 chapters
+                                    </h2>
+                                    <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-500 sm:text-base">
+                                        Scan the full Qur&apos;an index in a
+                                        quiet two-column list, then move
+                                        directly into the chapter you want to
+                                        read.
+                                    </p>
+                                </div>
+                                <Button
+                                    variant="link"
+                                    className="h-auto self-start px-0 text-sm font-medium text-slate-700 sm:self-auto"
+                                    onClick={() =>
+                                        router.visit('/revelation-order')
+                                    }
+                                >
+                                    Revelation Order
+                                    <ArrowRight className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div className="border-y border-slate-200 bg-white/55 px-0 py-0 backdrop-blur-sm">
+                            {loading ? (
+                                <div className="px-6 py-14 text-center">
+                                    <div className="mx-auto h-12 w-12 animate-pulse rounded-full bg-slate-200" />
+                                    <p className="mt-4 text-sm text-slate-500">
+                                        Loading chapters...
+                                    </p>
+                                </div>
+                            ) : hasError ? (
+                                <div className="px-6 py-10 text-center">
+                                    <h3 className="text-lg font-semibold text-red-900">
+                                        Chapters could not be loaded
+                                    </h3>
+                                    <p className="mt-2 text-sm leading-6 text-red-700">
+                                        Refresh the page and try again.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="grid gap-x-10 px-4 py-5 sm:px-6 lg:grid-cols-2">
+                                    {chapters.map((chapter) => (
+                                        <ChapterRow
+                                            key={chapter.id}
+                                            chapter={chapter}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </section>
+
+                <section className="border-t border-slate-200 py-14 sm:py-18">
+                    <div className="mx-auto max-w-7xl px-4 sm:px-6">
+                        <div className="grid gap-6 border-y border-slate-300/80 py-8 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end sm:gap-10">
+                            <div className="max-w-2xl">
+                                <h2 className="font-young text-3xl tracking-[-0.03em] text-slate-950 sm:text-4xl">
+                                    Everything stays centered on the text.
+                                </h2>
+                                <p className="mt-4 text-sm leading-7 text-slate-500 sm:text-base">
+                                    Start with a chapter, follow a topic, or
+                                    save verses into a collection. The structure
+                                    stays simple so the reading stays primary.
+                                </p>
+                            </div>
                             <Button
                                 size="lg"
                                 onClick={scrollToChapters}
-                                className="h-12 rounded-full px-6"
+                                className="h-12 rounded-full px-6 sm:justify-self-end"
                             >
-                                Start reading
-                                <ArrowRight className="h-4 w-4" />
-                            </Button>
-                            <Button
-                                size="lg"
-                                variant="outline"
-                                onClick={() => router.visit('/topics')}
-                                className="h-12 rounded-full border-slate-200 bg-white px-6 shadow-none"
-                            >
-                                Explore topics
-                            </Button>
-                            <Button
-                                size="lg"
-                                variant="outline"
-                                onClick={() => router.visit('/collections')}
-                                className="h-12 rounded-full border-slate-200 bg-white px-6 shadow-none"
-                            >
-                                Explore Collections
-                            </Button>
-                        </div>
-
-                        <div className="mt-10 grid grid-cols-2 gap-3 sm:max-w-md">
-                            <div className="rounded-3xl bg-white px-4 py-4 ring-1 ring-slate-200">
-                                <div className="text-2xl font-semibold tracking-tight text-slate-950">
-                                    114
-                                </div>
-                                <p className="mt-1 text-sm leading-6 text-slate-500">
-                                    chapters ready to open
-                                </p>
-                            </div>
-                            <div className="rounded-3xl bg-white px-4 py-4 ring-1 ring-slate-200">
-                                <div className="text-2xl font-semibold tracking-tight text-slate-950">
-                                    1 place
-                                </div>
-                                <p className="mt-1 text-sm leading-6 text-slate-500">
-                                    for reading and references
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="rounded-[2rem] bg-white px-5 py-5 ring-1 ring-slate-200 sm:px-6">
-                        <p className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">
-                            Why it feels better
-                        </p>
-                        <div className="mt-4">
-                            {featureItems.map((feature) => (
-                                <FeatureRow key={feature.title} {...feature} />
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section
-                id="chapters-section"
-                className="bg-[#fafaf8] py-14 sm:py-18 lg:py-24"
-            >
-                <div className="mx-auto max-w-7xl px-4 sm:px-6">
-                    <div className="mb-8 max-w-7xl sm:mb-10">
-                        <p className="text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">
-                            Chapters
-                        </p>
-                        <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <h2 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-4xl">
-                                All 114 chapters
-                            </h2>
-                            <Button
-                                variant="link"
-                                className="h-auto self-start px-0 text-sm font-medium text-slate-700 sm:self-auto"
-                                onClick={() =>
-                                    router.visit('/revelation-order')
-                                }
-                            >
-                                Revelation Order
-                                <ArrowRight className="h-4 w-4" />
+                                <BookOpen className="h-5 w-5" />
+                                Browse chapters
                             </Button>
                         </div>
                     </div>
-
-                    {loading ? (
-                        <div className="rounded-[2rem] bg-white px-6 py-14 text-center ring-1 ring-slate-200">
-                            <div className="mx-auto h-12 w-12 animate-pulse rounded-full bg-slate-200" />
-                            <p className="mt-4 text-sm text-slate-500">
-                                Loading chapters...
-                            </p>
-                        </div>
-                    ) : hasError ? (
-                        <div className="rounded-[2rem] border border-red-200 bg-red-50 px-6 py-10 text-center">
-                            <h3 className="text-lg font-semibold text-red-900">
-                                Chapters could not be loaded
-                            </h3>
-                            <p className="mt-2 text-sm leading-6 text-red-700">
-                                Refresh the page and try again.
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="rounded-[2rem] bg-white px-5 py-5 ring-1 ring-slate-200 sm:px-6">
-                            <div className="grid gap-x-8 gap-y-2 lg:grid-cols-2">
-                                {chapters.map((chapter) => (
-                                    <ChapterRow
-                                        key={chapter.id}
-                                        chapter={chapter}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </section>
-
-            <section className="border-t border-slate-200 bg-[#fafaf8] py-14 sm:py-18">
-                <div className="mx-auto max-w-4xl px-4 text-center sm:px-6">
-                    <h2 className="font-young text-3xl tracking-[-0.03em] text-slate-950 sm:text-4xl">
-                        Everything stays centered on the text.
-                    </h2>
-                    <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-slate-500 sm:text-base">
-                        Start with a chapter, follow a topic, or save verses
-                        into a collection. The structure stays simple so the
-                        reading stays primary.
-                    </p>
-                    <Button
-                        size="lg"
-                        onClick={scrollToChapters}
-                        className="mt-8 h-12 rounded-full px-6"
-                    >
-                        <BookOpen className="h-5 w-5" />
-                        Browse chapters
-                    </Button>
-                </div>
-            </section>
+                </section>
+            </div>
         </LandingLayout>
     );
 }

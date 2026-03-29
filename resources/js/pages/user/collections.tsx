@@ -1,12 +1,6 @@
 import { CollectionTagList } from '@/components/collections/collection-tag-list';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardFooter,
-    CardHeader,
-} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import PublicLayout from '@/layouts/public-layout';
 import { api } from '@/lib/api-client';
@@ -172,11 +166,15 @@ export default function CollectionsPage() {
     return (
         <PublicLayout>
             <Head title="Public Collections - From Quran" />
-            <div className="flex flex-1 flex-col bg-[#fafaf8]">
+            <div className="flex flex-1 flex-col bg-[#f7f4ef]">
                 <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10">
-                    <section className="border-b border-slate-200 pb-6">
+                    <section className="relative overflow-hidden border-b border-slate-200 pb-6">
+                        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-400/40 to-transparent" />
                         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
                             <div>
+                                <p className="text-xs font-semibold tracking-[0.22em] text-slate-400 uppercase">
+                                    Collections
+                                </p>
                                 <h1 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-4xl">
                                     Community collections
                                 </h1>
@@ -196,7 +194,7 @@ export default function CollectionsPage() {
                             </Button>
                         </div>
 
-                        <div className="mt-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                        <div className="mt-5 grid gap-3 border-t border-slate-300/80 pt-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                             <div className="relative">
                                 <Search className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-slate-400" />
                                 <Input
@@ -223,7 +221,7 @@ export default function CollectionsPage() {
                     )}
 
                     {availableTags.length > 0 && (
-                        <section>
+                        <section className="border-y border-slate-300/80 py-4">
                             <div className="flex flex-wrap items-center gap-2">
                                 <p className="mr-2 text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">
                                     Filter by tag
@@ -266,84 +264,79 @@ export default function CollectionsPage() {
                     )}
 
                     {filteredCollections.length === 0 ? (
-                        <Card className="rounded-3xl border-slate-200 bg-white shadow-sm">
-                            <CardContent className="py-16 text-center">
-                                <Folder className="mx-auto h-12 w-12 text-slate-300" />
-                                <h2 className="mt-4 text-xl font-semibold text-slate-950">
-                                    No collections found
-                                </h2>
-                                <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-slate-500">
-                                    No public collections match your current
-                                    filters or search.
-                                </p>
-                                {(selectedTagSlugs.length > 0 ||
-                                    searchQuery) && (
-                                    <Button
-                                        onClick={clearFilters}
-                                        className="mt-6 rounded-full px-5"
-                                    >
-                                        Clear filters
-                                    </Button>
-                                )}
-                            </CardContent>
-                        </Card>
+                        <section className="border-y border-slate-200 bg-white/55 py-16 text-center backdrop-blur-sm">
+                            <Folder className="mx-auto h-12 w-12 text-slate-300" />
+                            <h2 className="mt-4 text-xl font-semibold text-slate-950">
+                                No collections found
+                            </h2>
+                            <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-slate-500">
+                                No public collections match your current filters
+                                or search.
+                            </p>
+                            {(selectedTagSlugs.length > 0 || searchQuery) && (
+                                <Button
+                                    onClick={clearFilters}
+                                    className="mt-6 rounded-full px-5"
+                                >
+                                    Clear filters
+                                </Button>
+                            )}
+                        </section>
                     ) : (
-                        <section className="grid gap-4 sm:grid-cols-2">
+                        <section className="grid gap-0 border-y border-slate-200 bg-white/45 backdrop-blur-sm sm:grid-cols-2">
                             {filteredCollections.map((collection, index) => (
                                 <article
                                     key={collection.id}
                                     className={
                                         index % 2 === 0
-                                            ? 'rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md'
-                                            : 'rounded-3xl border border-slate-200 bg-slate-50/70 p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white hover:shadow-md'
+                                            ? 'border-t border-r-0 border-l-0 border-slate-200 px-4 py-5 transition-colors hover:bg-white/75 sm:border-r sm:px-6'
+                                            : 'border-t border-r-0 border-l-0 border-slate-200 bg-slate-50/35 px-4 py-5 transition-colors hover:bg-white/75 sm:px-6'
                                     }
                                 >
-                                    <CardHeader className="p-0">
-                                        <div className="flex items-start justify-between gap-4">
-                                            <button
-                                                type="button"
-                                                className="min-w-0 flex-1 text-left"
-                                                onClick={() =>
-                                                    handleViewCollection(
-                                                        collection.slug,
-                                                    )
-                                                }
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <span
-                                                        className="h-3 w-3 rounded-full"
-                                                        style={{
-                                                            backgroundColor:
-                                                                collection.color,
-                                                        }}
-                                                    />
-                                                    <h2 className="truncate text-lg font-semibold tracking-tight text-slate-950">
-                                                        {collection.name}
-                                                    </h2>
-                                                </div>
+                                    <div className="flex items-start justify-between gap-4">
+                                        <button
+                                            type="button"
+                                            className="min-w-0 flex-1 text-left"
+                                            onClick={() =>
+                                                handleViewCollection(
+                                                    collection.slug,
+                                                )
+                                            }
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <span
+                                                    className="h-3 w-3 rounded-full"
+                                                    style={{
+                                                        backgroundColor:
+                                                            collection.color,
+                                                    }}
+                                                />
+                                                <h2 className="truncate text-lg font-semibold tracking-tight text-slate-950">
+                                                    {collection.name}
+                                                </h2>
+                                            </div>
 
-                                                {collection.description && (
-                                                    <p className="mt-3 line-clamp-2 text-sm leading-7 text-slate-500">
-                                                        {truncateDescription(
-                                                            collection.description,
-                                                        )}
-                                                    </p>
-                                                )}
-                                            </button>
+                                            {collection.description && (
+                                                <p className="mt-3 line-clamp-2 text-sm leading-7 text-slate-500">
+                                                    {truncateDescription(
+                                                        collection.description,
+                                                    )}
+                                                </p>
+                                            )}
+                                        </button>
 
-                                            <Badge
-                                                variant="secondary"
-                                                className="rounded-full bg-slate-100 px-3 py-1 text-slate-600"
-                                            >
-                                                {collection.verses_count} Ayah
-                                                {collection.verses_count === 1
-                                                    ? ''
-                                                    : 's'}
-                                            </Badge>
-                                        </div>
-                                    </CardHeader>
+                                        <Badge
+                                            variant="secondary"
+                                            className="rounded-full bg-slate-100 px-3 py-1 text-slate-600"
+                                        >
+                                            {collection.verses_count} Ayah
+                                            {collection.verses_count === 1
+                                                ? ''
+                                                : 's'}
+                                        </Badge>
+                                    </div>
 
-                                    <CardContent className="mt-4 p-0">
+                                    <div className="mt-4">
                                         <CollectionTagList
                                             tags={collection.tags}
                                             className="mt-0"
@@ -351,9 +344,9 @@ export default function CollectionsPage() {
                                                 `/collections?tags[]=${encodeURIComponent(tag.slug)}`
                                             }
                                         />
-                                    </CardContent>
+                                    </div>
 
-                                    <CardFooter className="mt-6 flex items-center justify-between border-t border-slate-200 pt-4">
+                                    <div className="mt-6 flex items-center justify-between border-t border-slate-200 pt-4">
                                         <div className="space-y-1 text-xs text-slate-400">
                                             <p>
                                                 Created{' '}
@@ -380,7 +373,7 @@ export default function CollectionsPage() {
                                             View collection
                                             <ChevronRight className="h-4 w-4" />
                                         </Button>
-                                    </CardFooter>
+                                    </div>
                                 </article>
                             ))}
                         </section>
