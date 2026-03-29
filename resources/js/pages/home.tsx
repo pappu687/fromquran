@@ -49,8 +49,8 @@ const featureItems: FeatureProps[] = [
 
 function FeatureRow({ icon, title, description }: FeatureProps) {
     return (
-        <div className="grid gap-4 border-t border-slate-300/80 py-5 first:border-t-0 first:pt-0 sm:grid-cols-[2.75rem_minmax(0,1fr)] sm:gap-5">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-300/80 bg-white/70 text-slate-700">
+        <div className="grid gap-4 py-4 sm:grid-cols-[2.75rem_minmax(0,1fr)] sm:gap-5">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200/80 bg-white/80 text-slate-700 shadow-[0_1px_0_rgba(15,23,42,0.03)]">
                 {icon}
             </div>
             <div className="space-y-1.5">
@@ -69,11 +69,12 @@ function ChapterRow({ chapter }: { chapter: ChapterSummary }) {
     return (
         <button
             type="button"
-            className="group grid w-full min-w-0 gap-3 border-t border-slate-200 py-4 text-left transition-colors first:border-t-0 first:pt-0 hover:text-slate-950 sm:grid-cols-[minmax(0,1fr)_auto]"
+            className="group relative grid w-full min-w-0 gap-3 bg-white/45 px-4 py-4 text-left shadow-[0_12px_40px_-34px_rgba(15,23,42,0.42)] ring-1 ring-slate-200/70 transition-colors hover:bg-white/72 sm:grid-cols-[minmax(0,1fr)_auto] sm:px-5"
             onClick={() => router.visit(`/${chapter.number}`)}
         >
+            <div className="pointer-events-none absolute inset-y-4 left-0 w-px bg-slate-200" />
             <div className="flex min-w-0 items-start gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-stone-50 text-sm font-semibold text-slate-700 transition-colors group-hover:border-slate-500 group-hover:text-slate-950">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-stone-50/90 text-sm font-semibold text-slate-700 transition-colors group-hover:border-slate-400 group-hover:text-slate-950">
                     {chapter.number}
                 </div>
                 <div className="min-w-0">
@@ -107,7 +108,7 @@ function ChapterRow({ chapter }: { chapter: ChapterSummary }) {
 
 function StatColumn({ value, label }: { value: string; label: string }) {
     return (
-        <div className="border-t border-slate-300/80 py-5 first:border-t-0 first:pt-0 sm:border-t-0 sm:border-l sm:px-6 sm:py-0 sm:first:border-l-0 sm:first:px-0">
+        <div className="rounded-[1.5rem] bg-white/55 px-4 py-5 shadow-[0_12px_36px_-32px_rgba(15,23,42,0.3)] ring-1 ring-white/70 backdrop-blur-sm sm:px-5">
             <div className="text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-[2.2rem]">
                 {value}
             </div>
@@ -131,16 +132,18 @@ export default function HomePage() {
     return (
         <LandingLayout title="From Quran - Explore the Quran Like Never Before">
             <div className="bg-[#f7f4ef] text-slate-950">
-                <section className="relative overflow-hidden border-b border-slate-200">
-                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-400/40 to-transparent" />
+                <section className="relative overflow-hidden">
                     <div className="absolute top-16 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,_rgba(148,163,184,0.16),_transparent_68%)] blur-3xl" />
+                    <div className="pointer-events-none absolute top-10 right-0 h-56 w-56 rounded-full bg-white/50 blur-3xl" />
 
                     <div className="mx-auto max-w-7xl px-4 sm:px-6">
                         <div className="grid gap-14 py-14 sm:py-18 lg:grid-cols-[minmax(0,1.2fr)_minmax(19rem,0.8fr)] lg:gap-16 lg:py-24">
                             <div className="max-w-4xl">
-                                <div className="flex items-center gap-3 text-xs font-semibold tracking-[0.22em] text-slate-400 uppercase">
+                                <div className="flex flex-wrap items-center gap-3 text-xs font-semibold tracking-[0.22em] text-slate-400 uppercase">
                                     <span>From Quran</span>
-                                    <span className="h-px flex-1 bg-slate-300/80" />
+                                    <span className="inline-flex items-center rounded-full border border-slate-200/80 bg-white/70 px-3 py-1.5 text-[11px] text-slate-500 shadow-[0_1px_0_rgba(15,23,42,0.03)]">
+                                        Read. Trace. Collect.
+                                    </span>
                                 </div>
 
                                 <h1 className="font-young mt-6 max-w-4xl text-[3rem] leading-[0.92] tracking-[-0.055em] text-slate-950 sm:text-[4.2rem] lg:text-[5.5rem]">
@@ -156,7 +159,7 @@ export default function HomePage() {
                                         experience designed to stay calm, clear,
                                         and highly readable.
                                     </p>
-                                    <div className="border-l border-slate-300/80 pl-5 text-sm leading-7 text-slate-500">
+                                    <div className="rounded-[1.25rem] bg-white/45 px-4 py-4 text-sm leading-7 text-slate-500 shadow-[0_12px_36px_-32px_rgba(15,23,42,0.28)] ring-1 ring-white/70">
                                         Structured for focused reading, not
                                         visual clutter.
                                     </div>
@@ -169,7 +172,6 @@ export default function HomePage() {
                                         className="h-12 rounded-full px-6"
                                     >
                                         Start reading
-                                        <ArrowRight className="h-4 w-4" />
                                     </Button>
                                     <Button
                                         size="lg"
@@ -191,7 +193,7 @@ export default function HomePage() {
                                     </Button>
                                 </div>
 
-                                <div className="mt-12 grid gap-4 border-t border-slate-300/80 pt-6 sm:grid-cols-2 sm:gap-0 sm:pt-8">
+                                <div className="mt-12 grid gap-4 sm:grid-cols-2">
                                     <StatColumn
                                         value="114"
                                         label="chapters ready to open"
@@ -203,14 +205,15 @@ export default function HomePage() {
                                 </div>
                             </div>
 
-                            <aside className="relative">
-                                <div className="absolute top-0 left-0 hidden h-full w-px bg-slate-300/80 lg:block" />
-                                <div className="lg:pl-9">
-                                    <div className="flex items-center gap-3 text-xs font-semibold tracking-[0.22em] text-slate-400 uppercase">
+                            <aside className="relative lg:pl-8">
+                                <div className="rounded-[2rem] bg-white/38 p-5 shadow-[0_18px_50px_-34px_rgba(15,23,42,0.35)] ring-1 ring-white/70 backdrop-blur-sm sm:p-6">
+                                    <div className="flex flex-wrap items-center gap-3 text-xs font-semibold tracking-[0.22em] text-slate-400 uppercase">
                                         <span>Why it feels better</span>
-                                        <span className="h-px flex-1 bg-slate-300/80" />
+                                        <span className="inline-flex items-center rounded-full border border-slate-200/80 bg-stone-50/80 px-3 py-1 text-[11px] text-slate-500">
+                                            Built for reading
+                                        </span>
                                     </div>
-                                    <div className="mt-6">
+                                    <div className="mt-5 space-y-1">
                                         {featureItems.map((feature) => (
                                             <FeatureRow
                                                 key={feature.title}
@@ -228,7 +231,6 @@ export default function HomePage() {
                     id="chapters-section"
                     className="relative overflow-hidden py-14 sm:py-18 lg:py-24"
                 >
-                    <div className="absolute inset-x-0 top-0 h-px bg-slate-200" />
                     <div className="absolute top-20 right-0 h-72 w-72 rounded-full bg-[radial-gradient(circle,_rgba(226,232,240,0.9),_transparent_70%)] blur-3xl" />
 
                     <div className="mx-auto max-w-7xl px-4 sm:px-6">
@@ -236,8 +238,8 @@ export default function HomePage() {
                             <p className="text-xs font-semibold tracking-[0.2em] text-slate-400 uppercase">
                                 Chapters
                             </p>
-                            <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                                <div>
+                            <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-end">
+                                <div className="sm:flex-1">
                                     <h2 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-4xl">
                                         All 114 chapters
                                     </h2>
@@ -250,7 +252,7 @@ export default function HomePage() {
                                 </div>
                                 <Button
                                     variant="link"
-                                    className="h-auto self-start px-0 text-sm font-medium text-slate-700 sm:self-auto"
+                                    className="h-auto self-end px-0 text-sm font-medium text-slate-700 sm:ml-auto sm:self-auto"
                                     onClick={() =>
                                         router.visit('/revelation-order')
                                     }
@@ -261,16 +263,16 @@ export default function HomePage() {
                             </div>
                         </div>
 
-                        <div className="border-y border-slate-200 bg-white/55 px-0 py-0 backdrop-blur-sm">
+                        <div className="grid gap-3 lg:grid-cols-2">
                             {loading ? (
-                                <div className="px-6 py-14 text-center">
+                                <div className="rounded-[2rem] bg-white/55 px-6 py-14 text-center backdrop-blur-sm">
                                     <div className="mx-auto h-12 w-12 animate-pulse rounded-full bg-slate-200" />
                                     <p className="mt-4 text-sm text-slate-500">
                                         Loading chapters...
                                     </p>
                                 </div>
                             ) : hasError ? (
-                                <div className="px-6 py-10 text-center">
+                                <div className="rounded-[2rem] bg-white/55 px-6 py-10 text-center backdrop-blur-sm">
                                     <h3 className="text-lg font-semibold text-red-900">
                                         Chapters could not be loaded
                                     </h3>
@@ -279,22 +281,20 @@ export default function HomePage() {
                                     </p>
                                 </div>
                             ) : (
-                                <div className="grid gap-x-10 px-4 py-5 sm:px-6 lg:grid-cols-2">
-                                    {chapters.map((chapter) => (
-                                        <ChapterRow
-                                            key={chapter.id}
-                                            chapter={chapter}
-                                        />
-                                    ))}
-                                </div>
+                                chapters.map((chapter) => (
+                                    <ChapterRow
+                                        key={chapter.id}
+                                        chapter={chapter}
+                                    />
+                                ))
                             )}
                         </div>
                     </div>
                 </section>
 
-                <section className="border-t border-slate-200 py-14 sm:py-18">
+                <section className="py-14 sm:py-18">
                     <div className="mx-auto max-w-7xl px-4 sm:px-6">
-                        <div className="grid gap-6 border-y border-slate-300/80 py-8 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end sm:gap-10">
+                        <div className="grid gap-6 rounded-[2rem] bg-white/42 px-5 py-8 shadow-[0_18px_50px_-34px_rgba(15,23,42,0.32)] ring-1 ring-white/70 backdrop-blur-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end sm:gap-10 sm:px-8">
                             <div className="max-w-2xl">
                                 <h2 className="font-young text-3xl tracking-[-0.03em] text-slate-950 sm:text-4xl">
                                     Everything stays centered on the text.

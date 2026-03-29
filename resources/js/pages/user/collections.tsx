@@ -167,9 +167,9 @@ export default function CollectionsPage() {
         <PublicLayout>
             <Head title="Public Collections - From Quran" />
             <div className="flex flex-1 flex-col bg-[#f7f4ef]">
-                <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10">
-                    <section className="relative overflow-hidden border-b border-slate-200 pb-6">
-                        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-400/40 to-transparent" />
+                <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10">
+                    <section className="relative overflow-hidden">
+                        <div className="pointer-events-none absolute -top-14 right-0 h-36 w-36 rounded-full bg-white/55 blur-3xl" />
                         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
                             <div>
                                 <p className="text-xs font-semibold tracking-[0.22em] text-slate-400 uppercase">
@@ -183,19 +183,34 @@ export default function CollectionsPage() {
                                     community. Discover themed verses gathered
                                     for reflection, study, and remembrance.
                                 </p>
+                                <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-slate-500">
+                                    <span className="inline-flex items-center rounded-full border border-slate-200/80 bg-white/70 px-3 py-1.5 font-medium text-slate-700 shadow-[0_1px_0_rgba(15,23,42,0.03)] backdrop-blur-sm">
+                                        {filteredCollections.length} collection
+                                        {filteredCollections.length === 1
+                                            ? ''
+                                            : 's'}
+                                    </span>
+                                    {selectedTagSlugs.length > 0 && (
+                                        <span className="inline-flex items-center rounded-full border border-slate-200/70 bg-stone-100/80 px-3 py-1.5 text-slate-600">
+                                            {selectedTagSlugs.length} filter
+                                            {selectedTagSlugs.length === 1
+                                                ? ''
+                                                : 's'}{' '}
+                                            active
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                             <Button
                                 onClick={() => router.visit('/')}
-                                className="gap-2 self-start rounded-full px-5 sm:self-auto"
+                                className="h-auto w-full gap-2 self-start rounded-full px-5 py-3 font-semibold whitespace-normal sm:w-auto sm:self-auto"
                             >
-                                <FolderPlus className="h-4 w-4" />
                                 Browse Quran
-                                <ChevronRight className="h-4 w-4" />
                             </Button>
                         </div>
 
-                        <div className="mt-5 grid gap-3 border-t border-slate-300/80 pt-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-                            <div className="relative">
+                        <div className="mt-6">
+                            <div className="relative min-w-0">
                                 <Search className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-slate-400" />
                                 <Input
                                     type="search"
@@ -207,10 +222,6 @@ export default function CollectionsPage() {
                                     className="h-11 rounded-full border-slate-200 bg-white pr-4 pl-11 shadow-none focus-visible:ring-slate-300"
                                 />
                             </div>
-                            <div className="text-sm text-slate-500">
-                                {filteredCollections.length} collection
-                                {filteredCollections.length === 1 ? '' : 's'}
-                            </div>
                         </div>
                     </section>
 
@@ -221,7 +232,7 @@ export default function CollectionsPage() {
                     )}
 
                     {availableTags.length > 0 && (
-                        <section className="border-y border-slate-300/80 py-4">
+                        <section className="rounded-[1.5rem] bg-white/35 px-4 py-4 backdrop-blur-sm">
                             <div className="flex flex-wrap items-center gap-2">
                                 <p className="mr-2 text-xs font-semibold tracking-[0.18em] text-slate-400 uppercase">
                                     Filter by tag
@@ -253,7 +264,7 @@ export default function CollectionsPage() {
                                         type="button"
                                         variant="ghost"
                                         size="sm"
-                                        className="rounded-full px-3 text-slate-500"
+                                        className="rounded-full px-3 text-slate-500 hover:bg-white/70"
                                         onClick={clearFilters}
                                     >
                                         Clear
@@ -264,7 +275,7 @@ export default function CollectionsPage() {
                     )}
 
                     {filteredCollections.length === 0 ? (
-                        <section className="border-y border-slate-200 bg-white/55 py-16 text-center backdrop-blur-sm">
+                        <section className="rounded-[2rem] bg-white/55 py-16 text-center backdrop-blur-sm">
                             <Folder className="mx-auto h-12 w-12 text-slate-300" />
                             <h2 className="mt-4 text-xl font-semibold text-slate-950">
                                 No collections found
@@ -283,17 +294,20 @@ export default function CollectionsPage() {
                             )}
                         </section>
                     ) : (
-                        <section className="grid gap-0 border-y border-slate-200 bg-white/45 backdrop-blur-sm sm:grid-cols-2">
-                            {filteredCollections.map((collection, index) => (
+                        <section className="grid gap-3">
+                            {filteredCollections.map((collection) => (
                                 <article
                                     key={collection.id}
-                                    className={
-                                        index % 2 === 0
-                                            ? 'border-t border-r-0 border-l-0 border-slate-200 px-4 py-5 transition-colors hover:bg-white/75 sm:border-r sm:px-6'
-                                            : 'border-t border-r-0 border-l-0 border-slate-200 bg-slate-50/35 px-4 py-5 transition-colors hover:bg-white/75 sm:px-6'
-                                    }
+                                    className="group relative overflow-hidden bg-white/45 px-4 py-5 shadow-[0_12px_40px_-34px_rgba(15,23,42,0.45)] ring-1 ring-slate-200/70 transition-colors hover:bg-white/72 sm:px-6"
                                 >
-                                    <div className="flex items-start justify-between gap-4">
+                                    <div className="pointer-events-none absolute inset-y-5 left-0 w-px bg-slate-200" />
+                                    <div
+                                        className="pointer-events-none absolute top-5 left-0 h-12 w-1 rounded-r-full transition-transform duration-300 group-hover:scale-y-110"
+                                        style={{
+                                            backgroundColor: collection.color,
+                                        }}
+                                    />
+                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                         <button
                                             type="button"
                                             className="min-w-0 flex-1 text-left"
@@ -303,15 +317,15 @@ export default function CollectionsPage() {
                                                 )
                                             }
                                         >
-                                            <div className="flex items-center gap-3">
+                                            <div className="flex min-w-0 items-start gap-3">
                                                 <span
-                                                    className="h-3 w-3 rounded-full"
+                                                    className="mt-1 h-3 w-3 shrink-0 rounded-full"
                                                     style={{
                                                         backgroundColor:
                                                             collection.color,
                                                     }}
                                                 />
-                                                <h2 className="truncate text-lg font-semibold tracking-tight text-slate-950">
+                                                <h2 className="text-lg font-semibold tracking-tight text-slate-950 sm:truncate">
                                                     {collection.name}
                                                 </h2>
                                             </div>
@@ -327,7 +341,7 @@ export default function CollectionsPage() {
 
                                         <Badge
                                             variant="secondary"
-                                            className="rounded-full bg-slate-100 px-3 py-1 text-slate-600"
+                                            className="self-start rounded-full border border-slate-200/80 bg-white/85 px-3 py-1 text-slate-600"
                                         >
                                             {collection.verses_count} Ayah
                                             {collection.verses_count === 1
@@ -346,9 +360,10 @@ export default function CollectionsPage() {
                                         />
                                     </div>
 
-                                    <div className="mt-6 flex items-center justify-between border-t border-slate-200 pt-4">
-                                        <div className="space-y-1 text-xs text-slate-400">
-                                            <p>
+                                    <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-400">
+                                            <p className="inline-flex items-center gap-1.5">
+                                                <span className="h-1 w-1 rounded-full bg-slate-300" />
                                                 Created{' '}
                                                 {formatDate(
                                                     collection.created_at,
@@ -363,7 +378,7 @@ export default function CollectionsPage() {
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            className="rounded-full px-3 text-slate-700"
+                                            className="h-auto max-w-full self-start rounded-full border border-transparent bg-white/70 px-3 py-2 text-left whitespace-normal text-slate-700 hover:border-slate-200 hover:bg-white"
                                             onClick={() =>
                                                 handleViewCollection(
                                                     collection.slug,

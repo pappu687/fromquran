@@ -100,7 +100,7 @@ export default function LandingLayout({
                     <div className="container mx-auto max-w-7xl px-4 py-10 md:py-12">
                         <div className="flex flex-col items-start gap-8 sm:flex-row sm:items-start">
                             <div className="max-w-xs sm:flex-[1]">
-                                <div className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+                                <div className="font-young text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
                                     FromQuran
                                 </div>
                             </div>
