@@ -12,20 +12,20 @@ class QuranVerseAudioController extends Controller
 {
     public function __construct(private readonly QuranVerseAudioService $service) {}
 
-    public function navigation(string $verseKey): JsonResponse
+    public function navigation(string $chapterId, string $verseNumber): JsonResponse
     {
-        $this->validateVerseKey($verseKey);
+        $verseKey = "{$chapterId}:{$verseNumber}";
 
         return response()->json($this->service->getNavigation($verseKey));
     }
 
-    public function verseAudio(Request $request, string $verseKey): JsonResponse
+    public function verseAudio(Request $request, string $chapterId, string $verseNumber): JsonResponse
     {
-        $this->validateVerseKey($verseKey);
-
         $validated = Validator::make($request->query(), [
             'recitation_id' => ['required', 'integer', 'min:1'],
         ])->validate();
+
+        $verseKey = "{$chapterId}:{$verseNumber}";
 
         return response()->json($this->service->getVerseAudio(
             $verseKey,

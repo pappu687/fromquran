@@ -23,12 +23,13 @@ export function getVerseAudio(
     verseKey: string,
     recitationId: number,
 ): Promise<VerseAudioResponse> {
+    const [chapterId, verseNumber] = verseKey.split(':');
     const query = new URLSearchParams({
         recitation_id: String(recitationId),
     });
 
     return api.get<VerseAudioResponse>(
-        `/api/quran/audio/verse/${encodeURIComponent(verseKey)}?${query}`,
+        `/api/quran/audio/verse/${chapterId}/${verseNumber}?${query}`,
         { retry: 0 },
     );
 }
@@ -36,8 +37,9 @@ export function getVerseAudio(
 export function getVerseNavigation(
     verseKey: string,
 ): Promise<VerseNavigationResponse> {
+    const [chapterId, verseNumber] = verseKey.split(':');
     return api.get<VerseNavigationResponse>(
-        `/api/quran/verses/${encodeURIComponent(verseKey)}/navigation`,
+        `/api/quran/verses/${chapterId}/${verseNumber}/navigation`,
         { retry: 0 },
     );
 }
