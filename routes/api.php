@@ -1,14 +1,15 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\QuranFoundationController;
+use App\Http\Controllers\Api\VerseAnnotationController;
+use App\Http\Controllers\Api\VerseResourceController;
 use App\Http\Controllers\BookmarkController;
 use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\PublicCollectionViewController;
 use App\Http\Controllers\QuranController;
 use App\Http\Controllers\TagController;
-use App\Http\Controllers\Api\VerseAnnotationController;
-use App\Http\Controllers\Api\VerseResourceController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -38,6 +39,27 @@ Route::prefix('quran')->group(function () {
     Route::get('/chapters/{chapterId}/resources', [\App\Http\Controllers\Api\ChapterResourceController::class, 'show']);
     Route::get('/verses', [QuranController::class, 'allVersesForChapter']);
     Route::get('/settings', [QuranController::class, 'settings']);
+});
+
+Route::prefix('qf')->group(function () {
+    Route::get('/verify', [QuranFoundationController::class, 'verify']);
+
+    Route::get('/resources/recitations', [QuranFoundationController::class, 'recitations']);
+    Route::get('/resources/recitations/{id}', [QuranFoundationController::class, 'recitationInfo'])->whereNumber('id');
+    Route::get('/resources/translations', [QuranFoundationController::class, 'translations']);
+    Route::get('/resources/translations/{id}', [QuranFoundationController::class, 'translationInfo'])->whereNumber('id');
+    Route::get('/resources/tafsirs', [QuranFoundationController::class, 'tafsirs']);
+    Route::get('/resources/tafsirs/{id}', [QuranFoundationController::class, 'tafsirInfo'])->whereNumber('id');
+    Route::get('/resources/languages', [QuranFoundationController::class, 'languages']);
+    Route::get('/resources/chapter-infos', [QuranFoundationController::class, 'chapterInfos']);
+    Route::get('/resources/chapter-reciters', [QuranFoundationController::class, 'chapterReciters']);
+    Route::get('/resources/recitation-styles', [QuranFoundationController::class, 'recitationStyles']);
+    Route::get('/resources/verse-media', [QuranFoundationController::class, 'verseMedia']);
+
+    Route::get('/audio/chapter-recitations/{chapterId}', [QuranFoundationController::class, 'chapterRecitations'])->whereNumber('chapterId');
+    Route::get('/audio/chapter-recitations/{chapterId}/{recitationId}', [QuranFoundationController::class, 'chapterRecitation'])->whereNumber(['chapterId', 'recitationId']);
+    Route::get('/audio/verse-recitations/by-chapter/{chapterId}/{recitationId}', [QuranFoundationController::class, 'verseRecitationsByChapter'])->whereNumber(['chapterId', 'recitationId']);
+    Route::get('/audio/verse-recitations/by-key/{verseKey}/{recitationId}', [QuranFoundationController::class, 'verseRecitationsByKey'])->whereNumber('recitationId');
 });
 
 // Bookmark Routes (require authentication)

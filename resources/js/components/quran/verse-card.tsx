@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { useAudioPlayer } from '@/store/use-audio-player';
 import { type VerseAnnotation, type VerseListItem } from '@/types/quran';
 import { router } from '@inertiajs/react';
+import { toast } from 'sonner';
 import {
     Bookmark,
     BookmarkCheck,
@@ -30,6 +31,8 @@ import {
     Plus,
     Quote,
     Share2,
+    Play,
+    Loader2,
 } from 'lucide-react';
 import { useState } from 'react';
 import { AddResourceModal } from './add-resource-modal';
@@ -88,14 +91,80 @@ export function VerseCard({
     const [isTafsirModalOpen, setIsTafsirModalOpen] = useState(false);
     const [shareUrl, setShareUrl] = useState<string | null>(null);
     const { settings } = useReaderSettings();
-    const { playVerse, currentVerse, isPlaying } = useAudioPlayer();
+    const { playVerse, currentVerse, isPlaying, pause } = useAudioPlayer();
+
+    const [qfAudio, setQfAudio] = useState<HTMLAudioElement | null>(null);
+    const [isQfPlaying, setIsQfPlaying] = useState(false);
+    const [isQfLoading, setIsQfLoading] = useState(false);
 
     const handleBookmark = () => {
         onBookmarkToggle?.(verse.id);
     };
 
-    const handlePlayAudio = () => {
-        playVerse(verse.chapterId, verse.verseNumber, reciterId);
+    const handlePlayAudio = async () => {
+        if (isQfPlaying && qfAudio) {
+            qfAudio.pause();
+            setIsQfPlaying(false);
+            return;
+        }
+
+        if (isPlaying) {
+            pause();
+        }
+
+        try {
+            setIsQfLoading(true);
+            // QF API prelive env usually supports 6 and 7. Fallback to 7 if reciterId is not valid for QF.
+            const validQfIds = [6, 7];
+            const qfReciterId = validQfIds.includes(reciterId) ? reciterId : 7;
+            const response = await fetch(`/api/qf/audio/verse-recitations/by-key/${verse.chapterNumber}:${verse.verseNumber}/${qfReciterId}`);
+            
+            if (!response.ok) {
+                if (response.status === 404) {
+                    toast.error('Audio recitation is not available for this verse yet.');
+                } else {
+                    toast.error('Failed to fetch audio recitation.');
+                }
+                throw new Error('Failed to fetch audio');
+            }
+            
+            const data = await response.json();
+            const url = data.audio_files?.[0]?.url;
+
+            if (url) {
+                let fullUrl = url;
+                if (url.startsWith('//')) {
+                    fullUrl = `https:${url}`;
+                } else if (!url.startsWith('http')) {
+                    const AUDIO_BASE_URL = 'https://audio.qurancdn.com';
+                    fullUrl = `${AUDIO_BASE_URL}/${url.replace(/^\/+/, '')}`;
+                }
+                
+                const newAudio = new Audio(fullUrl);
+                
+                newAudio.onplay = () => {
+                    setIsQfPlaying(true);
+                    setIsQfLoading(false);
+                };
+                
+                newAudio.onended = () => {
+                    setIsQfPlaying(false);
+                };
+                
+                newAudio.onerror = () => {
+                    setIsQfLoading(false);
+                    setIsQfPlaying(false);
+                };
+
+                setQfAudio(newAudio);
+                newAudio.play();
+            } else {
+                setIsQfLoading(false);
+            }
+        } catch (error) {
+            console.error('Error playing verse audio:', error);
+            setIsQfLoading(false);
+        }
     };
 
     const handleAddResource = () => {
@@ -104,9 +173,9 @@ export function VerseCard({
 
     // Check if this is the currently playing verse
     const isCurrentlyPlaying =
-        currentVerse?.chapterId === verse.chapterId &&
+        (currentVerse?.chapterId === verse.chapterId &&
         currentVerse?.verseNumber === verse.verseNumber &&
-        isPlaying;
+        isPlaying) || isQfPlaying;
 
     const handleCopyArabic = () => {
         navigator.clipboard.writeText(verse.text);
@@ -218,16 +287,18 @@ export function VerseCard({
 
                     {!hideHeaderActions && (
                         <div className="flex items-center gap-1 transition-opacity duration-200">
-                            {/* Play Button hidden for now */}
-                            {/* <Tooltip>
+                            <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button
                                         variant="ghost"
                                         size="sm"
                                         onClick={handlePlayAudio}
+                                        disabled={isQfLoading}
                                         className="h-8 w-8 p-0"
                                     >
-                                        {isCurrentlyPlaying ? (
+                                        {isQfLoading ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : isCurrentlyPlaying ? (
                                             <div className="flex h-4 w-4 items-center items-end justify-center gap-0.5">
                                                 <span className="h-2 w-0.5 animate-pulse bg-current" />
                                                 <span className="h-3 w-0.5 animate-pulse bg-current delay-75" />
@@ -243,7 +314,7 @@ export function VerseCard({
                                         ? 'Playing'
                                         : 'Play audio'}
                                 </TooltipContent>
-                            </Tooltip> */}
+                            </Tooltip>
 
                             <Tooltip>
                                 <TooltipTrigger asChild>

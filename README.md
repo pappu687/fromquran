@@ -138,6 +138,28 @@ php artisan test --filter=TestName
 php artisan test tests/Feature/SomeTest.php
 ```
 
+## Quran Foundation Content API
+
+Audio and resource metadata can be proxied through Laravel at `/api/qf/*`. React must use `resources/js/api/quranFoundation.ts` and must not call Quran Foundation directly.
+
+Required environment values:
+
+```bash
+QF_CLIENT_ID=
+QF_CLIENT_SECRET=
+QF_ENV=prelive
+QF_CACHE_STORE=file
+```
+
+Use `QF_ENV=prelive` for `https://prelive-oauth2.quran.foundation` and `https://apis-prelive.quran.foundation`. Use `QF_ENV=production` for `https://oauth2.quran.foundation` and `https://apis.quran.foundation`.
+
+The backend uses the client credentials flow with the `content` scope, caches access tokens, refreshes shortly before expiry, and never returns tokens or secrets to the frontend. To smoke-test the integration after configuring credentials, call:
+
+```bash
+curl http://localhost:8004/api/qf/verify
+php artisan qf:verify
+```
+
 ## Contributor Workflow
 
 ### Frontend conventions
