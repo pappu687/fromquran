@@ -206,3 +206,104 @@
   margin-bottom: 1rem;
   margin-top: 1rem;
 }
+
+body.has-quran-floating-audio-player {
+  padding-bottom: 58px;
+}
+
+.quran-floating-audio-player .rhap_container {
+  box-shadow: none;
+  padding: 0;
+  background: transparent;
+  color: var(--foreground);
+}
+
+.quran-floating-audio-player .rhap_horizontal-reverse {
+  gap: 0.5rem;
+}
+
+.quran-floating-audio-player .rhap_controls-section {
+  margin-top: 0;
+}
+
+.quran-floating-audio-player .rhap_main {
+  gap: 0.25rem;
+}
+
+.quran-floating-audio-player .rhap_main-controls {
+  gap: 0.2rem;
+}
+
+.quran-floating-audio-player .rhap_main-controls-button {
+  width: 28px;
+  height: 28px;
+  margin: 0 1px;
+  font-size: 24px;
+}
+
+.quran-floating-audio-player .rhap_play-pause-button {
+  width: 34px;
+  height: 34px;
+  font-size: 32px;
+}
+
+.quran-floating-audio-player .rhap_progress-section {
+  gap: 0.35rem;
+  margin-bottom: 0;
+}
+
+.quran-floating-audio-player .rhap_time {
+  font-size: 11px;
+}
+
+.quran-floating-audio-player .rhap_volume-controls {
+  flex: 0 0 auto;
+}
+
+.quran-floating-audio-player .rhap_main-controls-button,
+.quran-floating-audio-player .rhap_volume-button {
+  color: var(--foreground);
+}
+
+.quran-floating-audio-player .rhap_progress-filled,
+.quran-floating-audio-player .rhap_progress-indicator,
+.quran-floating-audio-player .rhap_volume-indicator {
+  background-color: var(--primary);
+}
+
+.quran-floating-audio-player .rhap_progress-bar,
+.quran-floating-audio-player .rhap_volume-bar {
+  background-color: var(--muted);
+}
+
+.quran-floating-audio-player.is-previous-disabled button[aria-label='Previous verse unavailable'],
+.quran-floating-audio-player.is-next-disabled button[aria-label='Next verse unavailable'] {
+  pointer-events: none;
+  cursor: not-allowed;
+  color: var(--muted-foreground);
+  opacity: 0.4;
+}
+
+@media (min-width: 768px) {
+  body:has([data-slot='sidebar'][data-side='left'][data-state='expanded']) .quran-floating-audio-player {
+    left: 21rem;
+  }
+
+  body:has([data-slot='sidebar'][data-side='left'][data-collapsible='icon']) .quran-floating-audio-player {
+    left: 3rem;
+  }
+}
+
+@media (max-width: 640px) {
+  body.has-quran-floating-audio-player {
+    padding-bottom: 66px;
+  }
+
+  .quran-floating-audio-player .rhap_controls-section {
+    gap: 0.35rem;
+  }
+
+  .quran-floating-audio-player .rhap_volume-controls {
+    display: none;
+  }
+}

@@ -1,6 +1,7 @@
 import 'overlayscrollbars/overlayscrollbars.css';
 import '../css/app.css';
 
+import { QuranFloatingAudioPlayer } from '@/components/audio/QuranFloatingAudioPlayer';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/contexts/auth-context';
 import { QueryProvider } from '@/providers/query-provider';
@@ -33,6 +34,7 @@ createInertiaApp({
                         <ReaderSettingsProvider>
                             <ReadingModeProvider>
                                 <App {...props} />
+                                <QuranFloatingAudioPlayer />
                                 <Toaster />
                             </ReadingModeProvider>
                         </ReaderSettingsProvider>

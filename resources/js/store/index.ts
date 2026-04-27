@@ -24,6 +24,11 @@ export type {
     CurrentVerse,
     AudioPlayerState,
 } from './use-audio-player';
+export { useQuranAudioPlayerStore } from './use-quran-audio-player';
+export type {
+    QuranAudioPlayerState,
+    SetCurrentAudioPayload,
+} from './use-quran-audio-player';
 
 // User content stores
 export {
