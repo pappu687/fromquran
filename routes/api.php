@@ -59,7 +59,7 @@ Route::prefix('qf')->group(function () {
     Route::get('/audio/chapter-recitations/{chapterId}', [QuranFoundationController::class, 'chapterRecitations'])->whereNumber('chapterId');
     Route::get('/audio/chapter-recitations/{chapterId}/{recitationId}', [QuranFoundationController::class, 'chapterRecitation'])->whereNumber(['chapterId', 'recitationId']);
     Route::get('/audio/verse-recitations/by-chapter/{chapterId}/{recitationId}', [QuranFoundationController::class, 'verseRecitationsByChapter'])->whereNumber(['chapterId', 'recitationId']);
-    Route::get('/audio/verse-recitations/by-key/{verseKey}/{recitationId}', [QuranFoundationController::class, 'verseRecitationsByKey'])->whereNumber('recitationId');
+    Route::get('/audio/verse-recitations/by-ayah/{chapterId}/{verseNumber}/{recitationId}', [QuranFoundationController::class, 'verseRecitationsByAyah'])->whereNumber(['chapterId', 'verseNumber', 'recitationId']);
 });
 
 // Bookmark Routes (require authentication)

@@ -117,7 +117,7 @@ export function VerseCard({
             // QF API prelive env usually supports 6 and 7. Fallback to 7 if reciterId is not valid for QF.
             const validQfIds = [6, 7];
             const qfReciterId = validQfIds.includes(reciterId) ? reciterId : 7;
-            const response = await fetch(`/api/qf/audio/verse-recitations/by-key/${verse.chapterNumber}:${verse.verseNumber}/${qfReciterId}`);
+            const response = await fetch(`/api/qf/audio/verse-recitations/by-ayah/${verse.chapterNumber}/${verse.verseNumber}/${qfReciterId}`);
             
             if (!response.ok) {
                 if (response.status === 404) {

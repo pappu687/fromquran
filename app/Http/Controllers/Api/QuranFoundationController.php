@@ -97,10 +97,13 @@ class QuranFoundationController extends Controller
         return $this->proxy($request, "/recitations/{$recitationId}/by_chapter/{$chapterId}");
     }
 
-    public function verseRecitationsByKey(Request $request, string $verseKey, string $recitationId): JsonResponse
+    public function verseRecitationsByAyah(Request $request, string $chapterId, string $verseNumber, string $recitationId): JsonResponse
     {
-        $this->validateVerseKey($verseKey);
+        $this->validateChapterId($chapterId);
+        $this->validateNumericId($verseNumber, 'verseNumber');
         $this->validateNumericId($recitationId, 'recitationId');
+
+        $verseKey = "{$chapterId}:{$verseNumber}";
 
         return $this->proxy($request, "/recitations/{$recitationId}/by_ayah/{$verseKey}");
     }
