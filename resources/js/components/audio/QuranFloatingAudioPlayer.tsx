@@ -5,8 +5,9 @@ import { useQuranAudioPlayer } from '@/hooks/useQuranAudioPlayer';
 import { cn } from '@/lib/utils';
 import { useQuranAudioPlayerStore } from '@/store/use-quran-audio-player';
 import { Pause, Play, SkipBack, SkipForward, X } from 'lucide-react';
-import { useEffect, useRef } from 'react';
-import H5AudioPlayer, { RHAP_UI } from 'react-h5-audio-player';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+
+const loadAudioPlayer = () => import('react-h5-audio-player');
 
 export function QuranFloatingAudioPlayer() {
     const { closePlayer, playNextVerse, playPreviousVerse, playerState } =
@@ -14,7 +15,8 @@ export function QuranFloatingAudioPlayer() {
     const setIsPlaying = useQuranAudioPlayerStore(
         (state) => state.setIsPlaying,
     );
-    const playerRef = useRef<H5AudioPlayer | null>(null);
+    const playerRef = useRef<any>(null);
+    const [AudioModule, setAudioModule] = useState<any>(null);
 
     useEffect(() => {
         if (typeof document === 'undefined') return;
@@ -28,6 +30,14 @@ export function QuranFloatingAudioPlayer() {
             document.body.classList.remove('has-quran-floating-audio-player');
         };
     }, [playerState.isVisible]);
+
+    useEffect(() => {
+        if (playerState.isVisible && playerState.audioUrl && !AudioModule) {
+            loadAudioPlayer().then((module) => {
+                setAudioModule(module);
+            });
+        }
+    }, [playerState.isVisible, playerState.audioUrl, AudioModule]);
 
     if (!playerState.isVisible || !playerState.audioUrl) {
         return null;
@@ -47,6 +57,20 @@ export function QuranFloatingAudioPlayer() {
         if (!playerState.canGoNext) return;
         void playNextVerse();
     };
+
+    if (!AudioModule) {
+        return (
+            <div className="fixed right-0 bottom-0 left-0 z-[9999] border-t bg-background/95 p-4">
+                <div className="mx-auto max-w-6xl">
+                    <div className="h-16 flex items-center justify-center">
+                        Loading audio player...
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    const { default: H5AudioPlayer, RHAP_UI } = AudioModule;
 
     return (
         <div

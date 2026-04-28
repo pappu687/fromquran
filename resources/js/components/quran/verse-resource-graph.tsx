@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import ForceGraph2D from 'react-force-graph-2d';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     type ResourceGraphApiResponse,
     type ResourceGraphNode,
 } from '@/types/quran';
 import { buildGraphData } from './buildGraphData';
+
+const ForceGraph2D = lazy(() => import('react-force-graph-2d'));
 
 interface VerseResourceGraphProps {
     verseKey: string;
@@ -86,18 +87,20 @@ export function VerseResourceGraph({
             style={{ width: '100%', height: '100%', minHeight: '400px' }}
             className="flex h-full w-full items-center justify-center p-2"
         >
-            <ForceGraph2D
-                graphData={graphData}
-                nodeLabel={handleNodeLabel}
-                nodeCanvasObject={handleNodeCanvasObject}
-                linkDirectionalParticles={2}
-                linkDirectionalParticleSpeed={0.005}
-                cooldownTicks={100}
-                d3VelocityDecay={0.3}
-                onNodeClick={onNodeClick}
-                width={dimensions.width}
-                height={dimensions.height}
-            />
+            <Suspense fallback={<div className="text-slate-500">Loading graph...</div>}>
+                <ForceGraph2D
+                    graphData={graphData}
+                    nodeLabel={handleNodeLabel}
+                    nodeCanvasObject={handleNodeCanvasObject}
+                    linkDirectionalParticles={2}
+                    linkDirectionalParticleSpeed={0.005}
+                    cooldownTicks={100}
+                    d3VelocityDecay={0.3}
+                    onNodeClick={onNodeClick}
+                    width={dimensions.width}
+                    height={dimensions.height}
+                />
+            </Suspense>
         </div>
     );
 }
