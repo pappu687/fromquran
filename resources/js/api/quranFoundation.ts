@@ -154,6 +154,12 @@ export function getAyahAnswers(
         language?: string;
     } = {},
 ): Promise<AyahAnswersResponse> {
+    const [chapterId, verseNumber] = verseKey.split(':');
+
+    if (!chapterId || !verseNumber) {
+        throw new Error(`Invalid verse key: ${verseKey}`);
+    }
+
     const query = new URLSearchParams({
         page: String(page),
         pageSize: String(pageSize),
@@ -161,6 +167,6 @@ export function getAyahAnswers(
     });
 
     return api.get<AyahAnswersResponse>(
-        buildPath(`/answers/by-ayah/${verseKey}?${query}`),
+        buildPath(`/answers/by-ayah/${chapterId}/${verseNumber}?${query}`),
     );
 }
