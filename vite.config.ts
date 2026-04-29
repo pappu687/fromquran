@@ -30,39 +30,6 @@ export default defineConfig({
             output: {
                 manualChunks(id) {
                     if (id.includes('node_modules')) {
-                        if (id.includes('react-force-graph')) {
-                            return 'vendor-force-graph';
-                        }
-                        if (id.includes('react-h5-audio-player')) {
-                            return 'vendor-audio-player';
-                        }
-                        if (id.includes('@radix-ui')) {
-                            return 'vendor-radix';
-                        }
-                        if (id.includes('react') || id.includes('react-dom')) {
-                            return 'vendor-react';
-                        }
-                        if (id.includes('@inertiajs')) {
-                            return 'vendor-inertia';
-                        }
-                        if (id.includes('@tanstack/react-query')) {
-                            return 'vendor-react-query';
-                        }
-                        if (id.includes('@dnd-kit')) {
-                            return 'vendor-dnd-kit';
-                        }
-                        if (id.includes('overlayscrollbars')) {
-                            return 'vendor-overlayscrollbars';
-                        }
-                        if (id.includes('zustand')) {
-                            return 'vendor-zustand';
-                        }
-                        if (id.includes('lucide-react')) {
-                            return 'vendor-lucide';
-                        }
-                        if (id.includes('cmdk')) {
-                            return 'vendor-cmdk';
-                        }
                         return 'vendor';
                     }
                 },
