@@ -37,11 +37,14 @@
  * ```
  */
 
+import { getAyahAnswers, type AyahAnswerQuestion } from '@/api/quranFoundation';
 import { api } from '@/lib/api-client';
 import { queryKeys } from '@/lib/query-client';
 import { router } from '@inertiajs/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
+const AYAH_ANSWERS_PAGE_SIZE = 5;
 
 interface ResourceType {
     id: number;
@@ -98,6 +101,8 @@ interface UseResourcesSheetOptions {
 interface UseResourcesSheetReturn {
     // Data
     resources: Resource[];
+    answerQuestions: AyahAnswerQuestion[];
+    answerQuestionsTotal: number;
     similarVerses: SimilarVerse[];
     topics: Topic[];
     resourceCounts: Record<string, number>;
@@ -105,6 +110,8 @@ interface UseResourcesSheetReturn {
 
     // State
     loading: boolean;
+    answersLoading: boolean;
+    answersError: boolean;
     hasMore: boolean;
     totalResources: number;
     activeSection: string | undefined;
@@ -165,15 +172,45 @@ export function useResourcesSheet({
         enabled: open && verseId > 0,
         staleTime: 2 * 60 * 1000,
     });
+    const verseKey = chapterNumber ? `${chapterNumber}:${verseNumber}` : null;
+    const ayahAnswersQuery = useQuery({
+        queryKey: verseKey
+            ? queryKeys.quranAyahAnswers(verseKey, AYAH_ANSWERS_PAGE_SIZE, 'en')
+            : ['quran', 'ayah-answers', 'missing-verse-key'],
+        queryFn: () =>
+            getAyahAnswers(verseKey ?? '', {
+                page: 1,
+                pageSize: AYAH_ANSWERS_PAGE_SIZE,
+                language: 'en',
+            }),
+        enabled: open && verseKey !== null,
+        staleTime: 10 * 60 * 1000,
+    });
 
-    const resources = verseResourcesQuery.data?.data || [];
+    const resources = useMemo(
+        () => verseResourcesQuery.data?.data || [],
+        [verseResourcesQuery.data?.data],
+    );
+    const answerQuestions = useMemo(
+        () => ayahAnswersQuery.data?.questions || [],
+        [ayahAnswersQuery.data?.questions],
+    );
+    const answerQuestionsTotal = ayahAnswersQuery.data?.totalCount || 0;
     const totalResources = verseResourcesQuery.data?.meta?.total || 0;
     const hasMore = Boolean(verseResourcesQuery.data?.meta?.hasMore);
     const resourceCounts =
         verseResourcesQuery.data?.meta?.counts?.resource_types || {};
-    const similarVerses = verseResourcesQuery.data?.similar_verses?.data || [];
-    const topics = verseResourcesQuery.data?.topics?.data || [];
+    const similarVerses = useMemo(
+        () => verseResourcesQuery.data?.similar_verses?.data || [],
+        [verseResourcesQuery.data?.similar_verses?.data],
+    );
+    const topics = useMemo(
+        () => verseResourcesQuery.data?.topics?.data || [],
+        [verseResourcesQuery.data?.topics?.data],
+    );
     const loading = verseResourcesQuery.isLoading;
+    const answersLoading = ayahAnswersQuery.isLoading;
+    const answersError = ayahAnswersQuery.isError;
 
     // Handle initial active section sync when sheet opens or resources change
     useEffect(() => {
@@ -202,16 +239,20 @@ export function useResourcesSheet({
     }, [open, initialActiveSection, resources, activeSection]);
 
     // Group resources by type
-    const groupedResources = resources.reduce(
-        (acc, resource) => {
-            const type = resource.resource_type.name;
-            if (!acc[type]) {
-                acc[type] = [];
-            }
-            acc[type].push(resource);
-            return acc;
-        },
-        {} as Record<string, Resource[]>,
+    const groupedResources = useMemo(
+        () =>
+            resources.reduce(
+                (acc, resource) => {
+                    const type = resource.resource_type.name;
+                    if (!acc[type]) {
+                        acc[type] = [];
+                    }
+                    acc[type].push(resource);
+                    return acc;
+                },
+                {} as Record<string, Resource[]>,
+            ),
+        [resources],
     );
 
     // Handle verse click - navigate to the verse
@@ -235,7 +276,7 @@ export function useResourcesSheet({
         try {
             const domain = new URL(url).hostname;
             return domain.replace('www.', '');
-        } catch (e) {
+        } catch {
             return 'Source';
         }
     }, []);
@@ -289,6 +330,8 @@ export function useResourcesSheet({
     return {
         // Data
         resources,
+        answerQuestions,
+        answerQuestionsTotal,
         similarVerses,
         topics,
         resourceCounts,
@@ -296,6 +339,8 @@ export function useResourcesSheet({
 
         // State
         loading,
+        answersLoading,
+        answersError,
         hasMore,
         totalResources,
         activeSection,

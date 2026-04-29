@@ -41,6 +41,8 @@ export const queryKeys = {
         ['quran', 'chapter-resources', chapterNumber] as const,
     verseResourcesSummary: (verseId: number) =>
         ['quran', 'verse-resources-summary', verseId] as const,
+    quranAyahAnswers: (verseKey: string, pageSize: number, language: string) =>
+        ['quran', 'ayah-answers', verseKey, pageSize, language] as const,
     quranSearch: (query: string, limit: number) =>
         ['quran', 'search', query, limit] as const,
     topicsTree: ['topics', 'tree'] as const,

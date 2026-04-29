@@ -2,6 +2,33 @@ import { api } from '@/lib/api-client';
 
 export type QuranFoundationResponse = Record<string, unknown>;
 
+export interface AyahAnswer {
+    id: string;
+    body: string;
+    answeredBy?: string;
+    status: 'Draft' | 'Published' | string;
+    language?: string;
+}
+
+export interface AyahAnswerQuestion {
+    id: string;
+    body: string;
+    type: 'CLARIFICATION' | 'TAFSIR' | 'COMMUNITY' | string;
+    ranges: string[];
+    surah: number;
+    theme?: string[];
+    summary?: string;
+    references?: string[];
+    language?: string;
+    status: 'New' | 'Draft' | 'Published' | 'Answered' | string;
+    answers: AyahAnswer[];
+}
+
+export interface AyahAnswersResponse {
+    questions: AyahAnswerQuestion[];
+    totalCount: number;
+}
+
 const BASE_PATH = '/api/qf';
 
 function buildPath(path: string): string {
@@ -9,7 +36,9 @@ function buildPath(path: string): string {
 }
 
 export function getRecitations(): Promise<QuranFoundationResponse> {
-    return api.get<QuranFoundationResponse>(buildPath('/resources/recitations'));
+    return api.get<QuranFoundationResponse>(
+        buildPath('/resources/recitations'),
+    );
 }
 
 export function getRecitationInfo(
@@ -21,7 +50,9 @@ export function getRecitationInfo(
 }
 
 export function getTranslations(): Promise<QuranFoundationResponse> {
-    return api.get<QuranFoundationResponse>(buildPath('/resources/translations'));
+    return api.get<QuranFoundationResponse>(
+        buildPath('/resources/translations'),
+    );
 }
 
 export function getTranslationInfo(
@@ -39,7 +70,9 @@ export function getTafsirs(): Promise<QuranFoundationResponse> {
 export function getTafsirInfo(
     id: number | string,
 ): Promise<QuranFoundationResponse> {
-    return api.get<QuranFoundationResponse>(buildPath(`/resources/tafsirs/${id}`));
+    return api.get<QuranFoundationResponse>(
+        buildPath(`/resources/tafsirs/${id}`),
+    );
 }
 
 export function getLanguages(): Promise<QuranFoundationResponse> {
@@ -53,7 +86,9 @@ export function getChapterReciters(): Promise<QuranFoundationResponse> {
 }
 
 export function getChapterInfos(): Promise<QuranFoundationResponse> {
-    return api.get<QuranFoundationResponse>(buildPath('/resources/chapter-infos'));
+    return api.get<QuranFoundationResponse>(
+        buildPath('/resources/chapter-infos'),
+    );
 }
 
 export function getRecitationStyles(): Promise<QuranFoundationResponse> {
@@ -63,7 +98,9 @@ export function getRecitationStyles(): Promise<QuranFoundationResponse> {
 }
 
 export function getVerseMedia(): Promise<QuranFoundationResponse> {
-    return api.get<QuranFoundationResponse>(buildPath('/resources/verse-media'));
+    return api.get<QuranFoundationResponse>(
+        buildPath('/resources/verse-media'),
+    );
 }
 
 export function getChapterRecitations(
@@ -99,6 +136,31 @@ export function getVerseRecitationsByKey(
     recitationId: number | string,
 ): Promise<QuranFoundationResponse> {
     return api.get<QuranFoundationResponse>(
-        buildPath(`/audio/verse-recitations/by-key/${verseKey}/${recitationId}`),
+        buildPath(
+            `/audio/verse-recitations/by-key/${verseKey}/${recitationId}`,
+        ),
+    );
+}
+
+export function getAyahAnswers(
+    verseKey: string,
+    {
+        page = 1,
+        pageSize = 5,
+        language = 'en',
+    }: {
+        page?: number;
+        pageSize?: number;
+        language?: string;
+    } = {},
+): Promise<AyahAnswersResponse> {
+    const query = new URLSearchParams({
+        page: String(page),
+        pageSize: String(pageSize),
+        language,
+    });
+
+    return api.get<AyahAnswersResponse>(
+        buildPath(`/answers/by-ayah/${verseKey}?${query}`),
     );
 }

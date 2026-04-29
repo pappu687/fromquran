@@ -1,8 +1,11 @@
+import { getAyahAnswers, type AyahAnswerQuestion } from '@/api/quranFoundation';
 import { useChapters } from '@/hooks';
 import { api, getErrorMessage } from '@/lib/api-client';
 import { type ChapterSummary } from '@/types/quran';
 import { BookOpen, FileText, Play, Scale, Video } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+
+const AYAH_ANSWERS_PAGE_SIZE = 10;
 
 export interface ResourceType {
     id: number;
@@ -71,6 +74,8 @@ export interface FullResource {
 interface UseRelatedVerseReturn {
     // Data
     resources: Resource[];
+    answerQuestions: AyahAnswerQuestion[];
+    answerQuestionsTotal: number;
     similarVerses: SimilarVerse[];
     topics: Topic[];
     mainVerse: MainVerse | null;
@@ -78,6 +83,7 @@ interface UseRelatedVerseReturn {
 
     // State
     loadingResources: boolean;
+    loadingAnswers: boolean;
     loadingSimilar: boolean;
     loadingTopics: boolean;
     loadingMainVerse: boolean;
@@ -146,12 +152,17 @@ export function useRelatedVerse(
     verseNumber: number,
 ): UseRelatedVerseReturn {
     const [resources, setResources] = useState<Resource[]>([]);
+    const [answerQuestions, setAnswerQuestions] = useState<
+        AyahAnswerQuestion[]
+    >([]);
+    const [answerQuestionsTotal, setAnswerQuestionsTotal] = useState(0);
     const [similarVerses, setSimilarVerses] = useState<SimilarVerse[]>([]);
     const [topics, setTopics] = useState<Topic[]>([]);
     const [mainVerse, setMainVerse] = useState<MainVerse | null>(null);
     const { chapters } = useChapters();
 
     const [loadingResources, setLoadingResources] = useState(false);
+    const [loadingAnswers, setLoadingAnswers] = useState(false);
     const [loadingSimilar, setLoadingSimilar] = useState(false);
     const [loadingTopics, setLoadingTopics] = useState(false);
     const [loadingMainVerse, setLoadingMainVerse] = useState(false);
@@ -215,6 +226,28 @@ export function useRelatedVerse(
         }
     }, [verseId]);
 
+    const fetchAyahAnswers = useCallback(async () => {
+        setLoadingAnswers(true);
+        try {
+            const data = await getAyahAnswers(
+                `${chapterNumber}:${verseNumber}`,
+                {
+                    page: 1,
+                    pageSize: AYAH_ANSWERS_PAGE_SIZE,
+                    language: 'en',
+                },
+            );
+            setAnswerQuestions(data.questions || []);
+            setAnswerQuestionsTotal(data.totalCount || 0);
+        } catch (err) {
+            console.error('Failed to fetch Quran Foundation answers:', err);
+            setAnswerQuestions([]);
+            setAnswerQuestionsTotal(0);
+        } finally {
+            setLoadingAnswers(false);
+        }
+    }, [chapterNumber, verseNumber]);
+
     // Fetch similar verses
     const fetchSimilarVerses = useCallback(async () => {
         setLoadingSimilar(true);
@@ -256,21 +289,29 @@ export function useRelatedVerse(
             setError(null);
             await Promise.all([
                 fetchResources(),
+                fetchAyahAnswers(),
                 fetchSimilarVerses(),
                 fetchTopics(),
             ]);
         };
 
         fetchAll();
-    }, [verseId, fetchResources, fetchSimilarVerses, fetchTopics]);
+    }, [
+        verseId,
+        fetchResources,
+        fetchAyahAnswers,
+        fetchSimilarVerses,
+        fetchTopics,
+    ]);
 
     const refresh = useCallback(async () => {
         await Promise.all([
             fetchResources(),
+            fetchAyahAnswers(),
             fetchSimilarVerses(),
             fetchTopics(),
         ]);
-    }, [fetchResources, fetchSimilarVerses, fetchTopics]);
+    }, [fetchResources, fetchAyahAnswers, fetchSimilarVerses, fetchTopics]);
 
     const handleSeeMore = async (resourceId: string | number) => {
         if (resourceId === -1 || resourceId === '-1') {
@@ -397,6 +438,8 @@ export function useRelatedVerse(
     return {
         // Data
         resources,
+        answerQuestions,
+        answerQuestionsTotal,
         similarVerses,
         topics,
         mainVerse,
@@ -404,6 +447,7 @@ export function useRelatedVerse(
 
         // State
         loadingResources,
+        loadingAnswers,
         loadingSimilar,
         loadingTopics,
         loadingMainVerse,

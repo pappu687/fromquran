@@ -29,6 +29,10 @@ import {
 import { useState } from 'react';
 import { LoginModal } from '../auth/login-modal';
 import { AddResourceModal } from './add-resource-modal';
+import {
+    AYAH_ANSWERS_SECTION_VALUE,
+    AyahAnswersAccordionItem,
+} from './ayah-answers-section';
 import { FullResourceDialog } from './full-resource-dialog';
 import { QuranResourceCard } from './quran-resource-card';
 import { ReportErrorModal } from './report-error-modal';
@@ -93,11 +97,15 @@ export function ResourcesSheet({
 
     const {
         resources,
+        answerQuestions,
+        answerQuestionsTotal,
         similarVerses,
         topics,
         resourceCounts,
         groupedResources,
         loading,
+        answersLoading,
+        answersError,
         hasMore,
         totalResources,
         activeSection,
@@ -125,6 +133,18 @@ export function ResourcesSheet({
             setIsLoginModalOpen(true);
         }
     };
+
+    const hasAnswerQuestions = answerQuestions.length > 0;
+    const hasAnswerContent = hasAnswerQuestions || answersLoading;
+    const hasSheetContent =
+        resources.length > 0 ||
+        hasAnswerContent ||
+        topics.length > 0 ||
+        similarVerses.length > 0;
+    const defaultAccordionSection =
+        activeSection ||
+        Object.keys(groupedResources)[0] ||
+        (hasAnswerContent ? AYAH_ANSWERS_SECTION_VALUE : '');
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -158,7 +178,7 @@ export function ResourcesSheet({
                             <Skeleton className="h-12 w-full" />
                             <Skeleton className="h-12 w-full" />
                         </div>
-                    ) : resources.length === 0 ? (
+                    ) : !hasSheetContent ? (
                         <div className="flex flex-col items-center justify-center gap-3 text-center">
                             <div className="flex w-full items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-amber-800 dark:border-amber-700/60 dark:bg-amber-950/30 dark:text-amber-300">
                                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -193,11 +213,7 @@ export function ResourcesSheet({
                         <Accordion
                             type="single"
                             collapsible
-                            value={
-                                activeSection ||
-                                Object.keys(groupedResources)[0] ||
-                                ''
-                            }
+                            value={defaultAccordionSection}
                             onValueChange={setActiveSection}
                             className="w-full"
                         >
@@ -336,6 +352,30 @@ export function ResourcesSheet({
                                         </AccordionItem>
                                     );
                                 },
+                            )}
+                            {answersLoading ? (
+                                <AccordionItem
+                                    value={AYAH_ANSWERS_SECTION_VALUE}
+                                >
+                                    <AccordionTrigger className="rounded-md px-2 transition-colors hover:no-underline [&[data-state=open]]:bg-muted/50">
+                                        Quran Foundation Answers
+                                    </AccordionTrigger>
+                                    <AccordionContent className="space-y-4 pt-4">
+                                        <Skeleton className="h-24 w-full" />
+                                        <Skeleton className="h-24 w-full" />
+                                    </AccordionContent>
+                                </AccordionItem>
+                            ) : hasAnswerQuestions ? (
+                                <AyahAnswersAccordionItem
+                                    questions={answerQuestions}
+                                    totalCount={answerQuestionsTotal}
+                                />
+                            ) : null}
+                            {answersError && (
+                                <div className="mx-2 my-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-700/60 dark:bg-amber-950/30 dark:text-amber-300">
+                                    Quran Foundation answers are unavailable
+                                    right now.
+                                </div>
                             )}
                             {topics.length > 0 && (
                                 <AccordionItem value="Topics">

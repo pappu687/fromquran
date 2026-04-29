@@ -1,5 +1,9 @@
 import { LoginModal } from '@/components/auth/login-modal';
 import { AddResourceModal } from '@/components/quran/add-resource-modal';
+import {
+    AyahAnswersHeader,
+    AyahAnswersList,
+} from '@/components/quran/ayah-answers-section';
 import { FullResourceDialog } from '@/components/quran/full-resource-dialog';
 import { QuranResourceCard } from '@/components/quran/quran-resource-card';
 import { ReportErrorModal } from '@/components/quran/report-error-modal';
@@ -48,11 +52,14 @@ export default function RelatedPage({
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const {
         resources,
+        answerQuestions,
+        answerQuestionsTotal,
         similarVerses,
         topics,
         mainVerse,
         chapters,
         loadingResources,
+        loadingAnswers,
         loadingSimilar,
         loadingTopics,
         loadingMainVerse,
@@ -431,6 +438,35 @@ export default function RelatedPage({
                             </Accordion>
                         )}
                     </section>
+
+                    {/* Quran Foundation Answers */}
+                    {(loadingAnswers || answerQuestions.length > 0) && (
+                        <>
+                            <Separator className="my-6" />
+                            <section className="mb-8">
+                                <div className="mb-4 flex items-center justify-between">
+                                    <AyahAnswersHeader
+                                        totalCount={answerQuestionsTotal}
+                                    />
+                                    {loadingAnswers && (
+                                        <span className="text-sm text-muted-foreground">
+                                            Loading answers...
+                                        </span>
+                                    )}
+                                </div>
+                                {loadingAnswers ? (
+                                    <div className="space-y-4">
+                                        <Skeleton className="h-24 w-full" />
+                                        <Skeleton className="h-24 w-full" />
+                                    </div>
+                                ) : (
+                                    <AyahAnswersList
+                                        questions={answerQuestions}
+                                    />
+                                )}
+                            </section>
+                        </>
+                    )}
 
                     {/* Topics */}
                     {(loadingTopics || topics.length > 0) && (

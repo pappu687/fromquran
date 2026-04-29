@@ -108,6 +108,19 @@ class QuranFoundationController extends Controller
         return $this->proxy($request, "/recitations/{$recitationId}/by_ayah/{$verseKey}");
     }
 
+    public function ayahAnswers(Request $request, string $verseKey): JsonResponse
+    {
+        $this->validateVerseKey($verseKey);
+
+        Validator::make($request->query(), [
+            'page' => ['sometimes', 'integer', 'min:1'],
+            'pageSize' => ['sometimes', 'integer', 'min:1', 'max:10'],
+            'language' => ['sometimes', 'string', 'size:2'],
+        ])->validate();
+
+        return $this->proxy($request, "/answers/by_ayah/{$verseKey}");
+    }
+
     public function verify(): JsonResponse
     {
         try {
