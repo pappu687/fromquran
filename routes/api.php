@@ -132,6 +132,12 @@ Route::middleware(['web', 'auth'])->prefix('collections')->group(function () {
     Route::post('/{slug}/reorder', [CollectionController::class, 'reorderVerses']);
 });
 
+// Graph V2 API Routes
+Route::prefix('quran/graph-v2')->group(function () {
+    Route::get('/verses/{verseId}', [\App\Http\Controllers\Api\QuranGraphV2Controller::class, 'verse']);
+    Route::get('/chapters/{chapterId}', [\App\Http\Controllers\Api\QuranGraphV2Controller::class, 'chapter']);
+});
+
 // Admin User Management Routes (require authentication and admin role)
 Route::middleware(['web', 'auth', 'role:Admin'])->prefix('admin/users')->group(function () {
     Route::get('/', [\App\Http\Controllers\Admin\UserController::class, 'apiIndex']);

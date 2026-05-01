@@ -22,12 +22,12 @@ import {
     BookmarkCheck,
     BookmarkPlus,
     BookOpen,
+    GitBranch,
     Info,
     Languages,
     Link,
     Loader2,
     MoreVertical,
-    Network,
     Play,
     Plus,
     Quote,
@@ -37,9 +37,9 @@ import { useState } from 'react';
 import { AddResourceModal } from './add-resource-modal';
 import { AnnotatedArabicText } from './annotated-arabic-text';
 import { CollectionsModal } from './collections-modal';
+import { QuranGraphV2Modal } from './quran-graph-v2-modal';
 import { ResourcesSheet } from './resources-sheet';
 import { TafsirModal } from './tafsir-modal';
-import { VerseGraphModal } from './verse-graph-modal';
 
 interface VerseCardProps {
     verse: VerseListItem;
@@ -82,13 +82,12 @@ export function VerseCard({
 }: VerseCardProps) {
     const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
     const [isResourcesSheetOpen, setIsResourcesSheetOpen] = useState(false);
-    const [isGraphModalOpen, setIsGraphModalOpen] = useState(false);
+    const [isGraphV2ModalOpen, setIsGraphV2ModalOpen] = useState(false);
     const [activeResourceSection, setActiveResourceSection] = useState<
         string | undefined
     >(undefined);
     const [isCollectionsModalOpen, setIsCollectionsModalOpen] = useState(false);
     const [isTafsirModalOpen, setIsTafsirModalOpen] = useState(false);
-    const [shareUrl, setShareUrl] = useState<string | null>(null);
     const { settings } = useReaderSettings();
     const { playVerseAudio, playerState } = useQuranAudioPlayer();
 
@@ -146,12 +145,6 @@ export function VerseCard({
         navigator.clipboard.writeText(url);
     };
 
-    const handleShare = () => {
-        const url = buildVerseUrl();
-        if (!url) return;
-        setShareUrl(url);
-    };
-
     const verseLabel = verse.chapterNumber
         ? `Quran ${verse.chapterNumber}:${verse.verseNumber}`
         : `Verse ${verse.verseNumber}`;
@@ -164,28 +157,26 @@ export function VerseCard({
         window.open(href, '_blank', 'noopener,noreferrer');
     };
 
+    const buildShareUrl = () => {
+        const url = buildVerseUrl();
+        if (!url) return null;
+        return encodeURIComponent(url);
+    };
+
     const handleShareToFacebook = () => {
-        if (!shareUrl) return;
-        const encodedUrl = encodeURIComponent(shareUrl);
+        const encodedUrl = buildShareUrl();
+        if (!encodedUrl) return;
         openShareWindow(
             `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
         );
     };
 
     const handleShareToTwitter = () => {
-        if (!shareUrl) return;
-        const encodedUrl = encodeURIComponent(shareUrl);
+        const encodedUrl = buildShareUrl();
+        if (!encodedUrl) return;
         const encodedText = encodeURIComponent(verseLabel);
         openShareWindow(
             `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedText}`,
-        );
-    };
-
-    const handleShareToLinkedIn = () => {
-        if (!shareUrl) return;
-        const encodedUrl = encodeURIComponent(shareUrl);
-        openShareWindow(
-            `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
         );
     };
 
@@ -293,20 +284,21 @@ export function VerseCard({
                                         variant="ghost"
                                         size="sm"
                                         onClick={() =>
-                                            setIsGraphModalOpen(true)
+                                            setIsGraphV2ModalOpen(true)
                                         }
                                         className="h-8 w-8 p-0"
                                     >
-                                        <Network
+                                        <GitBranch
                                             className={cn(
                                                 'h-4 w-4',
-                                                hasResources && 'text-sky-500',
+                                                hasResources &&
+                                                    'text-emerald-500',
                                             )}
                                         />
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                    Resource Network
+                                    Explore Connections
                                 </TooltipContent>
                             </Tooltip>
 
@@ -362,11 +354,18 @@ export function VerseCard({
                                         Copy Link
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
-                                        onClick={handleShare}
+                                        onClick={handleShareToFacebook}
                                         className="gap-2 text-sm"
                                     >
                                         <Share2 className="h-3.5 w-3.5" />
-                                        Share Verse
+                                        Share on Facebook
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        onClick={handleShareToTwitter}
+                                        className="gap-2 text-sm"
+                                    >
+                                        <Share2 className="h-3.5 w-3.5" />
+                                        Share on Twitter
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem
@@ -466,16 +465,12 @@ export function VerseCard({
                 initialActiveSection={activeResourceSection}
             />
 
-            {/* Quick Graph Modal */}
-            <VerseGraphModal
-                open={isGraphModalOpen}
-                onOpenChange={setIsGraphModalOpen}
+            {/* Graph V2 Modal */}
+            <QuranGraphV2Modal
+                open={isGraphV2ModalOpen}
+                onOpenChange={setIsGraphV2ModalOpen}
                 verseId={verse.id}
                 verseKey={`${verse.chapterNumber}:${verse.verseNumber}`}
-                onSectionSelect={(section) => {
-                    setActiveResourceSection(section);
-                    setIsResourcesSheetOpen(true);
-                }}
             />
 
             {/* Tafsir Modal */}

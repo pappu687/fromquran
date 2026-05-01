@@ -1,8 +1,16 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     type ResourceGraphApiResponse,
     type ResourceGraphNode,
 } from '@/types/quran';
+import {
+    lazy,
+    Suspense,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import { buildGraphData } from './buildGraphData';
 
 const ForceGraph2D = lazy(() => import('react-force-graph-2d'));
@@ -56,8 +64,7 @@ export function VerseResourceGraph({
             // Make text scale explicitly with zoom
             const fontSize = 14 / globalScale;
             ctx.font = `${fontSize}px Sans-Serif`;
-            ctx.fillStyle =
-                graphNode.type === 'verse' ? '#f97316' : '#0ea5e9'; // orange-500 : sky-500
+            ctx.fillStyle = graphNode.type === 'verse' ? '#f97316' : '#0ea5e9'; // orange-500 : sky-500
 
             ctx.beginPath();
             ctx.arc(
@@ -87,7 +94,11 @@ export function VerseResourceGraph({
             style={{ width: '100%', height: '100%', minHeight: '400px' }}
             className="flex h-full w-full items-center justify-center p-2"
         >
-            <Suspense fallback={<div className="text-slate-500">Loading graph...</div>}>
+            <Suspense
+                fallback={
+                    <div className="text-slate-500">Loading graph...</div>
+                }
+            >
                 <ForceGraph2D
                     graphData={graphData}
                     nodeLabel={handleNodeLabel}
@@ -96,7 +107,12 @@ export function VerseResourceGraph({
                     linkDirectionalParticleSpeed={0.005}
                     cooldownTicks={100}
                     d3VelocityDecay={0.3}
-                    onNodeClick={onNodeClick}
+                    onNodeClick={
+                        onNodeClick
+                            ? (node: object) =>
+                                  onNodeClick(node as ResourceGraphNode)
+                            : undefined
+                    }
                     width={dimensions.width}
                     height={dimensions.height}
                 />

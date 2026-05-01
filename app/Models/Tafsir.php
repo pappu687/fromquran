@@ -10,6 +10,14 @@ class Tafsir extends Model
 {
     use HasFactory;
 
+    protected $table = 'tafsir';
+
+    protected $primaryKey = 'tafsir_id';
+
+    public $incrementing = false;
+
+    protected $keyType = 'int';
+
     protected $fillable = [
         'verse_id',
         'language_id',
@@ -137,7 +145,7 @@ class Tafsir extends Model
      */
     public function coversMultipleVerses(): bool
     {
-        return !is_null($this->group_tafsir_id);
+        return ! is_null($this->group_tafsir_id);
     }
 
     /**

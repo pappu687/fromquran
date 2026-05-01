@@ -1,6 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { router } from '@inertiajs/react';
-import { BookOpen, MapPin } from 'lucide-react';
+import { BookOpen, GitBranch, MapPin } from 'lucide-react';
+import { useState } from 'react';
+import { QuranGraphV2Modal } from './quran-graph-v2-modal';
 
 interface Chapter {
     id: number;
@@ -18,9 +20,11 @@ interface ChapterInfoHeaderProps {
 }
 
 export function ChapterInfoHeader({ chapter }: ChapterInfoHeaderProps) {
+    const [isGraphV2Open, setIsGraphV2Open] = useState(false);
+
     if (!chapter) {
         return (
-            <div className="bg-muted/50 mx-auto h-24 w-full max-w-3xl rounded-xl animate-pulse" />
+            <div className="mx-auto h-24 w-full max-w-3xl animate-pulse rounded-xl bg-muted/50" />
         );
     }
 
@@ -63,7 +67,7 @@ export function ChapterInfoHeader({ chapter }: ChapterInfoHeaderProps) {
                             <span>{chapter.verses} verses</span>
                         </div>
                     </div>
-                    <div className="mt-4">
+                    <div className="mt-4 flex items-center justify-end gap-2">
                         <Button
                             size="sm"
                             variant="outline"
@@ -73,9 +77,24 @@ export function ChapterInfoHeader({ chapter }: ChapterInfoHeaderProps) {
                         >
                             All resources
                         </Button>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setIsGraphV2Open(true)}
+                        >
+                            <GitBranch className="mr-1 h-3.5 w-3.5" />
+                            Explore
+                        </Button>
                     </div>
                 </div>
             </div>
+
+            <QuranGraphV2Modal
+                open={isGraphV2Open}
+                onOpenChange={setIsGraphV2Open}
+                chapterId={chapter.id}
+                chapterName={chapter.romanName ?? chapter.englishName}
+            />
         </div>
     );
 }
