@@ -18,6 +18,10 @@ const ForceGraph2D = lazy(() => import('react-force-graph-2d'));
 interface GraphNodeWithCoords extends QuranGraphV2Node {
     x?: number;
     y?: number;
+    vx?: number;
+    vy?: number;
+    fx?: number | null;
+    fy?: number | null;
 }
 
 const NODE_COLORS: Record<QuranGraphV2NodeType, string> = {
@@ -55,7 +59,26 @@ interface QuranGraphV2Props {
     onNodeClick?: (node: QuranGraphV2Node) => void;
     selectedNodeId?: string | null;
     expandedHubs?: Set<string>;
-    onExpandHub?: (hub: string) => void;
+    onExpandHub?: (hub: string, x: number, y: number) => void;
+    hubOrigins?: Map<string, { x: number; y: number }>;
+}
+
+function distributeRadial(
+    count: number,
+    centerX: number,
+    centerY: number,
+    radius: number,
+): Array<{ x: number; y: number }> {
+    const positions: Array<{ x: number; y: number }> = [];
+    const angleStep = (2 * Math.PI) / count;
+    for (let i = 0; i < count; i++) {
+        const angle = i * angleStep - Math.PI / 2;
+        positions.push({
+            x: centerX + Math.cos(angle) * radius,
+            y: centerY + Math.sin(angle) * radius,
+        });
+    }
+    return positions;
 }
 
 export function QuranGraphV2({
@@ -64,21 +87,56 @@ export function QuranGraphV2({
     selectedNodeId,
     expandedHubs = new Set(),
     onExpandHub,
+    hubOrigins = new Map(),
 }: QuranGraphV2Props) {
     const containerRef = useRef<HTMLDivElement>(null);
     const graphRef = useRef<any>(null);
     const [dimensions, setDimensions] = useState({ width: 800, height: 500 });
+    const [releasedHubs, setReleasedHubs] = useState<Set<string>>(new Set());
+
+    // Reset released state when the center node changes
+    useEffect(() => {
+        setReleasedHubs(new Set());
+    }, [data?.meta.center]);
+
+    // Clean up released hubs that are no longer expanded
+    useEffect(() => {
+        setReleasedHubs((prev) => {
+            const next = new Set<string>();
+            for (const hub of prev) {
+                if (expandedHubs.has(hub)) {
+                    next.add(hub);
+                }
+            }
+            return next;
+        });
+    }, [expandedHubs]);
+
+    // Release fixed positions after bloom animation
+    useEffect(() => {
+        const timers: NodeJS.Timeout[] = [];
+        expandedHubs.forEach((hub) => {
+            if (!releasedHubs.has(hub)) {
+                const timer = setTimeout(() => {
+                    setReleasedHubs((prev) => new Set(prev).add(hub));
+                }, 800);
+                timers.push(timer);
+            }
+        });
+        return () => timers.forEach(clearTimeout);
+    }, [expandedHubs, releasedHubs]);
 
     const displayData = useMemo(() => {
         if (!data) return { nodes: [], links: [] };
 
-        const allNodes = data.nodes;
-        const allLinks = data.links;
+        const allNodes = data.nodes.map((n) => ({ ...n }));
+        const allLinks = data.links.map((l) => ({ ...l }));
 
         const resourceNodes = allNodes.filter((n) => n.type === 'resource');
         const resourceCount = resourceNodes.length;
 
-        if (resourceCount <= 4 || expandedHubs.has('resources')) {
+        // Small number: show resources directly, no hub
+        if (resourceCount <= 4) {
             return {
                 nodes: allNodes.map((n) => ({ ...n, id: n.id })),
                 links: allLinks.map((l) => ({
@@ -89,32 +147,110 @@ export function QuranGraphV2({
         }
 
         const resourceIds = new Set(resourceNodes.map((n) => n.id));
+        const origin = hubOrigins.get('resources');
+        const isExpanded = expandedHubs.has('resources');
 
-        const visibleNodes = allNodes
-            .filter((n) => n.type !== 'resource')
-            .map((n) => ({ ...n, id: n.id }));
+        if (!isExpanded) {
+            // Collapsed: show hub node only
+            const visibleNodes = allNodes
+                .filter((n) => !resourceIds.has(n.id))
+                .map((n) => ({ ...n, id: n.id }));
 
-        const visibleLinks = allLinks
-            .filter((l) => !resourceIds.has(l.target))
-            .map((l) => ({ source: l.source, target: l.target }));
+            const visibleLinks = allLinks
+                .filter((l) => !resourceIds.has(l.target))
+                .map((l) => ({ source: l.source, target: l.target }));
 
+            const hubNode: GraphNodeWithCoords = {
+                id: 'resource_hub',
+                label: `${resourceCount} Resources`,
+                type: 'resource_hub',
+                payload: { count: resourceCount },
+            };
+
+            return {
+                nodes: [...visibleNodes, hubNode],
+                links: [
+                    ...visibleLinks,
+                    { source: data.meta.center, target: 'resource_hub' },
+                ],
+            };
+        }
+
+        // Expanded: show hub as a sub-center with resources orbiting it
+        const isAnimating = origin && !releasedHubs.has('resources');
+
+        // Hub is pinned to the right of where it was clicked
+        const hubX = origin ? origin.x + 250 : 0;
+        const hubY = origin ? origin.y : 0;
+
+        // Calculate child positions around hub for the bloom animation
+        let childPositions: Array<{ x: number; y: number }> = [];
+        if (isAnimating) {
+            const childRadius = Math.min(120, Math.max(60, resourceCount * 4));
+            childPositions = distributeRadial(
+                resourceCount,
+                hubX,
+                hubY,
+                childRadius,
+            );
+        }
+
+        const nodes = allNodes.map((n) => {
+            const base = { ...n, id: n.id } as GraphNodeWithCoords;
+
+            if (n.type === 'resource' && isAnimating) {
+                const idx = resourceNodes.findIndex((r) => r.id === n.id);
+                if (idx >= 0) {
+                    const pos = childPositions[idx];
+                    base.x = pos.x;
+                    base.y = pos.y;
+                    base.vx = 0;
+                    base.vy = 0;
+                    base.fx = pos.x;
+                    base.fy = pos.y;
+                }
+            }
+            return base;
+        });
+
+        // Hub node is always present when expanded
         const hubNode: GraphNodeWithCoords = {
             id: 'resource_hub',
             label: `${resourceCount} Resources`,
             type: 'resource_hub',
             payload: { count: resourceCount },
+            ...(origin
+                ? {
+                      x: hubX,
+                      y: hubY,
+                      vx: 0,
+                      vy: 0,
+                      fx: hubX,
+                      fy: hubY,
+                  }
+                : {}),
         };
 
-        const hubLink = {
-            source: data.meta.center,
-            target: 'resource_hub',
-        };
+        // Remove direct center-to-resource links so resources only connect through hub
+        const filteredLinks = allLinks
+            .filter((l) => !resourceIds.has(l.target))
+            .map((l) => ({ source: l.source, target: l.target }));
+
+        // Add center-to-hub and hub-to-resource links
+        const hubToResourceLinks = resourceNodes.map((r) => ({
+            source: 'resource_hub',
+            target: r.id,
+        }));
 
         return {
-            nodes: [...visibleNodes, hubNode],
-            links: [...visibleLinks, hubLink],
+            nodes: [...nodes, hubNode],
+            links: [
+                ...filteredLinks,
+                { source: data.meta.center, target: 'resource_hub' },
+                ...hubToResourceLinks,
+            ],
         };
-    }, [data, expandedHubs]);
+    }, [data, expandedHubs, hubOrigins, releasedHubs]);
 
     useEffect(() => {
         const observer = new ResizeObserver((entries) => {
@@ -188,10 +324,10 @@ export function QuranGraphV2({
 
     const handleClick = useCallback(
         (node: object) => {
-            const graphNode = node as QuranGraphV2Node;
+            const graphNode = node as GraphNodeWithCoords;
 
             if (graphNode.type === 'resource_hub') {
-                onExpandHub?.('resources');
+                onExpandHub?.('resources', graphNode.x ?? 0, graphNode.y ?? 0);
                 return;
             }
 

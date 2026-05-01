@@ -97,13 +97,15 @@ function QuranGraphV2Wrapper({
     onNodeClick,
     expandedHubs,
     onExpandHub,
+    hubOrigins,
 }: {
     verseId?: number;
     chapterId?: number;
     selectedNodeId: string | null;
     onNodeClick: (node: QuranGraphV2Node) => void;
     expandedHubs: Set<string>;
-    onExpandHub: (hub: string) => void;
+    onExpandHub: (hub: string, x: number, y: number) => void;
+    hubOrigins: Map<string, { x: number; y: number }>;
 }) {
     const { data, loading, error } = useQuranGraphV2({
         verseId,
@@ -135,6 +137,7 @@ function QuranGraphV2Wrapper({
                 onNodeClick={onNodeClick}
                 expandedHubs={expandedHubs}
                 onExpandHub={onExpandHub}
+                hubOrigins={hubOrigins}
             />
         </div>
     );
@@ -152,6 +155,9 @@ export function QuranGraphV2Modal({
         null,
     );
     const [expandedHubs, setExpandedHubs] = useState<Set<string>>(new Set());
+    const [hubOrigins, setHubOrigins] = useState<
+        Map<string, { x: number; y: number }>
+    >(new Map());
 
     const handleNodeClick = useCallback((node: QuranGraphV2Node) => {
         setSelectedNode((prev) => (prev?.id === node.id ? null : node));
@@ -177,12 +183,18 @@ export function QuranGraphV2Modal({
         // so the user can inspect before deciding to open the link.
     }, []);
 
-    const handleExpandHub = useCallback((hub: string) => {
+    const handleExpandHub = useCallback((hub: string, x: number, y: number) => {
         setExpandedHubs((prev) => new Set(prev).add(hub));
+        setHubOrigins((prev) => {
+            const next = new Map(prev);
+            next.set(hub, { x, y });
+            return next;
+        });
     }, []);
 
     const handleReset = useCallback(() => {
         setExpandedHubs(new Set());
+        setHubOrigins(new Map());
         setSelectedNode(null);
     }, []);
 
@@ -243,6 +255,7 @@ export function QuranGraphV2Modal({
                             onNodeClick={handleNodeClick}
                             expandedHubs={expandedHubs}
                             onExpandHub={handleExpandHub}
+                            hubOrigins={hubOrigins}
                         />
                     </Suspense>
 
