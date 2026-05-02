@@ -130,7 +130,7 @@ function QuranGraphV2Wrapper({
     }
 
     return (
-        <div className="h-full w-full flex-1">
+        <div className="h-full w-full flex-1 overflow-hidden">
             <QuranGraphV2
                 data={data}
                 selectedNodeId={selectedNodeId}

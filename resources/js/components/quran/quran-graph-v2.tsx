@@ -3,26 +3,10 @@ import type {
     QuranGraphV2NodeType,
     QuranGraphV2Response,
 } from '@/types/quran-graph';
-import {
-    lazy,
-    Suspense,
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from 'react';
-
-const ForceGraph2D = lazy(() => import('react-force-graph-2d'));
-
-interface GraphNodeWithCoords extends QuranGraphV2Node {
-    x?: number;
-    y?: number;
-    vx?: number;
-    vy?: number;
-    fx?: number | null;
-    fy?: number | null;
-}
+import * as am5 from '@amcharts/amcharts5';
+import * as am5hierarchy from '@amcharts/amcharts5/hierarchy';
+import am5themes_Animated from '@amcharts/amcharts5/themes/Animated';
+import { useEffect, useMemo, useRef } from 'react';
 
 const NODE_COLORS: Record<QuranGraphV2NodeType, string> = {
     verse: '#f97316',
@@ -40,8 +24,8 @@ const NODE_COLORS: Record<QuranGraphV2NodeType, string> = {
 };
 
 const NODE_SIZES: Record<QuranGraphV2NodeType, number> = {
-    verse: 8,
-    chapter: 10,
+    verse: 10,
+    chapter: 12,
     topic: 6,
     similar: 5,
     tafsir: 5,
@@ -54,6 +38,11 @@ const NODE_SIZES: Record<QuranGraphV2NodeType, number> = {
     unknown: 4,
 };
 
+interface GraphNodeWithChildren extends QuranGraphV2Node {
+    children?: GraphNodeWithChildren[];
+    linkWith?: string[];
+}
+
 interface QuranGraphV2Props {
     data: QuranGraphV2Response | null;
     onNodeClick?: (node: QuranGraphV2Node) => void;
@@ -63,71 +52,156 @@ interface QuranGraphV2Props {
     hubOrigins?: Map<string, { x: number; y: number }>;
 }
 
-function distributeRadial(
-    count: number,
-    centerX: number,
-    centerY: number,
-    radius: number,
-): Array<{ x: number; y: number }> {
-    const positions: Array<{ x: number; y: number }> = [];
-    const angleStep = (2 * Math.PI) / count;
-    for (let i = 0; i < count; i++) {
-        const angle = i * angleStep - Math.PI / 2;
-        positions.push({
-            x: centerX + Math.cos(angle) * radius,
-            y: centerY + Math.sin(angle) * radius,
-        });
+function buildTreeFromFlat(
+    rootId: string,
+    nodes: QuranGraphV2Node[],
+    links: { source: string; target: string }[],
+): unknown[] {
+    const nodeMap = new Map<string, GraphNodeWithChildren>();
+    for (const n of nodes) {
+        nodeMap.set(n.id, { ...n, children: [], linkWith: [] });
     }
-    return positions;
+
+    const adj = new Map<string, string[]>();
+    for (const link of links) {
+        const s = link.source;
+        const t = link.target;
+        if (!adj.has(s)) adj.set(s, []);
+        if (!adj.has(t)) adj.set(t, []);
+        adj.get(s)!.push(t);
+        adj.get(t)!.push(s);
+    }
+
+    const visited = new Set<string>();
+    const parentMap = new Map<string, string>();
+    const queue: string[] = [rootId];
+    visited.add(rootId);
+
+    while (queue.length > 0) {
+        const current = queue.shift()!;
+        const neighbors = adj.get(current) || [];
+
+        for (const neighbor of neighbors) {
+            if (!visited.has(neighbor)) {
+                visited.add(neighbor);
+                parentMap.set(neighbor, current);
+                queue.push(neighbor);
+                const parent = nodeMap.get(current);
+                const child = nodeMap.get(neighbor);
+                if (parent && child) {
+                    parent.children = parent.children || [];
+                    parent.children.push(child);
+                }
+            } else {
+                const currentNode = nodeMap.get(current);
+                const neighborNode = nodeMap.get(neighbor);
+                if (
+                    currentNode &&
+                    neighborNode &&
+                    parentMap.get(neighbor) !== current &&
+                    parentMap.get(current) !== neighbor
+                ) {
+                    currentNode.linkWith = currentNode.linkWith || [];
+                    if (!currentNode.linkWith.includes(neighbor)) {
+                        currentNode.linkWith.push(neighbor);
+                    }
+                }
+            }
+        }
+    }
+
+    const root = nodeMap.get(rootId);
+    if (!root) return [];
+
+    for (const [, node] of nodeMap) {
+        if (!node.children || node.children.length === 0) {
+            delete (node as Partial<typeof node>).children;
+        }
+        if (!node.linkWith || node.linkWith.length === 0) {
+            delete (node as Partial<typeof node>).linkWith;
+        }
+    }
+
+    function mapToAmCharts(n: GraphNodeWithChildren): unknown {
+        return {
+            name: n.label || n.id,
+            label: n.label || n.id,
+            id: n.id,
+            type: n.type,
+            value: NODE_SIZES[n.type] || 5,
+            payload: n.payload,
+            circleSettings: {
+                fill: am5.color(NODE_COLORS[n.type] || NODE_COLORS.unknown),
+            },
+            ...(n.children ? { children: n.children.map(mapToAmCharts) } : {}),
+            ...(n.linkWith && n.linkWith.length > 0
+                ? { linkWith: n.linkWith }
+                : {}),
+        };
+    }
+
+    return [mapToAmCharts(root)];
+}
+
+function findHubDataItem(
+    series: am5hierarchy.ForceDirected,
+): am5.DataItem<am5hierarchy.IForceDirectedDataItem> | undefined {
+    let found: am5.DataItem<am5hierarchy.IForceDirectedDataItem> | undefined;
+    for (const di of series.dataItems) {
+        const ctx = di.dataContext as
+            | { id?: string; type?: string }
+            | undefined;
+        if (ctx?.type === 'resource_hub') {
+            found = di as am5.DataItem<am5hierarchy.IForceDirectedDataItem>;
+            break;
+        }
+    }
+    return found;
+}
+
+function applyHubState(
+    series: am5hierarchy.ForceDirected,
+    expandedHubs: Set<string>,
+) {
+    const hub = findHubDataItem(series);
+    if (!hub) return;
+
+    const s = series as unknown as {
+        enableDataItem(
+            di: am5.DataItem<am5hierarchy.IForceDirectedDataItem>,
+        ): void;
+        disableDataItem(
+            di: am5.DataItem<am5hierarchy.IForceDirectedDataItem>,
+        ): void;
+    };
+
+    if (expandedHubs.has('resources')) {
+        s.enableDataItem(hub);
+    } else {
+        s.disableDataItem(hub);
+    }
 }
 
 export function QuranGraphV2({
     data,
     onNodeClick,
-    selectedNodeId,
     expandedHubs = new Set(),
     onExpandHub,
-    hubOrigins = new Map(),
 }: QuranGraphV2Props) {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const graphRef = useRef<any>(null);
-    const [dimensions, setDimensions] = useState({ width: 800, height: 500 });
-    const [releasedHubs, setReleasedHubs] = useState<Set<string>>(new Set());
+    const chartDivRef = useRef<HTMLDivElement>(null);
+    const chartRef = useRef<{
+        root: am5.Root;
+        series: am5hierarchy.ForceDirected;
+    } | null>(null);
+    const onNodeClickRef = useRef(onNodeClick);
+    onNodeClickRef.current = onNodeClick;
+    const onExpandHubRef = useRef(onExpandHub);
+    onExpandHubRef.current = onExpandHub;
+    const expandedHubsRef = useRef(expandedHubs);
+    expandedHubsRef.current = expandedHubs;
 
-    // Reset released state when the center node changes
-    useEffect(() => {
-        setReleasedHubs(new Set());
-    }, [data?.meta.center]);
-
-    // Clean up released hubs that are no longer expanded
-    useEffect(() => {
-        setReleasedHubs((prev) => {
-            const next = new Set<string>();
-            for (const hub of prev) {
-                if (expandedHubs.has(hub)) {
-                    next.add(hub);
-                }
-            }
-            return next;
-        });
-    }, [expandedHubs]);
-
-    // Release fixed positions after bloom animation
-    useEffect(() => {
-        const timers: NodeJS.Timeout[] = [];
-        expandedHubs.forEach((hub) => {
-            if (!releasedHubs.has(hub)) {
-                const timer = setTimeout(() => {
-                    setReleasedHubs((prev) => new Set(prev).add(hub));
-                }, 800);
-                timers.push(timer);
-            }
-        });
-        return () => timers.forEach(clearTimeout);
-    }, [expandedHubs, releasedHubs]);
-
-    const displayData = useMemo(() => {
-        if (!data) return { nodes: [], links: [] };
+    const displayTreeData = useMemo(() => {
+        if (!data) return [];
 
         const allNodes = data.nodes.map((n) => ({ ...n }));
         const allLinks = data.links.map((l) => ({ ...l }));
@@ -135,206 +209,151 @@ export function QuranGraphV2({
         const resourceNodes = allNodes.filter((n) => n.type === 'resource');
         const resourceCount = resourceNodes.length;
 
-        // Small number: show resources directly, no hub
         if (resourceCount <= 4) {
-            return {
-                nodes: allNodes.map((n) => ({ ...n, id: n.id })),
-                links: allLinks.map((l) => ({
+            return buildTreeFromFlat(
+                data.meta.center,
+                allNodes,
+                allLinks.map((l) => ({
                     source: l.source,
                     target: l.target,
                 })),
-            };
-        }
-
-        const resourceIds = new Set(resourceNodes.map((n) => n.id));
-        const origin = hubOrigins.get('resources');
-        const isExpanded = expandedHubs.has('resources');
-
-        if (!isExpanded) {
-            // Collapsed: show hub node only
-            const visibleNodes = allNodes
-                .filter((n) => !resourceIds.has(n.id))
-                .map((n) => ({ ...n, id: n.id }));
-
-            const visibleLinks = allLinks
-                .filter((l) => !resourceIds.has(l.target))
-                .map((l) => ({ source: l.source, target: l.target }));
-
-            const hubNode: GraphNodeWithCoords = {
-                id: 'resource_hub',
-                label: `${resourceCount} Resources`,
-                type: 'resource_hub',
-                payload: { count: resourceCount },
-            };
-
-            return {
-                nodes: [...visibleNodes, hubNode],
-                links: [
-                    ...visibleLinks,
-                    { source: data.meta.center, target: 'resource_hub' },
-                ],
-            };
-        }
-
-        // Expanded: show hub as a sub-center with resources orbiting it
-        const isAnimating = origin && !releasedHubs.has('resources');
-
-        // Hub is pinned to the right of where it was clicked
-        const hubX = origin ? origin.x + 250 : 0;
-        const hubY = origin ? origin.y : 0;
-
-        // Calculate child positions around hub for the bloom animation
-        let childPositions: Array<{ x: number; y: number }> = [];
-        if (isAnimating) {
-            const childRadius = Math.min(120, Math.max(60, resourceCount * 4));
-            childPositions = distributeRadial(
-                resourceCount,
-                hubX,
-                hubY,
-                childRadius,
             );
         }
 
-        const nodes = allNodes.map((n) => {
-            const base = { ...n, id: n.id } as GraphNodeWithCoords;
-
-            if (n.type === 'resource' && isAnimating) {
-                const idx = resourceNodes.findIndex((r) => r.id === n.id);
-                if (idx >= 0) {
-                    const pos = childPositions[idx];
-                    base.x = pos.x;
-                    base.y = pos.y;
-                    base.vx = 0;
-                    base.vy = 0;
-                    base.fx = pos.x;
-                    base.fy = pos.y;
-                }
-            }
-            return base;
-        });
-
-        // Hub node is always present when expanded
-        const hubNode: GraphNodeWithCoords = {
+        const resourceIds = new Set(resourceNodes.map((n) => n.id));
+        const hubNode: QuranGraphV2Node = {
             id: 'resource_hub',
             label: `${resourceCount} Resources`,
             type: 'resource_hub',
             payload: { count: resourceCount },
-            ...(origin
-                ? {
-                      x: hubX,
-                      y: hubY,
-                      vx: 0,
-                      vy: 0,
-                      fx: hubX,
-                      fy: hubY,
-                  }
-                : {}),
         };
 
-        // Remove direct center-to-resource links so resources only connect through hub
-        const filteredLinks = allLinks
-            .filter((l) => !resourceIds.has(l.target))
-            .map((l) => ({ source: l.source, target: l.target }));
+        const nonResourceNodes = allNodes.filter((n) => !resourceIds.has(n.id));
+        const nodesWithHub = [...nonResourceNodes, hubNode, ...resourceNodes];
 
-        // Add center-to-hub and hub-to-resource links
-        const hubToResourceLinks = resourceNodes.map((r) => ({
-            source: 'resource_hub',
-            target: r.id,
-        }));
+        const linksWithHub = [
+            ...allLinks.filter(
+                (l) => !resourceIds.has(l.target) && !resourceIds.has(l.source),
+            ),
+            {
+                source: data.meta.center,
+                target: 'resource_hub',
+                type: 'hub',
+                weight: 1,
+                payload: null,
+            },
+            ...resourceNodes.map((r) => ({
+                source: 'resource_hub',
+                target: r.id,
+                type: 'hub_resource',
+                weight: 1,
+                payload: null,
+            })),
+        ];
 
-        return {
-            nodes: [...nodes, hubNode],
-            links: [
-                ...filteredLinks,
-                { source: data.meta.center, target: 'resource_hub' },
-                ...hubToResourceLinks,
-            ],
-        };
-    }, [data, expandedHubs, hubOrigins, releasedHubs]);
+        return buildTreeFromFlat(
+            data.meta.center,
+            nodesWithHub,
+            linksWithHub.map((l) => ({
+                source: l.source,
+                target: l.target,
+            })),
+        );
+    }, [data]);
 
     useEffect(() => {
-        const observer = new ResizeObserver((entries) => {
-            if (entries[0]) {
-                const { width, height } = entries[0].contentRect;
-                if (width && height) {
-                    setDimensions({ width, height });
-                }
-            }
+        if (!chartDivRef.current || typeof window === 'undefined') return;
+
+        const root = am5.Root.new(chartDivRef.current);
+        root.setThemes([am5themes_Animated.new(root)]);
+
+        const zoomableContainer = root.container.children.push(
+            am5.ZoomableContainer.new(root, {
+                width: am5.p100,
+                height: am5.p100,
+                wheelable: true,
+                pinchZoom: true,
+                minZoomLevel: 0.3,
+                maxZoomLevel: 5,
+            }),
+        );
+
+        const series = zoomableContainer.contents.children.push(
+            am5hierarchy.ForceDirected.new(root, {
+                singleBranchOnly: false,
+                downDepth: 2,
+                initialDepth: 3,
+                valueField: 'value',
+                categoryField: 'name',
+                childDataField: 'children',
+                idField: 'id',
+                linkWithField: 'linkWith',
+                centerStrength: 0.6,
+                velocityDecay: 0.3,
+                nodePadding: 18,
+                minRadius: 6,
+                maxRadius: 18,
+                initialFrames: 300,
+                animationDuration: 600,
+                animationEasing: am5.ease.out(am5.ease.cubic),
+            }),
+        );
+
+        series.circles.template.setAll({
+            templateField: 'circleSettings',
         });
 
-        if (containerRef.current) {
-            observer.observe(containerRef.current);
-        }
+        series.outerCircles.template.setAll({
+            visible: false,
+        });
 
-        return () => observer.disconnect();
-    }, []);
+        series.labels.template.setAll({
+            fontSize: 12,
+            maxWidth: 120,
+            oversizedBehavior: 'truncate',
+        });
 
-    const handleNodeLabel = useCallback((node: object) => {
-        const graphNode = node as QuranGraphV2Node;
-        return graphNode.label || graphNode.id;
-    }, []);
+        series.nodes.template.set('toggleKey', 'none');
 
-    const handleNodeCanvasObject = useCallback(
-        (node: object, ctx: CanvasRenderingContext2D, globalScale: number) => {
-            const graphNode = node as GraphNodeWithCoords;
-            const label = graphNode.label || graphNode.id;
-            const color = NODE_COLORS[graphNode.type] || NODE_COLORS.unknown;
+        series.nodes.template.events.on('click', (ev) => {
+            const dataContext = ev.target.dataItem?.dataContext as
+                | (QuranGraphV2Node & { id: string; type: string })
+                | undefined;
+            if (!dataContext) return;
 
-            let radius = NODE_SIZES[graphNode.type] || 5;
-            if (
-                graphNode.type === 'resource' &&
-                graphNode.payload.thumbnail_url
-            ) {
-                radius = 8;
-            }
-
-            const isSelected = selectedNodeId === graphNode.id;
-
-            ctx.beginPath();
-            ctx.arc(
-                graphNode.x ?? 0,
-                graphNode.y ?? 0,
-                isSelected ? radius + 3 : radius,
-                0,
-                2 * Math.PI,
-            );
-            ctx.fillStyle = color;
-            ctx.fill();
-
-            if (isSelected) {
-                ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 2 / globalScale;
-                ctx.stroke();
-            }
-
-            const displayLabel =
-                label.length > 20 ? label.slice(0, 20) + '...' : label;
-
-            const fontSize = 14 / globalScale;
-            ctx.font = `${fontSize}px Sans-Serif`;
-            ctx.fillStyle = '#334155';
-            ctx.fillText(
-                displayLabel,
-                (graphNode.x ?? 0) + radius + 2,
-                (graphNode.y ?? 0) + fontSize / 3,
-            );
-        },
-        [selectedNodeId],
-    );
-
-    const handleClick = useCallback(
-        (node: object) => {
-            const graphNode = node as GraphNodeWithCoords;
-
-            if (graphNode.type === 'resource_hub') {
-                onExpandHub?.('resources', graphNode.x ?? 0, graphNode.y ?? 0);
+            if (dataContext.type === 'resource_hub') {
+                onExpandHubRef.current?.('resources', 0, 0);
                 return;
             }
 
-            onNodeClick?.(graphNode);
-        },
-        [onNodeClick, onExpandHub],
-    );
+            onNodeClickRef.current?.(dataContext);
+        });
+
+        chartRef.current = { root, series };
+
+        return () => {
+            root.dispose();
+            chartRef.current = null;
+        };
+    }, []);
+
+    useEffect(() => {
+        const { series } = chartRef.current || {};
+        if (!series) return;
+
+        series.data.setAll(displayTreeData);
+
+        const timer = setTimeout(() => {
+            applyHubState(series, expandedHubs);
+        }, 80);
+        return () => clearTimeout(timer);
+    }, [displayTreeData]);
+
+    useEffect(() => {
+        const { series } = chartRef.current || {};
+        if (!series) return;
+        applyHubState(series, expandedHubs);
+    }, [expandedHubs]);
 
     if (!data || data.nodes.length === 0) {
         return (
@@ -346,35 +365,14 @@ export function QuranGraphV2({
 
     return (
         <div
-            ref={containerRef}
-            style={{ width: '100%', height: '100%', minHeight: '400px' }}
-            className="flex h-full w-full items-center justify-center p-2"
-        >
-            <Suspense
-                fallback={
-                    <div className="text-slate-500">Loading graph...</div>
-                }
-            >
-                <ForceGraph2D
-                    ref={graphRef}
-                    graphData={displayData}
-                    nodeLabel={handleNodeLabel}
-                    nodeCanvasObject={handleNodeCanvasObject}
-                    linkDirectionalParticles={2}
-                    linkDirectionalParticleSpeed={0.005}
-                    cooldownTicks={100}
-                    d3VelocityDecay={0.3}
-                    onNodeClick={handleClick}
-                    onEngineStop={() => {
-                        if (graphRef.current) {
-                            graphRef.current.zoom(2);
-                        }
-                    }}
-                    width={dimensions.width}
-                    height={dimensions.height}
-                />
-            </Suspense>
-        </div>
+            ref={chartDivRef}
+            style={{
+                width: '100%',
+                height: '100%',
+                minHeight: '400px',
+                overflow: 'hidden',
+            }}
+        />
     );
 }
 

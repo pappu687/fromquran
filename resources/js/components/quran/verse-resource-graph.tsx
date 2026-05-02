@@ -2,18 +2,11 @@ import {
     type ResourceGraphApiResponse,
     type ResourceGraphNode,
 } from '@/types/quran';
-import {
-    lazy,
-    Suspense,
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from 'react';
+import * as am5 from '@amcharts/amcharts5';
+import * as am5hierarchy from '@amcharts/amcharts5/hierarchy';
+import am5themes_Animated from '@amcharts/amcharts5/themes/Animated';
+import { useEffect, useMemo, useRef } from 'react';
 import { buildGraphData } from './buildGraphData';
-
-const ForceGraph2D = lazy(() => import('react-force-graph-2d'));
 
 interface VerseResourceGraphProps {
     verseKey: string;
@@ -31,93 +24,125 @@ export function VerseResourceGraph({
         return buildGraphData(verseKey, data);
     }, [verseKey, data]);
 
-    const containerRef = useRef<HTMLDivElement>(null);
-    const [dimensions, setDimensions] = useState({ width: 800, height: 400 });
+    const chartDivRef = useRef<HTMLDivElement>(null);
+    const chartRef = useRef<{
+        root: am5.Root;
+        series: am5hierarchy.ForceDirected;
+    } | null>(null);
+    const onNodeClickRef = useRef(onNodeClick);
+    onNodeClickRef.current = onNodeClick;
 
     useEffect(() => {
-        const observer = new ResizeObserver((entries) => {
-            if (entries[0]) {
-                const { width, height } = entries[0].contentRect;
-                if (width && height) {
-                    setDimensions({ width, height });
-                }
+        if (!chartDivRef.current || typeof window === 'undefined') return;
+
+        const root = am5.Root.new(chartDivRef.current);
+        root.setThemes([am5themes_Animated.new(root)]);
+
+        const series = root.container.children.push(
+            am5hierarchy.ForceDirected.new(root, {
+                singleBranchOnly: false,
+                downDepth: 1,
+                initialDepth: 2,
+                valueField: 'value',
+                categoryField: 'name',
+                childDataField: 'children',
+                idField: 'id',
+                centerStrength: 0.6,
+                velocityDecay: 0.3,
+                nodePadding: 18,
+                minRadius: 6,
+                maxRadius: 18,
+                initialFrames: 300,
+            }),
+        );
+
+        series.circles.template.setAll({
+            templateField: 'circleSettings',
+        });
+
+        series.outerCircles.template.setAll({
+            visible: false,
+        });
+
+        series.labels.template.setAll({
+            fontSize: 12,
+            maxWidth: 100,
+            oversizedBehavior: 'wrap',
+        });
+
+        series.nodes.template.set('toggleKey', 'none');
+
+        series.nodes.template.events.on('click', (ev) => {
+            const dataContext = ev.target.dataItem?.dataContext as
+                | ResourceGraphNode
+                | undefined;
+            if (dataContext) {
+                onNodeClickRef.current?.(dataContext);
             }
         });
 
-        if (containerRef.current) {
-            observer.observe(containerRef.current);
+        chartRef.current = { root, series };
+
+        return () => {
+            root.dispose();
+            chartRef.current = null;
+        };
+    }, []);
+
+    useEffect(() => {
+        const { series } = chartRef.current || {};
+        if (!series) return;
+
+        if (graphData.nodes.length === 0) {
+            series.data.setAll([]);
+            return;
         }
 
-        return () => observer.disconnect();
-    }, []);
+        const rootNode = graphData.nodes.find((n) => n.id === verseKey);
+        const children = graphData.nodes
+            .filter((n) => n.id !== verseKey)
+            .map((n) => ({
+                name: n.label,
+                id: n.id,
+                label: n.label,
+                type: n.type,
+                value: n.type === 'verse' ? 8 : 5,
+                originalName: n.originalName,
+                circleSettings: {
+                    fill:
+                        n.type === 'verse'
+                            ? am5.color('#f97316')
+                            : am5.color('#0ea5e9'),
+                },
+            }));
 
-    const handleNodeLabel = useCallback((node: object) => {
-        const graphNode = node as ResourceGraphNode;
-        return graphNode.label || graphNode.id;
-    }, []);
+        const amData = [
+            {
+                name: rootNode?.label || verseKey,
+                id: verseKey,
+                label: rootNode?.label || verseKey,
+                type: 'verse',
+                value: 10,
+                circleSettings: {
+                    fill: am5.color('#f97316'),
+                },
+                children,
+            },
+        ];
 
-    const handleNodeCanvasObject = useCallback(
-        (node: object, ctx: CanvasRenderingContext2D, globalScale: number) => {
-            const graphNode = node as ResourceGraphNode;
-            const label = graphNode.label || graphNode.id;
-
-            // Make text scale explicitly with zoom
-            const fontSize = 14 / globalScale;
-            ctx.font = `${fontSize}px Sans-Serif`;
-            ctx.fillStyle = graphNode.type === 'verse' ? '#f97316' : '#0ea5e9'; // orange-500 : sky-500
-
-            ctx.beginPath();
-            ctx.arc(
-                graphNode.x ?? 0,
-                graphNode.y ?? 0,
-                graphNode.type === 'verse' ? 8 : 5,
-                0,
-                2 * Math.PI,
-            );
-            ctx.fill();
-
-            ctx.fillStyle = '#334155'; // slate-700, force light theme
-
-            // Offset text position dynamically based on font size
-            ctx.fillText(
-                label,
-                (graphNode.x ?? 0) + 8,
-                (graphNode.y ?? 0) + fontSize / 3,
-            );
-        },
-        [],
-    );
+        series.data.setAll(amData);
+    }, [graphData, verseKey]);
 
     return (
         <div
-            ref={containerRef}
-            style={{ width: '100%', height: '100%', minHeight: '400px' }}
-            className="flex h-full w-full items-center justify-center p-2"
-        >
-            <Suspense
-                fallback={
-                    <div className="text-slate-500">Loading graph...</div>
-                }
-            >
-                <ForceGraph2D
-                    graphData={graphData}
-                    nodeLabel={handleNodeLabel}
-                    nodeCanvasObject={handleNodeCanvasObject}
-                    linkDirectionalParticles={2}
-                    linkDirectionalParticleSpeed={0.005}
-                    cooldownTicks={100}
-                    d3VelocityDecay={0.3}
-                    onNodeClick={
-                        onNodeClick
-                            ? (node: object) =>
-                                  onNodeClick(node as ResourceGraphNode)
-                            : undefined
-                    }
-                    width={dimensions.width}
-                    height={dimensions.height}
-                />
-            </Suspense>
-        </div>
+            ref={chartDivRef}
+            style={{
+                width: '100%',
+                height: '100%',
+                minHeight: '400px',
+                overflow: 'hidden',
+            }}
+        />
     );
 }
 
