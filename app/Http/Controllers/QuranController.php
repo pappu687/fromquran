@@ -177,6 +177,8 @@ class QuranController extends Controller
         $query = $request->get('query', '');
         $edition = $request->get('edition', config('quran.default_edition', 'en.sahih'));
         $limit = (int) $request->get('limit', 10);
+        $page = (int) $request->get('page', 1);
+        $exactArabic = $request->boolean('exact_arabic');
 
         if (empty($query)) {
             return response()->json([
@@ -185,14 +187,15 @@ class QuranController extends Controller
         }
 
         try {
-            $results = $this->quranService->search($query, $edition);
-            $limitedResults = array_slice($results, 0, $limit);
+            $results = $this->quranService->search($query, $edition, $exactArabic, $page, $limit);
 
             return response()->json([
-                'data' => $limitedResults,
+                'data' => $results['data'],
                 'query' => $query,
                 'edition' => $edition,
-                'total_results' => count($results)
+                'total_results' => $results['total_results'],
+                'current_page' => $page,
+                'per_page' => $limit
             ]);
         } catch (\Exception $e) {
             return response()->json([

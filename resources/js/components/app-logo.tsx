@@ -3,10 +3,10 @@ import AppLogoIcon from './app-logo-icon';
 export default function AppLogo() {
     return (
         <>
-            <AppLogoIcon className="size-7 fill-current text-black" />
-            <div className="ml-1 grid flex-1 text-left text-sm">
+            <AppLogoIcon className="size-9 fill-current text-black" />
+            <div className="text-md ml-1 grid flex-1 text-left">
                 <span className="mb-0.5 truncate leading-tight font-semibold">
-                    FromQuran
+                    From Quran
                 </span>
             </div>
         </>

@@ -8,6 +8,7 @@ interface VerseReadingProps {
     className?: string;
     annotationsByVerse?: Record<number, VerseAnnotation[]>;
     highlightedAyah?: number | null;
+    onSearch?: (text: string) => void;
 }
 
 export function VerseReading({
@@ -15,6 +16,7 @@ export function VerseReading({
     className,
     annotationsByVerse = {},
     highlightedAyah,
+    onSearch,
 }: VerseReadingProps) {
     const { settings } = useReaderSettings();
     if (verses.length === 0) {
@@ -89,6 +91,8 @@ export function VerseReading({
                                                 className="inline"
                                                 text={verse.text}
                                                 verseId={verse.id}
+                                                interactive={true}
+                                                onSearch={onSearch}
                                             />
                                             <span className="mr-2 inline-flex h-8 w-8 items-center justify-center rounded-[40%] bg-gray-400/20 align-middle text-sm font-semibold">
                                                 {verse.verseNumber}

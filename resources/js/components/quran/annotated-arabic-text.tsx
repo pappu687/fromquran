@@ -42,6 +42,8 @@ interface AnnotatedArabicTextProps {
     dir?: 'rtl' | 'ltr' | 'auto';
     interactive?: boolean;
     onAnnotationCreated?: (annotation: VerseAnnotation) => void;
+    onSearch?: (text: string) => void;
+    highlightText?: string;
     style?: CSSProperties;
 }
 
@@ -54,6 +56,8 @@ export function AnnotatedArabicText({
     dir,
     interactive = false,
     onAnnotationCreated,
+    onSearch,
+    highlightText,
     style,
 }: AnnotatedArabicTextProps) {
     const { user } = useAuth();
@@ -76,7 +80,9 @@ export function AnnotatedArabicText({
             return;
         }
 
-        const mediaQuery = window.matchMedia('(hover: none), (pointer: coarse)');
+        const mediaQuery = window.matchMedia(
+            '(hover: none), (pointer: coarse)',
+        );
         const updateTouchState = () => {
             setIsTouchDevice(mediaQuery.matches);
         };
@@ -301,6 +307,28 @@ export function AnnotatedArabicText({
         style,
     };
 
+    const renderTextWithHighlight = (textContent: string) => {
+        if (!highlightText) return textContent;
+        const parts = textContent.split(highlightText);
+        if (parts.length === 1) return textContent;
+
+        const result = [];
+        for (let i = 0; i < parts.length; i++) {
+            result.push(parts[i]);
+            if (i < parts.length - 1) {
+                result.push(
+                    <mark
+                        key={`mark-${i}`}
+                        className="rounded-sm bg-green-200/80 px-0.5 text-inherit"
+                    >
+                        {highlightText}
+                    </mark>,
+                );
+            }
+        }
+        return result;
+    };
+
     return (
         <>
             {as === 'span' ? (
@@ -312,7 +340,7 @@ export function AnnotatedArabicText({
                         if (!segment.annotation) {
                             return (
                                 <span key={`${verseId}-segment-${index}`}>
-                                    {segment.text}
+                                    {renderTextWithHighlight(segment.text)}
                                 </span>
                             );
                         }
@@ -333,7 +361,7 @@ export function AnnotatedArabicText({
                         if (!segment.annotation) {
                             return (
                                 <span key={`${verseId}-segment-${index}`}>
-                                    {segment.text}
+                                    {renderTextWithHighlight(segment.text)}
                                 </span>
                             );
                         }
@@ -363,31 +391,57 @@ export function AnnotatedArabicText({
                     }}
                 >
                     {!user ? (
-                        <Button
-                            className="w-full"
-                            onClick={() => setIsLoginModalOpen(true)}
-                            size="sm"
-                            variant="outline"
-                        >
-                            Log in to save note
-                        </Button>
+                        <div className="flex flex-col gap-2">
+                            <Button
+                                className="w-full"
+                                onClick={() => setIsLoginModalOpen(true)}
+                                size="sm"
+                                variant="outline"
+                            >
+                                Log in to save note
+                            </Button>
+                            <Button
+                                className="w-full"
+                                onClick={() => {
+                                    onSearch?.(selection.selectedText);
+                                    clearSelection();
+                                }}
+                                size="sm"
+                                variant="outline"
+                            >
+                                Search this selection
+                            </Button>
+                        </div>
                     ) : !selection.showEditor ? (
-                        <Button
-                            className="w-full"
-                            onClick={() =>
-                                setSelection((current) =>
-                                    current
-                                        ? {
-                                              ...current,
-                                              showEditor: true,
-                                          }
-                                        : current,
-                                )
-                            }
-                            size="sm"
-                        >
-                            Add note
-                        </Button>
+                        <div className="flex flex-col gap-2">
+                            <Button
+                                className="w-full"
+                                onClick={() =>
+                                    setSelection((current) =>
+                                        current
+                                            ? {
+                                                  ...current,
+                                                  showEditor: true,
+                                              }
+                                            : current,
+                                    )
+                                }
+                                size="sm"
+                            >
+                                Add note
+                            </Button>
+                            <Button
+                                className="w-full"
+                                onClick={() => {
+                                    onSearch?.(selection.selectedText);
+                                    clearSelection();
+                                }}
+                                size="sm"
+                                variant="outline"
+                            >
+                                Search
+                            </Button>
+                        </div>
                     ) : (
                         <div className="space-y-3">
                             <div className="rounded-md bg-muted/60 px-2 py-1.5 text-right text-sm">
@@ -452,7 +506,7 @@ export function AnnotatedArabicText({
                     <DialogHeader>
                         <DialogTitle>Note</DialogTitle>
                     </DialogHeader>
-                    <div className="overflow-y-auto whitespace-pre-wrap text-sm text-foreground">
+                    <div className="overflow-y-auto text-sm whitespace-pre-wrap text-foreground">
                         {selectedAnnotation?.note}
                     </div>
                 </DialogContent>

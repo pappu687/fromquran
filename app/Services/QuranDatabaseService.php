@@ -431,10 +431,10 @@ class QuranDatabaseService {
     /**
      * Search Quran text using Solr
      */
-    public function search( string $query, string $edition = 'en.sahih' ): array {
-        $cacheKey = "quran." . self::CACHE_SCHEMA_VERSION . ".solr.search." . md5( $query . $edition );
+    public function search( string $query, string $edition = 'en.sahih', bool $exactArabic = false, int $page = 1, int $limit = 10 ): array {
+        $cacheKey = "quran." . self::CACHE_SCHEMA_VERSION . ".solr.search." . md5( $query . $edition . ($exactArabic ? '1' : '0') . $page . $limit );
 
-        return Cache::remember( $cacheKey, $this->cacheTtl / 2, function () use ( $query, $edition ) {
+        return Cache::remember( $cacheKey, $this->cacheTtl / 2, function () use ( $query, $edition, $exactArabic, $page, $limit ) {
             $availableTranslationIds = $this->getAvailableTranslationResourceIds();
             $translationResource = $this->resolveVerseTranslationResources(
                 [],
@@ -450,28 +450,35 @@ class QuranDatabaseService {
                 $escapedQuery
             );
 
-            if ( $translationResourceId ) {
-                $fieldName = 'translation_' . $translationResourceId . '_t';
-                $select->setQuery(
-                    sprintf(
-                        '((%s:%s) OR (text_uthmani_t:%s)) OR %s',
-                        $fieldName,
-                        $escapedQuery,
-                        $escapedQuery,
-                        $resourceQuery
-                    )
-                );
+            if ($exactArabic) {
+                // Exact-match Solr search using the selected Arabic text
+                // Query must exclude documents where type_s exists: AND !type_s:[* TO *]
+                $select->setQuery(sprintf('text_uthmani_t:"%s" AND -type_s:[* TO *]', $escapedQuery));
             } else {
-                $select->setQuery( sprintf( '(text_uthmani_t:%s) OR %s', $escapedQuery, $resourceQuery ) );
+                if ( $translationResourceId ) {
+                    $fieldName = 'translation_' . $translationResourceId . '_t';
+                    $select->setQuery(
+                        sprintf(
+                            '((%s:%s) OR (text_uthmani_t:%s)) OR %s',
+                            $fieldName,
+                            $escapedQuery,
+                            $escapedQuery,
+                            $resourceQuery
+                        )
+                    );
+                } else {
+                    $select->setQuery( sprintf( '(text_uthmani_t:%s) OR %s', $escapedQuery, $resourceQuery ) );
+                }
             }
 
             $select->addSort( 'score', $select::SORT_DESC );
-            $select->setStart( 0 )->setRows( 200 );
+            $start = ($page - 1) * $limit;
+            $select->setStart( $start )->setRows( $limit );
 
             $resultSet = $this->solrClient->select( $select );
 
             if ( $resultSet->getNumFound() === 0 ) {
-                return array(  );
+                return array( 'data' => [], 'total_results' => 0 );
             }
 
             $verseKeys = array(  );
@@ -558,7 +565,10 @@ class QuranDatabaseService {
                  );
             }
 
-            return $results;
+            return array(
+                'data' => $results,
+                'total_results' => $resultSet->getNumFound(),
+            );
         } );
     }
 

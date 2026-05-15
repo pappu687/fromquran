@@ -27,6 +27,7 @@ import { Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { VerseCard } from './verse-card';
 import { VerseReading } from './verse-reading';
+import { VerseSearchSheet } from './verse-search-sheet';
 
 interface VersesPanelProps {
     chapter?: ChapterSummary;
@@ -67,6 +68,13 @@ export function VersesPanel({
     const containerRef = useRef<HTMLDivElement | null>(null);
     const highlightTimeoutRef = useRef<number | null>(null);
     const highlightedStartVerseRef = useRef<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState<string | null>(null);
+    const [isSearchSheetOpen, setIsSearchSheetOpen] = useState(false);
+
+    const handleSearch = useCallback((text: string) => {
+        setSearchQuery(text);
+        setIsSearchSheetOpen(true);
+    }, []);
 
     const {
         verses,
@@ -490,6 +498,7 @@ export function VersesPanel({
                                         annotationsByVerse[verse.id] ?? []
                                     }
                                     onAnnotationCreated={handleAnnotationCreated}
+                                    onSearch={handleSearch}
                                     onCopy={handleCopy}
                                     onPlayAudio={handlePlayAudio}
                                     showTranslation={showTranslation}
@@ -501,6 +510,7 @@ export function VersesPanel({
                             annotationsByVerse={annotationsByVerse}
                             highlightedAyah={highlightedAyah}
                             verses={verses}
+                            onSearch={handleSearch}
                         />
                     ) : null}
 
@@ -618,6 +628,12 @@ export function VersesPanel({
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            <VerseSearchSheet
+                open={isSearchSheetOpen}
+                onOpenChange={setIsSearchSheetOpen}
+                searchQuery={searchQuery}
+            />
         </div>
     );
 }

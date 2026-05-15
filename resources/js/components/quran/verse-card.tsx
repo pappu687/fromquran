@@ -58,6 +58,9 @@ interface VerseCardProps {
     hideHeaderActions?: boolean;
     annotations?: VerseAnnotation[];
     onAnnotationCreated?: (annotation: VerseAnnotation) => void;
+    onSearch?: (text: string) => void;
+    highlightText?: string;
+    arabicFontSize?: string | number;
     contentClassName?: string;
 }
 
@@ -78,6 +81,9 @@ export function VerseCard({
     hideHeaderActions = false,
     annotations = [],
     onAnnotationCreated,
+    onSearch,
+    highlightText,
+    arabicFontSize,
     contentClassName,
 }: VerseCardProps) {
     const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
@@ -415,7 +421,9 @@ export function VerseCard({
                         dir="rtl"
                         interactive
                         onAnnotationCreated={onAnnotationCreated}
-                        style={{ fontSize: `${settings.fontSize}rem` }}
+                        onSearch={onSearch}
+                        highlightText={highlightText}
+                        style={{ fontSize: arabicFontSize ?? `${settings.fontSize}rem` }}
                         text={verse.text}
                         verseId={verse.id}
                     />

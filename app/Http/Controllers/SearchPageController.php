@@ -21,13 +21,9 @@ class SearchPageController extends Controller
         $total = 0;
 
         if (trim($query) !== '') {
-            $allResults = $quranService->search($query, $edition);
-            $total = count($allResults);
-
-            $offset = ($page - 1) * $perPage;
-            $paged = array_slice($allResults, $offset, $perPage);
-
-            $results = $paged;
+            $searchResult = $quranService->search($query, $edition, false, $page, $perPage);
+            $total = $searchResult['total_results'];
+            $results = $searchResult['data'];
         }
 
         // Chapters list for QuranReaderLayout (same shape as QuranDatabaseService::getChapters)
