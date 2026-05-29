@@ -107,6 +107,8 @@ interface UseVersesPanelOptions {
     fromVerse?: number;
     toVerse?: number;
     startFromVerse?: number;
+    chapters?: ChapterSummary[];
+    onChapterChange?: (chapter: ChapterSummary) => void;
 }
 
 interface UseVersesPanelReturn {
@@ -115,6 +117,8 @@ interface UseVersesPanelReturn {
     loading: boolean;
     error: string | null;
     hasMore: boolean;
+    activeChapter: ChapterSummary | undefined;
+    autoAdvancedChapterId: number | null;
     bookmarkedVerses: Set<string>;
     isAutoScroll: boolean;
     selectedEdition: string;
@@ -137,6 +141,7 @@ interface UseVersesPanelReturn {
     setSelectedEdition: (edition: string) => void;
     setShowSearch: (show: boolean) => void;
     retry: () => void;
+    clearAutoAdvanceChapter: () => void;
 }
 
 export const useVersesPanel = ({
@@ -147,12 +152,15 @@ export const useVersesPanel = ({
     fromVerse,
     toVerse,
     startFromVerse,
+    chapters,
+    onChapterChange,
 }: UseVersesPanelOptions): UseVersesPanelReturn => {
     const { user } = useAuth();
     const hasScrolledToStartRef = useRef(false);
     const currentChapterIdRef = useRef<number | null>(chapter?.id || null);
     const lastTranslationIdsRef = useRef('');
     const lastStartVerseRef = useRef<number | null>(startFromVerse ?? null);
+    const isInternalChangeRef = useRef(false);
 
     const { settings } = useReaderSettings();
     // Keep a stable ref so fetchVerses can read the latest translations
@@ -172,7 +180,14 @@ export const useVersesPanel = ({
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [page, setPage] = useState(1);
+    const [chapterHasMore, setChapterHasMore] = useState(
+        initialVerses?.has_more ?? true,
+    );
     const [hasMore, setHasMore] = useState(initialVerses?.has_more ?? true);
+    const [activeChapter, setActiveChapter] = useState(chapter);
+    const [autoAdvancedChapterId, setAutoAdvancedChapterId] = useState<
+        number | null
+    >(null);
 
     // User interaction state
     const [bookmarkedVerses, setBookmarkedVerses] = useState<Set<string>>(
@@ -190,23 +205,30 @@ export const useVersesPanel = ({
     const [successAlertMessage, setSuccessAlertMessage] = useState('');
 
     const fetchVerses = useCallback(
-        async (pageNum: number, reset = false) => {
-            if (!chapter) return;
-
+        async (
+            targetChapter: ChapterSummary,
+            pageNum: number,
+            reset = false,
+        ) => {
             setLoading(true);
             setError(null);
 
             try {
                 const currentTranslations = selectedTranslationsRef.current;
+                const shouldPassRange =
+                    fromVerse &&
+                    toVerse &&
+                    targetChapter.id === chapter?.id;
+
                 const data = await requestVersesPage({
-                    chapterId: chapter.id,
+                    chapterId: targetChapter.id,
                     apiUrl,
                     pageNum,
                     pageSize,
                     selectedEdition,
                     translationIds: currentTranslations,
-                    fromVerse,
-                    toVerse,
+                    fromVerse: shouldPassRange ? fromVerse : undefined,
+                    toVerse: shouldPassRange ? toVerse : undefined,
                 });
 
                 if (reset) {
@@ -215,7 +237,11 @@ export const useVersesPanel = ({
                     setVerses((prev) => [...prev, ...(data.data || [])]);
                 }
 
-                setHasMore(data.data?.length === pageSize);
+                const hasMorePages = data.data?.length === pageSize;
+                setChapterHasMore(hasMorePages);
+                setHasMore(
+                    hasMorePages || targetChapter.number < 114,
+                );
                 setPage(pageNum);
             } catch (err) {
                 setError(
@@ -225,7 +251,7 @@ export const useVersesPanel = ({
                 setLoading(false);
             }
         },
-        [chapter, apiUrl, pageSize, selectedEdition, fromVerse, toVerse],
+        [chapter?.id, apiUrl, pageSize, selectedEdition, fromVerse, toVerse],
     );
 
     // Store fetchVerses in a ref so the reset effect can call the latest
@@ -247,22 +273,43 @@ export const useVersesPanel = ({
             lastTranslationIdsRef.current !== currentTranslationIds ||
             startVerseChanged
         ) {
-            currentChapterIdRef.current = chapter.id;
-            lastTranslationIdsRef.current = currentTranslationIds;
-            lastStartVerseRef.current = startFromVerse ?? null;
-            setVerses([]);
-            setHasMore(true);
-            hasScrolledToStartRef.current = false;
+            if (isInternalChangeRef.current) {
+                // This is our own internal chapter advance being reflected back
+                // through the prop. Clear the flag so future external changes
+                // still trigger a reset, and always start from page 1.
+                isInternalChangeRef.current = false;
+                currentChapterIdRef.current = chapter.id;
+                lastTranslationIdsRef.current = currentTranslationIds;
+                lastStartVerseRef.current = null;
+                setActiveChapter(chapter);
+                setVerses([]);
+                setChapterHasMore(true);
+                setHasMore(chapter.number < 114);
+                hasScrolledToStartRef.current = false;
+                setPage(1);
+                fetchVersesRef.current(chapter, 1, true);
+            } else {
+                setAutoAdvancedChapterId(null);
+                currentChapterIdRef.current = chapter.id;
+                lastTranslationIdsRef.current = currentTranslationIds;
+                lastStartVerseRef.current = startFromVerse ?? null;
+                setActiveChapter(chapter);
+                setVerses([]);
+                setChapterHasMore(true);
+                setHasMore(true);
+                hasScrolledToStartRef.current = false;
 
-            const initialPage =
-                startFromVerse && !fromVerse && !toVerse
-                    ? Math.max(1, Math.ceil(startFromVerse / pageSize))
-                    : 1;
+                const initialPage =
+                    startFromVerse && !fromVerse && !toVerse
+                        ? Math.max(1, Math.ceil(startFromVerse / pageSize))
+                        : 1;
 
-            setPage(initialPage);
-            fetchVersesRef.current(initialPage, true);
+                setPage(initialPage);
+                fetchVersesRef.current(chapter, initialPage, true);
+            }
         }
     }, [
+        chapter,
         chapter?.id,
         translationIds,
         startFromVerse,
@@ -290,21 +337,14 @@ export const useVersesPanel = ({
             el.scrollIntoView({ behavior: 'smooth', block: 'start' });
             hasScrolledToStartRef.current = true;
         }
-    }, [chapter?.id, startFromVerse, verses]);
+    }, [chapter, chapter?.id, startFromVerse, verses]);
 
-    // Load user bookmarks if authenticated
-    useEffect(() => {
-        if (user && chapter) {
-            loadUserBookmarks();
-        }
-    }, [user, chapter, selectedEdition]);
-
-    const loadUserBookmarks = async () => {
-        if (!user || !chapter) return;
+    const loadUserBookmarks = useCallback(async () => {
+        if (!user || !activeChapter) return;
 
         try {
             const response = await fetch(
-                `/api/bookmarks?chapter_id=${chapter.id}&edition=${selectedEdition}`,
+                `/api/bookmarks?chapter_id=${activeChapter.id}&edition=${selectedEdition}`,
             );
 
             if (response.ok) {
@@ -319,13 +359,48 @@ export const useVersesPanel = ({
         } catch (err) {
             console.error('Failed to load bookmarks:', err);
         }
-    };
+    }, [user, activeChapter, selectedEdition]);
+
+    // Load user bookmarks if authenticated
+    useEffect(() => {
+        if (user && activeChapter) {
+            loadUserBookmarks();
+        }
+    }, [user, activeChapter, selectedEdition, loadUserBookmarks]);
 
     const loadMore = useCallback(() => {
-        if (!loading && hasMore) {
-            fetchVerses(page + 1);
+        if (loading || !activeChapter) {
+            return;
         }
-    }, [loading, hasMore, page, fetchVerses]);
+
+        if (chapterHasMore) {
+            fetchVerses(activeChapter, page + 1);
+        } else if (chapters && chapters.length > 0) {
+            const nextChapter = chapters.find(
+                (c) => c.number === activeChapter.number + 1,
+            );
+            if (nextChapter && nextChapter.number <= 114) {
+                isInternalChangeRef.current = true;
+                setAutoAdvancedChapterId(nextChapter.id);
+                setActiveChapter(nextChapter);
+                setPage(1);
+                setChapterHasMore(true);
+                setHasMore(nextChapter.number < 114);
+                onChapterChange?.(nextChapter);
+                fetchVerses(nextChapter, 1);
+            } else {
+                setHasMore(false);
+            }
+        }
+    }, [
+        loading,
+        chapterHasMore,
+        activeChapter,
+        chapters,
+        page,
+        fetchVerses,
+        onChapterChange,
+    ]);
 
     const handleBookmarkToggle = useCallback(
         async (verse: VerseListItem) => {
@@ -397,7 +472,7 @@ export const useVersesPanel = ({
                             'X-CSRF-TOKEN': csrfToken || '',
                         },
                         body: JSON.stringify({
-                            chapter_id: chapter?.id,
+                            chapter_id: activeChapter?.id,
                             verse_number: verse.verseNumber,
                             verse_id: verseId,
                             edition: selectedEdition,
@@ -430,7 +505,7 @@ export const useVersesPanel = ({
                 setShowErrorAlert(true);
             }
         },
-        [user, bookmarkedVerses, chapter, selectedEdition],
+        [user, bookmarkedVerses, activeChapter, selectedEdition],
     );
 
     const handleCopy = useCallback(async (verseId: number, text: string) => {
@@ -447,8 +522,13 @@ export const useVersesPanel = ({
     }, []);
 
     const retry = useCallback(() => {
-        fetchVerses(1, true);
-    }, [fetchVerses]);
+        if (!activeChapter) return;
+        fetchVerses(activeChapter, 1, true);
+    }, [activeChapter, fetchVerses]);
+
+    const clearAutoAdvanceChapter = useCallback(() => {
+        setAutoAdvancedChapterId(null);
+    }, []);
 
     return {
         // State
@@ -456,6 +536,8 @@ export const useVersesPanel = ({
         loading,
         error,
         hasMore,
+        activeChapter,
+        autoAdvancedChapterId,
         bookmarkedVerses,
         isAutoScroll,
         selectedEdition,
@@ -478,5 +560,6 @@ export const useVersesPanel = ({
         setSelectedEdition,
         setShowSearch,
         retry,
+        clearAutoAdvanceChapter,
     };
 };

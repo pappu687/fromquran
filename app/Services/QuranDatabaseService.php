@@ -378,6 +378,7 @@ class QuranDatabaseService {
                 'chapterId' => $meta->chapter_id ?? $fallbackChapterId ?? ($doc['chapter_id_i'] ?? null),
                 'verseNumber' => $meta->verse_number ?? ($doc['verse_number_i'] ?? null),
                 'text' => $doc['text_uthmani_t'] ?? null,
+                'textTajweed' => $doc['text_uthmani_tajweed_t'] ?? null,
                 'translations' => $translations,
                 'juzNumber' => $meta->juz_number ?? ($doc['juz_number_i'] ?? null),
                 'pageNumber' => $meta->page_number ?? ($doc['page_number_i'] ?? null),

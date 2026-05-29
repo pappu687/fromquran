@@ -10,6 +10,7 @@ export interface ReaderSettings {
     fontSize: number; // in rem, default 2.1
     selectedTranslations: number[]; // default none selected
     showArabic: boolean; // default true
+    showTajweed: boolean; // default false
     mushafFont: 'uthmanic' | 'indopak'; // default 'uthmanic'
     showRecentlyViewed: boolean; // default false
 }
@@ -24,6 +25,7 @@ const DEFAULT_SETTINGS: ReaderSettings = {
     fontSize: 2.1,
     selectedTranslations: [],
     showArabic: true,
+    showTajweed: false,
     mushafFont: 'uthmanic',
     showRecentlyViewed: false,
 };

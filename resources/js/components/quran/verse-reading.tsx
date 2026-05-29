@@ -2,6 +2,7 @@ import { useReaderSettings } from '@/contexts/reader-settings-context';
 import { cn } from '@/lib/utils';
 import { type VerseAnnotation, type VerseListItem } from '@/types/quran';
 import { AnnotatedArabicText } from './annotated-arabic-text';
+import { TajweedText } from './tajweed-text';
 
 interface VerseReadingProps {
     verses: VerseListItem[];
@@ -81,19 +82,28 @@ export function VerseReading({
                                                     'bg-amber-100/90 ring-1 ring-amber-300/60',
                                             )}
                                         >
-                                            <AnnotatedArabicText
-                                                as="span"
-                                                annotations={
-                                                    annotationsByVerse[
-                                                        verse.id
-                                                    ] ?? []
-                                                }
-                                                className="inline"
-                                                text={verse.text}
-                                                verseId={verse.id}
-                                                interactive={true}
-                                                onSearch={onSearch}
-                                            />
+                                            {settings.showTajweed &&
+                                            verse.textTajweed ? (
+                                                <TajweedText
+                                                    className="inline"
+                                                    dir="rtl"
+                                                    text={verse.textTajweed}
+                                                />
+                                            ) : (
+                                                <AnnotatedArabicText
+                                                    as="span"
+                                                    annotations={
+                                                        annotationsByVerse[
+                                                            verse.id
+                                                        ] ?? []
+                                                    }
+                                                    className="inline"
+                                                    text={verse.text}
+                                                    verseId={verse.id}
+                                                    interactive={true}
+                                                    onSearch={onSearch}
+                                                />
+                                            )}
                                             <span className="mr-2 inline-flex h-8 w-8 items-center justify-center rounded-[40%] bg-gray-400/20 align-middle text-sm font-semibold">
                                                 {verse.verseNumber}
                                             </span>

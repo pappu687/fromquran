@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 
 interface UseStorageOptions<T> {
     key: string;
@@ -15,7 +15,7 @@ export function useStorage<T>({
 }: UseStorageOptions<T>) {
     const [value, setValue] = useState<T>(defaultValue);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (typeof window === 'undefined') {
             return;
         }

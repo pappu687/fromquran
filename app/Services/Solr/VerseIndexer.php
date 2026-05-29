@@ -83,6 +83,7 @@ class VerseIndexer
                 $doc->verse_index_i = (int) $verse->verse_index;
                 $doc->verse_key_s = $verse->verse_key;
                 $doc->text_uthmani_t = $verse->text_uthmani;
+                $doc->text_uthmani_tajweed_t = $verse->text_uthmani_tajweed ?? null;
                 $doc->juz_number_i = (int) $verse->juz_number;
                 $doc->page_number_i = (int) $verse->page_number;
                 $doc->ruku_number_i = (int) $verse->ruku_number;

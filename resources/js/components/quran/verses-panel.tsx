@@ -39,6 +39,8 @@ interface VersesPanelProps {
     fromVerse?: number;
     toVerse?: number;
     startFromVerse?: number;
+    chapters?: ChapterSummary[];
+    onChapterChange?: (chapter: ChapterSummary) => void;
     onCurrentAyahChange?: (ayah: number) => void;
     onJumpHandlerChange?: (
         handler: ((ayahNumber: number) => Promise<boolean>) | undefined,
@@ -55,6 +57,8 @@ export function VersesPanel({
     fromVerse,
     toVerse,
     startFromVerse,
+    chapters,
+    onChapterChange,
     onCurrentAyahChange,
     onJumpHandlerChange,
 }: VersesPanelProps) {
@@ -70,6 +74,7 @@ export function VersesPanel({
     const highlightedStartVerseRef = useRef<string | null>(null);
     const [searchQuery, setSearchQuery] = useState<string | null>(null);
     const [isSearchSheetOpen, setIsSearchSheetOpen] = useState(false);
+    const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
     const handleSearch = useCallback((text: string) => {
         setSearchQuery(text);
@@ -81,6 +86,8 @@ export function VersesPanel({
         loading,
         error,
         hasMore,
+        activeChapter,
+        autoAdvancedChapterId,
         bookmarkedVerses,
         showLoginAlert,
         showErrorAlert,
@@ -95,6 +102,7 @@ export function VersesPanel({
         setShowErrorAlert,
         setShowSuccessAlert,
         retry,
+        clearAutoAdvanceChapter,
     } = useVersesPanel({
         chapter,
         initialVerses,
@@ -103,6 +111,8 @@ export function VersesPanel({
         fromVerse,
         toVerse,
         startFromVerse,
+        chapters,
+        onChapterChange,
     });
 
     const verseIdsKey = verses.map((verse) => verse.id).join(',');
@@ -363,6 +373,54 @@ export function VersesPanel({
         }
     }, [chapter, scrollToAyah, startFromVerse, verses]);
 
+    // Intersection observer for lazy loading
+    useEffect(() => {
+        const element = loadMoreRef.current;
+        if (!element || !hasMore || loading) {
+            return;
+        }
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                const [entry] = entries;
+                if (entry.isIntersecting) {
+                    loadMore();
+                }
+            },
+            {
+                root: null,
+                rootMargin: '0px 0px 400px 0px',
+                threshold: 0,
+            },
+        );
+
+        observer.observe(element);
+
+        return () => {
+            observer.disconnect();
+        };
+    }, [hasMore, loading, loadMore]);
+
+    // Auto-scroll to verse 1 when lazy loading advances to a new chapter
+    useEffect(() => {
+        if (
+            !activeChapter ||
+            autoAdvancedChapterId !== activeChapter.id
+        ) {
+            return;
+        }
+
+        const el = document.getElementById(
+            `verse-${activeChapter.id}-1`,
+        );
+
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        clearAutoAdvanceChapter();
+    }, [activeChapter, autoAdvancedChapterId, clearAutoAdvanceChapter]);
+
     if (!chapter) {
         return (
             <div className="flex h-full items-center justify-center px-4 py-12">
@@ -412,7 +470,7 @@ export function VersesPanel({
                     )}
 
                     {/* Bismillah — shown before verse 1 for all chapters except chapter 9 */}
-                    {chapter.number !== 9 &&
+                    {activeChapter?.number !== 9 &&
                         verses.length > 0 &&
                         verses[0]?.verseNumber === 1 && (
                         <div className="mb-6 flex justify-center py-4">
@@ -477,13 +535,12 @@ export function VersesPanel({
                                     className="bg-transparent px-0 py-3 md:p-3"
                                     verse={{
                                         ...verse,
-                                        chapterId:
-                                            verse.chapterId || chapter?.id,
+                                        chapterId: verse.chapterId,
                                         chapterNumber:
-                                            verse.chapterNumber ||
-                                            chapter?.number,
+                                            verse.chapterNumber ??
+                                            activeChapter?.number,
                                     }}
-                                    totalVerses={chapter?.verses}
+                                    totalVerses={activeChapter?.verses}
                                     isBookmarked={bookmarkedVerses.has(
                                         verse.id.toString(),
                                     )}
@@ -514,7 +571,22 @@ export function VersesPanel({
                         />
                     ) : null}
 
-                    {/* Load More Button */}
+                    {/* Lazy loading sentinel & spinner */}
+                    {hasMore && (
+                        <div
+                            ref={loadMoreRef}
+                            className="flex justify-center py-4"
+                            aria-hidden="true"
+                        />
+                    )}
+
+                    {loading && verses.length > 0 && (
+                        <div className="flex justify-center py-4">
+                            <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+                        </div>
+                    )}
+
+                    {/* Load More Button (fallback) */}
                     {!showChapterLoadingSkeleton &&
                         !fromVerse &&
                         !toVerse &&

@@ -116,6 +116,7 @@ export function ReaderSettingsSheet({
         settings.selectedTranslations,
     );
     const [showArabic, setShowArabic] = useState(settings.showArabic);
+    const [showTajweed, setShowTajweed] = useState(settings.showTajweed);
     const [mushafFont, setMushafFont] = useState(settings.mushafFont);
     const [showRecentlyViewed, setShowRecentlyViewed] = useState(
         settings.showRecentlyViewed,
@@ -172,6 +173,7 @@ export function ReaderSettingsSheet({
             setFontSize(settings.fontSize);
             setSelectedTranslations(settings.selectedTranslations);
             setShowArabic(settings.showArabic);
+            setShowTajweed(settings.showTajweed);
             setMushafFont(settings.mushafFont);
             setShowRecentlyViewed(settings.showRecentlyViewed);
         }
@@ -209,6 +211,11 @@ export function ReaderSettingsSheet({
     const handleArabicToggle = (checked: boolean) => {
         setShowArabic(checked);
         updateSettings({ showArabic: checked });
+    };
+
+    const handleTajweedToggle = (checked: boolean) => {
+        setShowTajweed(checked);
+        updateSettings({ showTajweed: checked });
     };
 
     const handleMushafFontChange = (fontId: 'uthmanic' | 'indopak') => {
@@ -289,6 +296,14 @@ export function ReaderSettingsSheet({
                                 description="Keep the original Arabic visible alongside translations."
                                 checked={showArabic}
                                 onCheckedChange={handleArabicToggle}
+                            />
+
+                            <ToggleRow
+                                id="show-tajweed"
+                                label="Show Tajweed"
+                                description="Display tajweed color-coded rules on the Arabic text."
+                                checked={showTajweed}
+                                onCheckedChange={handleTajweedToggle}
                             />
                         </div>
                     </SettingsSection>

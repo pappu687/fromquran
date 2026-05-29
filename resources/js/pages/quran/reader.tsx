@@ -192,6 +192,15 @@ export default function QuranReader({
         [],
     );
 
+    const handleChapterChange = useCallback(
+        (nextChapter: ChapterSummary) => {
+            setSelectedChapter(nextChapter);
+            setCurrentAyah(1);
+            window.history.replaceState({}, '', `/${nextChapter.number}`);
+        },
+        [],
+    );
+
     const displayName =
         selectedChapter?.romanName || selectedChapter?.englishName || '';
 
@@ -288,6 +297,8 @@ export default function QuranReader({
                                 fromVerse={activeFromVerse}
                                 toVerse={activeToVerse}
                                 startFromVerse={activeStartFromVerse}
+                                chapters={chapters}
+                                onChapterChange={handleChapterChange}
                                 onCurrentAyahChange={setCurrentAyah}
                                 onJumpHandlerChange={handleJumpHandlerChange}
                             />

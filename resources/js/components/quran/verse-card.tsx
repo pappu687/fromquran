@@ -36,6 +36,7 @@ import {
 import { useState } from 'react';
 import { AddResourceModal } from './add-resource-modal';
 import { AnnotatedArabicText } from './annotated-arabic-text';
+import { TajweedText } from './tajweed-text';
 import { CollectionsModal } from './collections-modal';
 import { QuranGraphV2Modal } from './quran-graph-v2-modal';
 import { ResourcesSheet } from './resources-sheet';
@@ -414,19 +415,34 @@ export function VerseCard({
 
                 {/* Arabic Text */}
                 <div className="mb-4 text-right">
-                    <AnnotatedArabicText
-                        as="div"
-                        annotations={annotations}
-                        className="font-arabic leading-[2.2] text-slate-900 dark:text-slate-100"
-                        dir="rtl"
-                        interactive
-                        onAnnotationCreated={onAnnotationCreated}
-                        onSearch={onSearch}
-                        highlightText={highlightText}
-                        style={{ fontSize: arabicFontSize ?? `${settings.fontSize}rem` }}
-                        text={verse.text}
-                        verseId={verse.id}
-                    />
+                    {settings.showTajweed && verse.textTajweed ? (
+                        <TajweedText
+                            className="font-arabic leading-[2.2] text-slate-900 dark:text-slate-100"
+                            dir="rtl"
+                            style={{
+                                fontSize:
+                                    arabicFontSize ?? `${settings.fontSize}rem`,
+                            }}
+                            text={verse.textTajweed}
+                        />
+                    ) : (
+                        <AnnotatedArabicText
+                            as="div"
+                            annotations={annotations}
+                            className="font-arabic leading-[2.2] text-slate-900 dark:text-slate-100"
+                            dir="rtl"
+                            interactive
+                            onAnnotationCreated={onAnnotationCreated}
+                            onSearch={onSearch}
+                            highlightText={highlightText}
+                            style={{
+                                fontSize:
+                                    arabicFontSize ?? `${settings.fontSize}rem`,
+                            }}
+                            text={verse.text}
+                            verseId={verse.id}
+                        />
+                    )}
                 </div>
 
                 {/* Translations */}

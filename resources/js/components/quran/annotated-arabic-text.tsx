@@ -393,7 +393,7 @@ export function AnnotatedArabicText({
                     {!user ? (
                         <div className="flex flex-col gap-2">
                             <Button
-                                className="w-full"
+                                className="w-full font-sans"
                                 onClick={() => setIsLoginModalOpen(true)}
                                 size="sm"
                                 variant="outline"
@@ -401,7 +401,7 @@ export function AnnotatedArabicText({
                                 Log in to save note
                             </Button>
                             <Button
-                                className="w-full"
+                                className="w-full font-sans"
                                 onClick={() => {
                                     onSearch?.(selection.selectedText);
                                     clearSelection();
@@ -415,7 +415,7 @@ export function AnnotatedArabicText({
                     ) : !selection.showEditor ? (
                         <div className="flex flex-col gap-2">
                             <Button
-                                className="w-full"
+                                className="w-full font-sans"
                                 onClick={() =>
                                     setSelection((current) =>
                                         current
@@ -431,7 +431,7 @@ export function AnnotatedArabicText({
                                 Add note
                             </Button>
                             <Button
-                                className="w-full"
+                                className="w-full font-sans"
                                 onClick={() => {
                                     onSearch?.(selection.selectedText);
                                     clearSelection();
@@ -470,6 +470,7 @@ export function AnnotatedArabicText({
                             ) : null}
                             <div className="flex items-center justify-end gap-2">
                                 <Button
+                                    className="font-sans"
                                     onClick={clearSelection}
                                     size="sm"
                                     type="button"
@@ -478,6 +479,7 @@ export function AnnotatedArabicText({
                                     Cancel
                                 </Button>
                                 <Button
+                                    className="font-sans"
                                     disabled={isSaving}
                                     onClick={saveAnnotation}
                                     size="sm"
