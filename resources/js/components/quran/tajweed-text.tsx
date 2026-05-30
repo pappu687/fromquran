@@ -48,11 +48,17 @@ export function TajweedText({
     }
 
     if (lastIndex < text.length) {
-        parts.push(<span key={`plain-${keyIndex}`}>{text.slice(lastIndex)}</span>);
+        parts.push(
+            <span key={`plain-${keyIndex}`}>{text.slice(lastIndex)}</span>,
+        );
     }
 
     return (
-        <span className={`tajweed-text ${className ?? ''}`} dir={dir} style={style}>
+        <span
+            className={`tajweed-text ${className ?? ''}`}
+            dir={dir}
+            style={style}
+        >
             {parts}
         </span>
     );

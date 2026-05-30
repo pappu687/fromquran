@@ -14,9 +14,11 @@ export function useStorage<T>({
     deserialize = JSON.parse,
 }: UseStorageOptions<T>) {
     const [value, setValue] = useState<T>(defaultValue);
+    const [hasHydrated, setHasHydrated] = useState(false);
 
     useLayoutEffect(() => {
         if (typeof window === 'undefined') {
+            setHasHydrated(true);
             return;
         }
 
@@ -28,10 +30,11 @@ export function useStorage<T>({
         } catch (error) {
             console.warn(`Error reading localStorage key "${key}":`, error);
         }
+        setHasHydrated(true);
     }, [key, deserialize]);
 
     useEffect(() => {
-        if (typeof window === 'undefined') {
+        if (typeof window === 'undefined' || !hasHydrated) {
             return;
         }
 
@@ -40,7 +43,7 @@ export function useStorage<T>({
         } catch (error) {
             console.warn(`Error setting localStorage key "${key}":`, error);
         }
-    }, [key, value, serialize]);
+    }, [key, value, serialize, hasHydrated]);
 
     return [value, setValue] as const;
 }

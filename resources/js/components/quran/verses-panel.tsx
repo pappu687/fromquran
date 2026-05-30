@@ -273,13 +273,7 @@ export function VersesPanel({
         return () => {
             onJumpHandlerChange?.(undefined);
         };
-    }, [
-        chapter,
-        fromVerse,
-        onJumpHandlerChange,
-        scrollToAyah,
-        toVerse,
-    ]);
+    }, [chapter, fromVerse, onJumpHandlerChange, scrollToAyah, toVerse]);
 
     useEffect(() => {
         if (!chapter || !containerRef.current || verses.length === 0) {
@@ -403,16 +397,11 @@ export function VersesPanel({
 
     // Auto-scroll to verse 1 when lazy loading advances to a new chapter
     useEffect(() => {
-        if (
-            !activeChapter ||
-            autoAdvancedChapterId !== activeChapter.id
-        ) {
+        if (!activeChapter || autoAdvancedChapterId !== activeChapter.id) {
             return;
         }
 
-        const el = document.getElementById(
-            `verse-${activeChapter.id}-1`,
-        );
+        const el = document.getElementById(`verse-${activeChapter.id}-1`);
 
         if (el) {
             el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -473,19 +462,19 @@ export function VersesPanel({
                     {activeChapter?.number !== 9 &&
                         verses.length > 0 &&
                         verses[0]?.verseNumber === 1 && (
-                        <div className="mb-6 flex justify-center py-4">
-                            <p
-                                className="font-arabic text-center leading-loose text-foreground/90"
-                                dir="rtl"
-                                aria-label="Bismillahir Rahmanir Rahim"
-                                style={{
-                                    fontSize: `${settings.fontSize * 1.1}rem`,
-                                }}
-                            >
-                                بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
-                            </p>
-                        </div>
-                    )}
+                            <div className="mb-6 flex justify-center py-4">
+                                <p
+                                    className="font-arabic text-center leading-loose text-foreground/90"
+                                    dir="rtl"
+                                    aria-label="Bismillahir Rahmanir Rahim"
+                                    style={{
+                                        fontSize: `${settings.fontSize * 1.1}rem`,
+                                    }}
+                                >
+                                    بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
+                                </p>
+                            </div>
+                        )}
 
                     {showChapterLoadingSkeleton && (
                         <div className="space-y-6">
@@ -554,7 +543,9 @@ export function VersesPanel({
                                     annotations={
                                         annotationsByVerse[verse.id] ?? []
                                     }
-                                    onAnnotationCreated={handleAnnotationCreated}
+                                    onAnnotationCreated={
+                                        handleAnnotationCreated
+                                    }
                                     onSearch={handleSearch}
                                     onCopy={handleCopy}
                                     onPlayAudio={handlePlayAudio}
@@ -565,9 +556,13 @@ export function VersesPanel({
                     ) : !showChapterLoadingSkeleton ? (
                         <VerseReading
                             annotationsByVerse={annotationsByVerse}
+                            bookmarkedVerses={bookmarkedVerses}
                             highlightedAyah={highlightedAyah}
-                            verses={verses}
+                            onBookmarkToggle={handleBookmarkToggle}
+                            onCopy={handleCopy}
                             onSearch={handleSearch}
+                            totalVerses={activeChapter?.verses}
+                            verses={verses}
                         />
                     ) : null}
 

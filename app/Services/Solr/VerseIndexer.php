@@ -78,6 +78,8 @@ class VerseIndexer
                 $doc = $update->createDocument();
 
                 $doc->id = $verse->verse_key;
+                $doc->document_type_s = 'verse';
+                $doc->type_s = 'verse';
                 $doc->chapter_id_i = (int) $verse->chapter_id;
                 $doc->verse_number_i = (int) $verse->verse_number;
                 $doc->verse_index_i = (int) $verse->verse_index;
@@ -113,7 +115,7 @@ class VerseIndexer
     private function deleteAllVerseDocuments(): void
     {
         $update = $this->client->createUpdate();
-        $update->addDeleteQuery('-document_type_s:[* TO *] AND -type_s:[* TO *]');
+        $update->addDeleteQuery('document_type_s:verse OR type_s:verse');
         $update->addCommit();
         $this->client->update($update);
     }

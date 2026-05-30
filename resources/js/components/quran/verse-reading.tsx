@@ -1,8 +1,12 @@
 import { useReaderSettings } from '@/contexts/reader-settings-context';
+import { useVerseActions } from '@/hooks/use-verse-actions';
 import { cn } from '@/lib/utils';
 import { type VerseAnnotation, type VerseListItem } from '@/types/quran';
+import { type ReactNode } from 'react';
 import { AnnotatedArabicText } from './annotated-arabic-text';
 import { TajweedText } from './tajweed-text';
+import { VerseActionsDropdown } from './verse-actions-dropdown';
+import { VerseActionsModals } from './verse-actions-modals';
 
 interface VerseReadingProps {
     verses: VerseListItem[];
@@ -10,6 +14,49 @@ interface VerseReadingProps {
     annotationsByVerse?: Record<number, VerseAnnotation[]>;
     highlightedAyah?: number | null;
     onSearch?: (text: string) => void;
+    bookmarkedVerses?: Set<string>;
+    onBookmarkToggle?: (verse: VerseListItem) => void;
+    onCopy?: (verseId: number, text: string) => void;
+    totalVerses?: number;
+}
+
+function VerseActionsWrapper({
+    verse,
+    totalVerses,
+    isBookmarked,
+    hasResources,
+    resourceCount,
+    onBookmarkToggle,
+    onCopy,
+    children,
+}: {
+    verse: VerseListItem;
+    totalVerses?: number;
+    isBookmarked: boolean;
+    hasResources: boolean;
+    resourceCount: number;
+    onBookmarkToggle?: (verse: VerseListItem) => void;
+    onCopy?: (verseId: number, text: string) => void;
+    children: ReactNode;
+}) {
+    const actions = useVerseActions({
+        verse,
+        totalVerses,
+        isBookmarked,
+        hasResources,
+        resourceCount,
+        onBookmarkToggle: () => onBookmarkToggle?.(verse),
+        onCopy,
+    });
+
+    return (
+        <>
+            <VerseActionsDropdown actions={actions} excludeCopyTranslation>
+                {children}
+            </VerseActionsDropdown>
+            <VerseActionsModals actions={actions} verse={verse} />
+        </>
+    );
 }
 
 export function VerseReading({
@@ -18,6 +65,10 @@ export function VerseReading({
     annotationsByVerse = {},
     highlightedAyah,
     onSearch,
+    bookmarkedVerses,
+    onBookmarkToggle,
+    onCopy,
+    totalVerses,
 }: VerseReadingProps) {
     const { settings } = useReaderSettings();
     if (verses.length === 0) {
@@ -64,7 +115,7 @@ export function VerseReading({
                                 <div className="h-px flex-1 bg-border"></div>
                             </div>
                             <div className="text-right" dir="rtl">
-                                <p
+                                <div
                                     className="font-arabic text-justify leading-relaxed"
                                     style={{
                                         fontSize: `${settings.fontSize}rem`,
@@ -104,15 +155,35 @@ export function VerseReading({
                                                     onSearch={onSearch}
                                                 />
                                             )}
-                                            <span className="mr-2 inline-flex h-8 w-8 items-center justify-center rounded-[40%] bg-gray-400/20 align-middle text-sm font-semibold">
-                                                {verse.verseNumber}
-                                            </span>
+                                            <VerseActionsWrapper
+                                                verse={verse}
+                                                totalVerses={totalVerses}
+                                                isBookmarked={
+                                                    bookmarkedVerses?.has(
+                                                        verse.id.toString(),
+                                                    ) ?? false
+                                                }
+                                                hasResources={
+                                                    verse.hasResources ?? false
+                                                }
+                                                resourceCount={
+                                                    verse.resourceCount ?? 0
+                                                }
+                                                onBookmarkToggle={
+                                                    onBookmarkToggle
+                                                }
+                                                onCopy={onCopy}
+                                            >
+                                                <span className="mr-2 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-[40%] bg-gray-400/20 align-middle text-sm font-semibold transition-colors hover:bg-black hover:text-white">
+                                                    {verse.verseNumber}
+                                                </span>
+                                            </VerseActionsWrapper>
                                             {index <
                                                 versesByPage[page].length - 1 &&
                                                 ' '}
                                         </span>
                                     ))}
-                                </p>
+                                </div>
                             </div>
                         </div>
                     );

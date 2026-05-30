@@ -1,46 +1,28 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
     Tooltip,
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useReaderSettings } from '@/contexts/reader-settings-context';
+import { useVerseActions } from '@/hooks/use-verse-actions';
 import { useQuranAudioPlayer } from '@/hooks/useQuranAudioPlayer';
 import { cn } from '@/lib/utils';
 import { type VerseAnnotation, type VerseListItem } from '@/types/quran';
 import { router } from '@inertiajs/react';
 import {
-    Bookmark,
-    BookmarkCheck,
-    BookmarkPlus,
     BookOpen,
     GitBranch,
     Info,
-    Languages,
-    Link,
     Loader2,
     MoreVertical,
     Play,
-    Plus,
-    Quote,
-    Share2,
 } from 'lucide-react';
-import { useState } from 'react';
-import { AddResourceModal } from './add-resource-modal';
 import { AnnotatedArabicText } from './annotated-arabic-text';
 import { TajweedText } from './tajweed-text';
-import { CollectionsModal } from './collections-modal';
-import { QuranGraphV2Modal } from './quran-graph-v2-modal';
-import { ResourcesSheet } from './resources-sheet';
-import { TafsirModal } from './tafsir-modal';
+import { VerseActionsDropdown } from './verse-actions-dropdown';
+import { VerseActionsModals } from './verse-actions-modals';
 
 interface VerseCardProps {
     verse: VerseListItem;
@@ -75,10 +57,9 @@ export function VerseCard({
     resourceCount = 0,
     onBookmarkToggle,
     onCopy,
-    onPlayAudio,
     showTranslation = true,
     className,
-    reciterId = 1, // Default reciter ID
+    reciterId = 1,
     hideHeaderActions = false,
     annotations = [],
     onAnnotationCreated,
@@ -87,20 +68,17 @@ export function VerseCard({
     arabicFontSize,
     contentClassName,
 }: VerseCardProps) {
-    const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
-    const [isResourcesSheetOpen, setIsResourcesSheetOpen] = useState(false);
-    const [isGraphV2ModalOpen, setIsGraphV2ModalOpen] = useState(false);
-    const [activeResourceSection, setActiveResourceSection] = useState<
-        string | undefined
-    >(undefined);
-    const [isCollectionsModalOpen, setIsCollectionsModalOpen] = useState(false);
-    const [isTafsirModalOpen, setIsTafsirModalOpen] = useState(false);
+    const actions = useVerseActions({
+        verse,
+        totalVerses,
+        isBookmarked,
+        hasResources,
+        resourceCount,
+        onBookmarkToggle,
+        onCopy,
+    });
     const { settings } = useReaderSettings();
     const { playVerseAudio, playerState } = useQuranAudioPlayer();
-
-    const handleBookmark = () => {
-        onBookmarkToggle?.(verse.id);
-    };
 
     const handlePlayAudio = async () => {
         const chapterNumber = verse.chapterNumber ?? verse.chapterId;
@@ -111,10 +89,6 @@ export function VerseCard({
             recitationId: qfRecitationId,
             title: `Surah ${chapterNumber} ${chapterNumber}:${verse.verseNumber}`,
         });
-    };
-
-    const handleAddResource = () => {
-        setIsResourceModalOpen(true);
     };
 
     // Check if this is the currently playing verse
@@ -129,70 +103,12 @@ export function VerseCard({
         playerState.currentVerseNumber === verse.verseNumber &&
         playerState.isLoading;
 
-    const handleCopyArabic = () => {
-        navigator.clipboard.writeText(verse.text);
-    };
-
-    const handleCopyTranslation = () => {
-        const firstTranslation = verse.translations?.[0]?.text;
-
-        if (firstTranslation) {
-            navigator.clipboard.writeText(firstTranslation);
-        }
-    };
-
-    const buildVerseUrl = () => {
-        if (typeof window === 'undefined') return '';
-        return `${window.location.origin}/${verse.chapterNumber}/${verse.verseNumber}`;
-    };
-
-    const handleCopyLink = () => {
-        const url = buildVerseUrl();
-        if (!url) return;
-        navigator.clipboard.writeText(url);
-    };
-
-    const verseLabel = verse.chapterNumber
-        ? `Quran ${verse.chapterNumber}:${verse.verseNumber}`
-        : `Verse ${verse.verseNumber}`;
-    const resourcesTooltip =
-        resourceCount > 0
-            ? `View (${resourceCount}) Resources`
-            : 'View Resources';
-
-    const openShareWindow = (href: string) => {
-        window.open(href, '_blank', 'noopener,noreferrer');
-    };
-
-    const buildShareUrl = () => {
-        const url = buildVerseUrl();
-        if (!url) return null;
-        return encodeURIComponent(url);
-    };
-
-    const handleShareToFacebook = () => {
-        const encodedUrl = buildShareUrl();
-        if (!encodedUrl) return;
-        openShareWindow(
-            `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
-        );
-    };
-
-    const handleShareToTwitter = () => {
-        const encodedUrl = buildShareUrl();
-        if (!encodedUrl) return;
-        const encodedText = encodeURIComponent(verseLabel);
-        openShareWindow(
-            `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedText}`,
-        );
-    };
-
     return (
         <Card
             className={cn(
                 'group mb-4 border-0 shadow-none transition-all duration-300',
                 isCurrentlyPlaying && 'bg-primary/5 ring-1 ring-primary/20',
-                isResourcesSheetOpen &&
+                actions.isResourcesSheetOpen &&
                     'bg-orange-50/50 shadow-sm ring-1 ring-orange-500/20 dark:bg-orange-900/10',
                 className,
             )}
@@ -266,8 +182,12 @@ export function VerseCard({
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => {
-                                            setActiveResourceSection(undefined);
-                                            setIsResourcesSheetOpen(true);
+                                            actions.setActiveResourceSection(
+                                                undefined,
+                                            );
+                                            actions.setIsResourcesSheetOpen(
+                                                true,
+                                            );
                                         }}
                                         className="h-8 w-8 p-0"
                                     >
@@ -281,7 +201,7 @@ export function VerseCard({
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                    {resourcesTooltip}
+                                    {actions.resourcesTooltip}
                                 </TooltipContent>
                             </Tooltip>
 
@@ -291,7 +211,7 @@ export function VerseCard({
                                         variant="ghost"
                                         size="sm"
                                         onClick={() =>
-                                            setIsGraphV2ModalOpen(true)
+                                            actions.setIsGraphV2ModalOpen(true)
                                         }
                                         className="h-8 w-8 p-0"
                                     >
@@ -315,7 +235,7 @@ export function VerseCard({
                                         variant="ghost"
                                         size="sm"
                                         onClick={() =>
-                                            setIsTafsirModalOpen(true)
+                                            actions.setIsTafsirModalOpen(true)
                                         }
                                         className="h-8 w-8 p-0"
                                     >
@@ -325,90 +245,15 @@ export function VerseCard({
                                 <TooltipContent>View Tafsir</TooltipContent>
                             </Tooltip>
 
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-8 w-8 p-0"
-                                    >
-                                        <MoreVertical className="h-4 w-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                    align="end"
-                                    className="w-48"
+                            <VerseActionsDropdown actions={actions}>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0"
                                 >
-                                    <DropdownMenuItem
-                                        onClick={handleCopyArabic}
-                                        className="gap-2 text-sm"
-                                    >
-                                        <Quote className="h-3.5 w-3.5" />
-                                        Copy Arabic
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onClick={handleCopyTranslation}
-                                        className="gap-2 text-sm"
-                                    >
-                                        <Languages className="h-3.5 w-3.5" />
-                                        Copy Translation
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onClick={handleCopyLink}
-                                        className="gap-2 text-sm"
-                                    >
-                                        <Link className="h-3.5 w-3.5" />
-                                        Copy Link
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onClick={handleShareToFacebook}
-                                        className="gap-2 text-sm"
-                                    >
-                                        <Share2 className="h-3.5 w-3.5" />
-                                        Share on Facebook
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onClick={handleShareToTwitter}
-                                        className="gap-2 text-sm"
-                                    >
-                                        <Share2 className="h-3.5 w-3.5" />
-                                        Share on Twitter
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                        onClick={handleBookmark}
-                                        className="gap-2 text-sm"
-                                    >
-                                        {isBookmarked ? (
-                                            <>
-                                                <BookmarkCheck className="h-3.5 w-3.5 text-primary" />
-                                                <span>Remove bookmark</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Bookmark className="h-3.5 w-3.5" />
-                                                <span>Bookmark verse</span>
-                                            </>
-                                        )}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onClick={() =>
-                                            setIsCollectionsModalOpen(true)
-                                        }
-                                        className="gap-2 text-sm"
-                                    >
-                                        <BookmarkPlus className="h-3.5 w-3.5" />
-                                        <span>Add to collection</span>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onClick={handleAddResource}
-                                        className="gap-2 text-sm"
-                                    >
-                                        <Plus className="h-3.5 w-3.5" />
-                                        <span>Add resource</span>
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                                    <MoreVertical className="h-4 w-4" />
+                                </Button>
+                            </VerseActionsDropdown>
                         </div>
                     )}
                 </div>
@@ -462,50 +307,7 @@ export function VerseCard({
                 )}
             </CardContent>
 
-            {/* Add Resource Modal */}
-            <AddResourceModal
-                open={isResourceModalOpen}
-                onOpenChange={setIsResourceModalOpen}
-                verseId={verse.id}
-            />
-
-            {/* Collections Modal */}
-            <CollectionsModal
-                open={isCollectionsModalOpen}
-                onOpenChange={setIsCollectionsModalOpen}
-                verseId={verse.id}
-                chapterId={verse.chapterId}
-                verseNumber={verse.verseNumber}
-                totalVerses={totalVerses}
-            />
-
-            {/* Resources Sheet */}
-            <ResourcesSheet
-                open={isResourcesSheetOpen}
-                onOpenChange={setIsResourcesSheetOpen}
-                verseId={verse.id}
-                verseNumber={verse.verseNumber}
-                chapterNumber={verse.chapterNumber}
-                initialActiveSection={activeResourceSection}
-            />
-
-            {/* Graph V2 Modal */}
-            <QuranGraphV2Modal
-                open={isGraphV2ModalOpen}
-                onOpenChange={setIsGraphV2ModalOpen}
-                verseId={verse.id}
-                verseKey={`${verse.chapterNumber}:${verse.verseNumber}`}
-            />
-
-            {/* Tafsir Modal */}
-            <TafsirModal
-                open={isTafsirModalOpen}
-                onOpenChange={setIsTafsirModalOpen}
-                chapterId={verse.chapterId}
-                verseNumber={verse.verseNumber}
-                chapterNumber={verse.chapterNumber}
-                totalVerses={totalVerses}
-            />
+            <VerseActionsModals actions={actions} verse={verse} />
         </Card>
     );
 }

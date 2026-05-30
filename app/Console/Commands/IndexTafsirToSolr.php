@@ -77,6 +77,7 @@ class IndexTafsirToSolr extends Command
                     // Use the same document type fields as other non-verse Solr documents.
                     $doc->document_type_t = 'tafsir';
                     $doc->document_type_s = 'tafsir';
+                    $doc->type_s = 'tafsir';
 
                     // Tafseer book info
                     $doc->tafsir_id_i = (int) $content->tafsir_id;

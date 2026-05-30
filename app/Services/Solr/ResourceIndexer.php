@@ -135,6 +135,7 @@ class ResourceIndexer
                 $doc->id = $this->translationDocumentId($translation->id);
                 $doc->document_type_t = 'translation';
                 $doc->document_type_s = 'translation';
+                $doc->type_s = 'translation';
                 $doc->verse_id_i = (int) $translation->verse_id;
                 $doc->chapter_id_i = (int) $translation->chapter_id;
                 $doc->verse_number_i = (int) $translation->verse?->verse_number;
@@ -216,6 +217,7 @@ class ResourceIndexer
         $doc->id = $this->verseResourceDocumentId($resource->id);
         $doc->document_type_t = 'user_verse_resource';
         $doc->document_type_s = 'user_verse_resource';
+        $doc->type_s = 'user_verse_resource';
         $doc->verse_id_i = (int) $resource->verse_id;
         $doc->chapter_id_i = (int) $resource->verse?->chapter_id;
         $doc->verse_number_i = (int) $resource->verse?->verse_number;
@@ -238,6 +240,7 @@ class ResourceIndexer
         $doc->id = $this->chapterResourceDocumentId($resource->id);
         $doc->document_type_t = 'user_chapter_resource';
         $doc->document_type_s = 'user_chapter_resource';
+        $doc->type_s = 'user_chapter_resource';
         $doc->chapter_id_i = (int) $resource->chapter_id;
         $doc->chapter_number_i = (int) $resource->chapter?->chapter_number;
         $doc->title_t = $resource->resource_title;
