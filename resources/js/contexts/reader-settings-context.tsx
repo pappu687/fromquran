@@ -13,6 +13,7 @@ export interface ReaderSettings {
     showTajweed: boolean; // default false
     mushafFont: 'uthmanic' | 'indopak'; // default 'uthmanic'
     showRecentlyViewed: boolean; // default false
+    autoPlayNext: boolean; // default true
 }
 
 interface ReaderSettingsContextType {
@@ -28,6 +29,7 @@ const DEFAULT_SETTINGS: ReaderSettings = {
     showTajweed: false,
     mushafFont: 'uthmanic',
     showRecentlyViewed: false,
+    autoPlayNext: true,
 };
 
 const ReaderSettingsContext = createContext<

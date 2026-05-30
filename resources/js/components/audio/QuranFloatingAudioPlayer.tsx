@@ -1,17 +1,31 @@
 import 'react-h5-audio-player/lib/styles.css';
 
 import { Button } from '@/components/ui/button';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { useReaderSettings } from '@/contexts/reader-settings-context';
 import { useQuranAudioPlayer } from '@/hooks/useQuranAudioPlayer';
 import { cn } from '@/lib/utils';
 import { useQuranAudioPlayerStore } from '@/store/use-quran-audio-player';
-import { Pause, Play, SkipBack, SkipForward, X } from 'lucide-react';
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import {
+    Pause,
+    Play,
+    SkipBack,
+    SkipForward,
+    StepForward,
+    X,
+} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 const loadAudioPlayer = () => import('react-h5-audio-player');
 
 export function QuranFloatingAudioPlayer() {
     const { closePlayer, playNextVerse, playPreviousVerse, playerState } =
         useQuranAudioPlayer();
+    const { settings, updateSettings } = useReaderSettings();
     const setIsPlaying = useQuranAudioPlayerStore(
         (state) => state.setIsPlaying,
     );
@@ -62,7 +76,7 @@ export function QuranFloatingAudioPlayer() {
         return (
             <div className="fixed right-0 bottom-0 left-0 z-[9999] border-t bg-background/95 p-4">
                 <div className="mx-auto max-w-6xl">
-                    <div className="h-16 flex items-center justify-center">
+                    <div className="flex h-16 items-center justify-center">
                         Loading audio player...
                     </div>
                 </div>
@@ -93,17 +107,54 @@ export function QuranFloatingAudioPlayer() {
                     layout="horizontal-reverse"
                     className="quran-h5-player"
                     customAdditionalControls={[
-                        <Button
-                            key="close-audio-player"
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 shrink-0 p-0"
-                            aria-label="Close audio player"
-                            onClick={handleClose}
-                        >
-                            <X className="h-4 w-4" />
-                        </Button>,
+                        <Tooltip key="auto-play-next">
+                            <TooltipTrigger asChild>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className={cn(
+                                        'h-7 w-7 shrink-0 p-0',
+                                        settings.autoPlayNext
+                                            ? 'text-primary'
+                                            : 'text-muted-foreground',
+                                    )}
+                                    aria-label={
+                                        settings.autoPlayNext
+                                            ? 'Auto-play next verse is on'
+                                            : 'Auto-play next verse is off'
+                                    }
+                                    onClick={() =>
+                                        updateSettings({
+                                            autoPlayNext:
+                                                !settings.autoPlayNext,
+                                        })
+                                    }
+                                >
+                                    <StepForward className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                {settings.autoPlayNext
+                                    ? 'Auto-play next verse: On'
+                                    : 'Auto-play next verse: Off'}
+                            </TooltipContent>
+                        </Tooltip>,
+                        <Tooltip key="close-audio-player">
+                            <TooltipTrigger asChild>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 w-7 shrink-0 p-0"
+                                    aria-label="Close audio player"
+                                    onClick={handleClose}
+                                >
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Close audio player</TooltipContent>
+                        </Tooltip>,
                     ]}
                     customControlsSection={[
                         RHAP_UI.ADDITIONAL_CONTROLS,
@@ -114,7 +165,12 @@ export function QuranFloatingAudioPlayer() {
                     onClickNext={handleNext}
                     onPlay={() => setIsPlaying(true)}
                     onPause={() => setIsPlaying(false)}
-                    onEnded={() => setIsPlaying(false)}
+                    onEnded={() => {
+                        setIsPlaying(false);
+                        if (settings.autoPlayNext && playerState.canGoNext) {
+                            void playNextVerse();
+                        }
+                    }}
                     onError={() =>
                         useQuranAudioPlayerStore
                             .getState()

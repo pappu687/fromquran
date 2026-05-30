@@ -1,4 +1,5 @@
 import { QuranFloatingAudioPlayer } from '@/components/audio/QuranFloatingAudioPlayer';
+import { ReaderSettingsProvider } from '@/contexts/reader-settings-context';
 import { useQuranAudioPlayer } from '@/hooks/useQuranAudioPlayer';
 import { useQuranAudioPlayerStore } from '@/store/use-quran-audio-player';
 import {
@@ -8,11 +9,16 @@ import {
     render,
     renderHook,
     screen,
+    waitFor,
 } from '@testing-library/react';
 import type React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getVerseAudio, getVerseNavigation } from '@/api/quranAudio';
+
+function renderWithSettings(ui: React.ReactElement) {
+    return render(<ReaderSettingsProvider>{ui}</ReaderSettingsProvider>);
+}
 
 vi.mock('@/api/quranAudio', () => ({
     getVerseAudio: vi.fn(),
@@ -95,7 +101,7 @@ afterEach(() => {
 
 describe('QuranFloatingAudioPlayer', () => {
     it('is hidden initially', () => {
-        render(<QuranFloatingAudioPlayer />);
+        renderWithSettings(<QuranFloatingAudioPlayer />);
 
         expect(
             screen.queryByTestId('quran-floating-audio-player'),
@@ -121,18 +127,20 @@ describe('QuranFloatingAudioPlayer', () => {
             });
         });
 
-        render(<QuranFloatingAudioPlayer />);
+        renderWithSettings(<QuranFloatingAudioPlayer />);
 
         expect(
-            screen.getByTestId('quran-floating-audio-player'),
+            await screen.findByTestId('quran-floating-audio-player'),
         ).toBeInTheDocument();
-        expect(screen.getByTestId('mock-audio-player')).toHaveAttribute(
-            'data-src',
-            'https://audio.qurancdn.com/Alafasy/mp3/002255.mp3',
-        );
+        await waitFor(() => {
+            expect(screen.getByTestId('mock-audio-player')).toHaveAttribute(
+                'data-src',
+                'https://audio.qurancdn.com/Alafasy/mp3/002255.mp3',
+            );
+        });
     });
 
-    it('close hides and pauses player', () => {
+    it('close hides and pauses player', async () => {
         act(() => {
             useQuranAudioPlayerStore.getState().setCurrentAudio({
                 verseKey: '2:255',
@@ -145,8 +153,9 @@ describe('QuranFloatingAudioPlayer', () => {
             });
         });
 
-        render(<QuranFloatingAudioPlayer />);
-        fireEvent.click(screen.getByLabelText('Close audio player'));
+        renderWithSettings(<QuranFloatingAudioPlayer />);
+        const closeButton = await screen.findByLabelText('Close audio player');
+        fireEvent.click(closeButton);
 
         expect(pauseMock).toHaveBeenCalledTimes(1);
         expect(

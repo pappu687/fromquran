@@ -121,6 +121,7 @@ export function ReaderSettingsSheet({
     const [showRecentlyViewed, setShowRecentlyViewed] = useState(
         settings.showRecentlyViewed,
     );
+    const [autoPlayNext, setAutoPlayNext] = useState(settings.autoPlayNext);
 
     useEffect(() => {
         if (open && availableTranslations.length === 0) {
@@ -176,6 +177,7 @@ export function ReaderSettingsSheet({
             setShowTajweed(settings.showTajweed);
             setMushafFont(settings.mushafFont);
             setShowRecentlyViewed(settings.showRecentlyViewed);
+            setAutoPlayNext(settings.autoPlayNext);
         }
     }, [open, settings]);
 
@@ -226,6 +228,11 @@ export function ReaderSettingsSheet({
     const handleRecentlyViewedToggle = (checked: boolean) => {
         setShowRecentlyViewed(checked);
         updateSettings({ showRecentlyViewed: checked });
+    };
+
+    const handleAutoPlayNextToggle = (checked: boolean) => {
+        setAutoPlayNext(checked);
+        updateSettings({ autoPlayNext: checked });
     };
 
     return (
@@ -304,6 +311,21 @@ export function ReaderSettingsSheet({
                                 description="Display tajweed color-coded rules on the Arabic text."
                                 checked={showTajweed}
                                 onCheckedChange={handleTajweedToggle}
+                            />
+                        </div>
+                    </SettingsSection>
+
+                    <SettingsSection
+                        title="Audio"
+                        description="Control verse audio playback behaviour."
+                    >
+                        <div className="space-y-3">
+                            <ToggleRow
+                                id="auto-play-next"
+                                label="Auto-play next verse"
+                                description="Automatically continue to the next verse when the current one finishes."
+                                checked={autoPlayNext}
+                                onCheckedChange={handleAutoPlayNextToggle}
                             />
                         </div>
                     </SettingsSection>
