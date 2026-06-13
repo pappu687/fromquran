@@ -567,7 +567,7 @@ export function VersesPanel({
                     ) : null}
 
                     {/* Lazy loading sentinel & spinner */}
-                    {hasMore && (
+                    {hasMore && !fromVerse && !toVerse && (
                         <div
                             ref={loadMoreRef}
                             className="flex justify-center py-4"

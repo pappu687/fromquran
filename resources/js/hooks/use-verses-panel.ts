@@ -158,11 +158,11 @@ export const useVersesPanel = ({
     const { user } = useAuth();
     const hasScrolledToStartRef = useRef(false);
     const currentChapterIdRef = useRef<number | null>(chapter?.id || null);
-    const lastTranslationIdsRef = useRef('');
     const lastStartVerseRef = useRef<number | null>(startFromVerse ?? null);
     const isInternalChangeRef = useRef(false);
 
     const { settings } = useReaderSettings();
+    const lastTranslationIdsRef = useRef(settings.selectedTranslations.join(','));
     // Keep a stable ref so fetchVerses can read the latest translations
     // without needing them as a useCallback dependency.
     // Updated synchronously during render so the reset effect always reads
