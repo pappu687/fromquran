@@ -103,6 +103,8 @@ export function VersesPanel({
         setShowSuccessAlert,
         retry,
         clearAutoAdvanceChapter,
+        hasNextChapter,
+        goToNextChapter,
     } = useVersesPanel({
         chapter,
         initialVerses,
@@ -610,9 +612,17 @@ export function VersesPanel({
                         !toVerse &&
                         !hasMore &&
                         verses.length > 0 && (
-                            <div className="py-8 text-center text-slate-500">
-                                <Separator className="mb-4 bg-slate-200" />
-                                <p>You've reached the end of this chapter</p>
+                            <div className="py-8 text-center">
+                                <Separator className="mb-6 bg-slate-200" />
+                                <p className="mb-6 text-slate-500">You've reached the end of this chapter</p>
+                                {hasNextChapter && (
+                                    <Button
+                                        onClick={goToNextChapter}
+                                        className="min-w-36 rounded-full border border-slate-200 bg-white px-5 shadow-none text-slate-700 hover:bg-slate-50"
+                                    >
+                                        Continue to Next Chapter
+                                    </Button>
+                                )}
                             </div>
                         )}
 

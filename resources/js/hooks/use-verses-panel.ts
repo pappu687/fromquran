@@ -142,6 +142,8 @@ interface UseVersesPanelReturn {
     setShowSearch: (show: boolean) => void;
     retry: () => void;
     clearAutoAdvanceChapter: () => void;
+    hasNextChapter: boolean;
+    goToNextChapter: () => void;
 }
 
 export const useVersesPanel = ({
@@ -239,9 +241,7 @@ export const useVersesPanel = ({
 
                 const hasMorePages = data.data?.length === pageSize;
                 setChapterHasMore(hasMorePages);
-                setHasMore(
-                    hasMorePages || targetChapter.number < 114,
-                );
+                setHasMore(hasMorePages);
                 setPage(pageNum);
             } catch (err) {
                 setError(
@@ -284,7 +284,7 @@ export const useVersesPanel = ({
                 setActiveChapter(chapter);
                 setVerses([]);
                 setChapterHasMore(true);
-                setHasMore(chapter.number < 114);
+                setHasMore(true);
                 hasScrolledToStartRef.current = false;
                 setPage(1);
                 fetchVersesRef.current(chapter, 1, true);
@@ -368,19 +368,10 @@ export const useVersesPanel = ({
         }
     }, [user, activeChapter, selectedEdition, loadUserBookmarks]);
 
-    const loadMore = useCallback(() => {
-        if (loading || !activeChapter) {
-            return;
-        }
+    const hasNextChapter = activeChapter ? activeChapter.number < 114 : false;
 
-        if (chapterHasMore) {
-            fetchVerses(activeChapter, page + 1);
-        } else if (chapters && chapters.length > 0 && verses.length > 0) {
-            // Only auto-advance to the next chapter when the current chapter
-            // has rendered verses.  Without this guard the IntersectionObserver
-            // fires loadMore in a tight loop (since `hasMore` stays true for
-            // chapters < 114) and the reader rapidly cycles through every
-            // remaining chapter.
+    const goToNextChapter = useCallback(() => {
+        if (chapters && chapters.length > 0 && activeChapter) {
             const nextChapter = chapters.find(
                 (c) => c.number === activeChapter.number + 1,
             );
@@ -390,22 +381,27 @@ export const useVersesPanel = ({
                 setActiveChapter(nextChapter);
                 setPage(1);
                 setChapterHasMore(true);
-                setHasMore(nextChapter.number < 114);
+                setHasMore(true);
                 onChapterChange?.(nextChapter);
                 fetchVerses(nextChapter, 1);
-            } else {
-                setHasMore(false);
             }
+        }
+    }, [activeChapter, chapters, fetchVerses, onChapterChange]);
+
+    const loadMore = useCallback(() => {
+        if (loading || !activeChapter) {
+            return;
+        }
+
+        if (chapterHasMore) {
+            fetchVerses(activeChapter, page + 1);
         }
     }, [
         loading,
         chapterHasMore,
         activeChapter,
-        chapters,
-        verses.length,
         page,
         fetchVerses,
-        onChapterChange,
     ]);
 
     const handleBookmarkToggle = useCallback(
@@ -567,5 +563,7 @@ export const useVersesPanel = ({
         setShowSearch,
         retry,
         clearAutoAdvanceChapter,
+        hasNextChapter,
+        goToNextChapter,
     };
 };
