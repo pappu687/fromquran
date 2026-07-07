@@ -375,7 +375,12 @@ export const useVersesPanel = ({
 
         if (chapterHasMore) {
             fetchVerses(activeChapter, page + 1);
-        } else if (chapters && chapters.length > 0) {
+        } else if (chapters && chapters.length > 0 && verses.length > 0) {
+            // Only auto-advance to the next chapter when the current chapter
+            // has rendered verses.  Without this guard the IntersectionObserver
+            // fires loadMore in a tight loop (since `hasMore` stays true for
+            // chapters < 114) and the reader rapidly cycles through every
+            // remaining chapter.
             const nextChapter = chapters.find(
                 (c) => c.number === activeChapter.number + 1,
             );
@@ -397,6 +402,7 @@ export const useVersesPanel = ({
         chapterHasMore,
         activeChapter,
         chapters,
+        verses.length,
         page,
         fetchVerses,
         onChapterChange,
